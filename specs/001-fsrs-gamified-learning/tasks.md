@@ -399,7 +399,7 @@ survive offline and tab closes (V3), and appear on a second device (V4).
 
 ### Tests for User Story 1 ⚠️ (write first, see them fail)
 
-- [ ] T066 [P] [US1] Add review-session cases to `packages/fixtures/queue.json`:
+- [X] T066 [P] [US1] Add review-session cases to `packages/fixtures/queue.json`:
   - `review` kind: learning/relearning first, then `due` ascending, up to `session_size`;
   - 5 due + 10 new, `session_size` 20, new limit 10: 5 due then 10 new (Story 1 #1);
   - 25 due + 10 new, `session_size` 20: 20 due and no new card (FR-006);
@@ -408,7 +408,7 @@ survive offline and tab closes (V3), and appear on a second device (V4).
   - `ahead` kind: Review cards not yet due, by `due` ascending;
   - re-queue of a card graded Again whose next due falls before the session ends;
   - progress counts each queued card once.
-- [ ] T067 [P] [US1] Write the failing test `packages/domain/tests/queue.test.ts`, which runs
+- [X] T067 [P] [US1] Write the failing test `packages/domain/tests/queue.test.ts`, which runs
   every `queue.json` case for the `review` and `ahead` kinds.
 - [ ] T068 [P] [US1] Write the failing test `apps/web/tests/session/session-machine.test.ts`:
   - reveal shows four interval labels (FR-002);
@@ -460,7 +460,7 @@ survive offline and tab closes (V3), and appear on a second device (V4).
 
 ### Implementation for User Story 1
 
-- [ ] T075 [US1] Implement `buildQueue({ kind: 'review' | 'ahead', cards, now, settings,
+- [X] T075 [US1] Implement `buildQueue({ kind: 'review' | 'ahead', cards, now, settings,
   studyDayEnd, introducedToday })` and `requeueAfterGrade()` in `packages/domain/src/queue/build-queue.ts`.
   `T067` must pass for these kinds.
 - [ ] T076 [US1] Register the push contract schemas `ReviewEvent`, `RevokeEvent`,
