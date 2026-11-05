@@ -7,3 +7,4 @@ specs
 .specify
 drizzle
 sst.config.ts
+apps/web/src/client/api-types.ts
