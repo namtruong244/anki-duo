@@ -1,0 +1,578 @@
+openapi: 3.1.0
+info:
+  title: Anki Duo API
+  version: 1.0.0
+  description: |
+    HTTP API served by the Hono app (apps/api on AWS Lambda) under /api/v1. Clients reach it
+    through the Cloudflare Worker at the app's origin (apps/edge); the Lambda URL is not public.
+    Clients authenticate with one of two schemes:
+    - the web app (same origin) uses the Better Auth session cookie;
+    - native clients (the future Flutter app) send the same session as `Authorization: Bearer`.
+    Sign-in, sign-up and the other routes under /api/auth/* belong to Better Auth and are not
+    described here. Every endpoint below requires a signed-in, email-verified user and only
+    touches that user's data.
+
+    This file is the source of truth for client generation (TypeScript via openapi-typescript
+    now, Dart later). The API's generated document must match it (contract test, research R17).
+
+    Errors use application/problem+json with a stable `code` (see Problem schema).
+    Rate limit: 60 requests per minute per user on /sync/* and /decks/*/import, which return
+    429 with a Retry-After header when exceeded.
+servers:
+  - url: /api/v1
+security:
+  - sessionCookie: []
+  - bearerSession: []
+
+paths:
+  /sync/pull:
+    get:
+      summary: Fetch every change since a cursor
+      description: |
+        Returns rows whose change_seq > cursor, in change_seq order, up to `limit` rows across all
+        collections. Deleted rows come back as tombstones (`deletedAt` set, content omitted).
+        Clients repeat the call while `hasMore` is true.
+      parameters:
+        - { name: cursor, in: query, required: true, schema: { type: string, pattern: '^[0-9]+$' } }
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 2000, default: 1000 } }
+        - { name: deviceId, in: query, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200':
+          description: Changes
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [cursor, hasMore, settings, stats, decks, cards, media, dailyActivity]
+                properties:
+                  cursor: { type: string }
+                  hasMore: { type: boolean }
+                  settings: { oneOf: [{ $ref: '#/components/schemas/Settings' }, { type: 'null' }] }
+                  stats: { oneOf: [{ $ref: '#/components/schemas/Stats' }, { type: 'null' }] }
+                  decks: { type: array, items: { $ref: '#/components/schemas/Deck' } }
+                  cards: { type: array, items: { $ref: '#/components/schemas/Card' } }
+                  media: { type: array, items: { $ref: '#/components/schemas/Media' } }
+                  dailyActivity: { type: array, items: { $ref: '#/components/schemas/DailyActivity' } }
+        '400': { $ref: '#/components/responses/Problem' }
+
+  /sync/push:
+    post:
+      summary: Upload outbox events (reviews, revokes, sessions, day flags)
+      description: |
+        Idempotent: events whose id was already stored are acknowledged again without effect.
+        Events are applied in the order given. A review older than the card's last_review, or a
+        revoke, causes the server to replay that card's history (research R6/R7).
+        Partial success is allowed: each event gets its own result.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deviceId, events]
+              properties:
+                deviceId: { type: string, format: uuid }
+                events:
+                  type: array
+                  maxItems: 500
+                  items:
+                    oneOf:
+                      - $ref: '#/components/schemas/ReviewEvent'
+                      - $ref: '#/components/schemas/RevokeEvent'
+                      - $ref: '#/components/schemas/SessionEvent'
+                      - $ref: '#/components/schemas/DayFlagEvent'
+                    discriminator: { propertyName: type }
+      responses:
+        '200':
+          description: Per-event results
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [results]
+                properties:
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, status]
+                      properties:
+                        id: { type: string, format: uuid }
+                        status: { type: string, enum: [applied, duplicate, rejected] }
+                        code:
+                          type: string
+                          description: Set when rejected. Rejected events must not be retried.
+                          enum: [card_not_found, future_timestamp, invalid_grade, review_not_found]
+        '400': { $ref: '#/components/responses/Problem' }
+        '429': { $ref: '#/components/responses/Problem' }
+
+  /decks:
+    post:
+      summary: Create a deck
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                id: { type: string, format: uuid, description: Optional client id }
+                name: { type: string, minLength: 1, maxLength: 100 }
+                newCardsPerDay: { type: integer, minimum: 0, maximum: 999, default: 20 }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Deck' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+
+  /decks/{deckId}:
+    parameters: [{ $ref: '#/components/parameters/DeckId' }]
+    patch:
+      summary: Rename a deck or change its new-card limit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                newCardsPerDay: { type: integer, minimum: 0, maximum: 999 }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Deck' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+    delete:
+      summary: Delete a deck with all its cards, media and history
+      description: The client must have shown a confirmation first. Irreversible.
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/Problem' }
+
+  /decks/{deckId}/cards:
+    parameters: [{ $ref: '#/components/parameters/DeckId' }]
+    post:
+      summary: Create a card
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/CardInput' } } }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Card' } } } }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /cards/{cardId}:
+    parameters: [{ $ref: '#/components/parameters/CardId' }]
+    patch:
+      summary: Edit card content, tags or suspension
+      description: Editing content never changes scheduling state.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                front: { type: string, minLength: 1, maxLength: 10000 }
+                back: { type: string, maxLength: 10000 }
+                tags: { type: array, maxItems: 20, items: { type: string, minLength: 1, maxLength: 50, pattern: '^\S+$' } }
+                suspended: { type: boolean }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Card' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      summary: Delete a card and its media and history
+      responses:
+        '204': { description: Deleted }
+
+  /cards/{cardId}/reset:
+    parameters: [{ $ref: '#/components/parameters/CardId' }]
+    post:
+      summary: Reset a card to New (records a ReviewLog of kind=reset)
+      responses:
+        '200': { description: Reset, content: { application/json: { schema: { $ref: '#/components/schemas/Card' } } } }
+
+  /decks/{deckId}/import:
+    parameters: [{ $ref: '#/components/parameters/DeckId' }]
+    post:
+      summary: Import one chunk of parsed CSV/TSV rows
+      description: See contracts/csv-import.md. Send chunks in order with the same jobId.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [jobId, fileName, totalRows, chunkIndex, duplicateMode, rows]
+              properties:
+                jobId: { type: string, format: uuid }
+                fileName: { type: string, maxLength: 255 }
+                totalRows: { type: integer, minimum: 1, maximum: 10000 }
+                chunkIndex: { type: integer, minimum: 0 }
+                isLast: { type: boolean, default: false }
+                duplicateMode: { type: string, enum: [skip, update, keep_both] }
+                rows:
+                  type: array
+                  maxItems: 1000
+                  items:
+                    type: object
+                    required: [row, front]
+                    properties:
+                      row: { type: integer, minimum: 1, description: 1-based line number in the source file }
+                      front: { type: string }
+                      back: { type: string, default: '' }
+                      tags: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Chunk result (cumulative totals for the job)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [imported, updated, skipped, errors]
+                properties:
+                  imported: { type: integer }
+                  updated: { type: integer }
+                  skipped: { type: integer }
+                  errors:
+                    type: array
+                    items:
+                      type: object
+                      required: [row, reason]
+                      properties:
+                        row: { type: integer }
+                        reason: { type: string }
+        '413': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /decks/{deckId}/export:
+    parameters: [{ $ref: '#/components/parameters/DeckId' }]
+    get:
+      summary: Export a deck in anki-duo-export v1 format
+      responses:
+        '200':
+          description: Export file (Content-Disposition attachment)
+          content:
+            application/json:
+              schema: { description: 'See contracts/export-format.md' }
+
+  /decks/restore:
+    post:
+      summary: Create a new deck from an anki-duo-export v1 file
+      description: Replays review history so scheduling state matches the export exactly (FR-014).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { description: 'See contracts/export-format.md' }
+      responses:
+        '201': { description: Restored, content: { application/json: { schema: { $ref: '#/components/schemas/Deck' } } } }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /media/upload-url:
+    post:
+      summary: Reserve a media asset and get a presigned upload URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [cardId, side, mime, bytes]
+              properties:
+                cardId: { type: string, format: uuid }
+                side: { type: string, enum: [front, back] }
+                mime:
+                  type: string
+                  enum: [image/png, image/jpeg, image/webp, image/gif, image/svg+xml, audio/mpeg, audio/mp4, audio/aac, audio/ogg, audio/wav]
+                bytes: { type: integer, minimum: 1, maximum: 5242880 }
+      responses:
+        '200':
+          description: Upload target
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [mediaId, uploadUrl, expiresAt]
+                properties:
+                  mediaId: { type: string, format: uuid }
+                  uploadUrl: { type: string, format: uri }
+                  expiresAt: { type: string, format: date-time }
+        '413': { $ref: '#/components/responses/Problem' }
+        '415': { $ref: '#/components/responses/Problem' }
+
+  /media/{mediaId}/complete:
+    parameters: [{ $ref: '#/components/parameters/MediaId' }]
+    post:
+      summary: Confirm an upload. The server checks the object's size and type, then marks it ready
+      responses:
+        '200': { description: Ready, content: { application/json: { schema: { $ref: '#/components/schemas/Media' } } } }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /media/{mediaId}:
+    parameters: [{ $ref: '#/components/parameters/MediaId' }]
+    get:
+      summary: Redirect to a short-lived signed URL for the media bytes
+      responses:
+        '302': { description: Redirect to signed URL }
+        '404': { $ref: '#/components/responses/Problem' }
+    delete:
+      summary: Remove a media asset from its card
+      responses:
+        '204': { description: Deleted }
+
+  /me/settings:
+    patch:
+      summary: Update learner settings
+      requestBody:
+        required: true
+        content: { application/json: { schema: { $ref: '#/components/schemas/SettingsPatch' } } }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Settings' } } } }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /me:
+    delete:
+      summary: Delete the account and all its data (FR-030)
+      description: Requires a fresh session (signed in within the last 10 minutes).
+      responses:
+        '204': { description: Deleted }
+        '403': { $ref: '#/components/responses/Problem' }
+
+  /client-events:
+    post:
+      summary: Report client-side errors and sync failures (observability, research R16)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [kind, message]
+              properties:
+                kind: { type: string, enum: [error, sync_failure] }
+                message: { type: string, maxLength: 2000 }
+                context: { type: object, additionalProperties: true }
+      responses:
+        '202': { description: Accepted }
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: better-auth.session_token
+      description: Session cookie set by Better Auth (httpOnly, Secure, SameSite=Lax). Web app only.
+    bearerSession:
+      type: http
+      scheme: bearer
+      description: Better Auth session token (bearer plugin). Native clients, such as Flutter.
+
+  parameters:
+    DeckId: { name: deckId, in: path, required: true, schema: { type: string, format: uuid } }
+    CardId: { name: cardId, in: path, required: true, schema: { type: string, format: uuid } }
+    MediaId: { name: mediaId, in: path, required: true, schema: { type: string, format: uuid } }
+
+  responses:
+    Problem:
+      description: Error
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/Problem' }
+
+  schemas:
+    Problem:
+      type: object
+      required: [type, title, status, code]
+      properties:
+        type: { type: string }
+        title: { type: string }
+        status: { type: integer }
+        code:
+          type: string
+          enum:
+            - validation_failed
+            - not_found
+            - deck_name_taken
+            - card_limit_reached
+            - media_quota_exceeded
+            - media_too_large
+            - unsupported_media_type
+            - import_too_large
+            - import_bad_encoding
+            - export_invalid
+            - rate_limited
+            - reauth_required
+        detail: { type: string }
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              path: { type: string }
+              message: { type: string }
+
+    FsrsState:
+      type: object
+      required: [state, due, stability, difficulty, learningSteps, reps, lapses, lastReview]
+      properties:
+        state: { type: string, enum: [new, learning, review, relearning] }
+        due: { type: string, format: date-time }
+        stability: { type: number, minimum: 0 }
+        difficulty: { type: number, minimum: 0, maximum: 10, description: '0 only for new cards' }
+        learningSteps: { type: integer, minimum: 0 }
+        reps: { type: integer, minimum: 0 }
+        lapses: { type: integer, minimum: 0 }
+        lastReview: { type: ['string', 'null'], format: date-time }
+
+    Deck:
+      type: object
+      required: [id, name, newCardsPerDay, createdAt, updatedAt, deletedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        newCardsPerDay: { type: integer }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: ['string', 'null'], format: date-time }
+
+    CardInput:
+      type: object
+      properties:
+        id: { type: string, format: uuid, description: Optional client id (create only) }
+        front: { type: string, minLength: 1, maxLength: 10000 }
+        back: { type: string, maxLength: 10000 }
+        tags: { type: array, maxItems: 20, items: { type: string, minLength: 1, maxLength: 50, pattern: '^\S+$' } }
+      required: [front]
+
+    Card:
+      type: object
+      required: [id, deckId, position, nodeIndex, front, back, tags, suspended, fsrs, updatedAt, deletedAt]
+      properties:
+        id: { type: string, format: uuid }
+        deckId: { type: string, format: uuid }
+        position: { type: integer }
+        nodeIndex: { type: integer }
+        front: { type: string }
+        back: { type: string }
+        tags: { type: array, items: { type: string } }
+        suspended: { type: boolean }
+        fsrs: { $ref: '#/components/schemas/FsrsState' }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: ['string', 'null'], format: date-time }
+
+    Media:
+      type: object
+      required: [id, cardId, side, kind, mime, bytes, sort, deletedAt]
+      properties:
+        id: { type: string, format: uuid }
+        cardId: { type: string, format: uuid }
+        side: { type: string, enum: [front, back] }
+        kind: { type: string, enum: [image, audio] }
+        mime: { type: string }
+        bytes: { type: integer }
+        sort: { type: integer }
+        deletedAt: { type: ['string', 'null'], format: date-time }
+
+    Settings:
+      type: object
+      required: [locale, timeZone, dayStartHour, desiredRetention, maximumIntervalDays, dailyXpGoal, sessionSize, soundEnabled, motion]
+      properties:
+        locale: { type: string, enum: [vi, en] }
+        timeZone: { type: string, description: IANA time zone }
+        dayStartHour: { type: integer, minimum: 0, maximum: 23 }
+        desiredRetention: { type: number, minimum: 0.7, maximum: 0.97 }
+        maximumIntervalDays: { type: integer, minimum: 1, maximum: 36500 }
+        dailyXpGoal: { type: integer, enum: [10, 20, 30, 50] }
+        sessionSize: { type: integer, minimum: 5, maximum: 50 }
+        soundEnabled: { type: boolean }
+        motion: { type: string, enum: [system, reduced, full] }
+
+    SettingsPatch:
+      type: object
+      minProperties: 1
+      properties:
+        locale: { type: string, enum: [vi, en] }
+        timeZone: { type: string }
+        dayStartHour: { type: integer, minimum: 0, maximum: 23 }
+        desiredRetention: { type: number, minimum: 0.7, maximum: 0.97 }
+        maximumIntervalDays: { type: integer, minimum: 1, maximum: 36500 }
+        dailyXpGoal: { type: integer, enum: [10, 20, 30, 50] }
+        sessionSize: { type: integer, minimum: 5, maximum: 50 }
+        soundEnabled: { type: boolean }
+        motion: { type: string, enum: [system, reduced, full] }
+
+    Stats:
+      type: object
+      required: [totalXp, currentStreak, longestStreak, lastGoalDay, cardCount, mediaBytes]
+      properties:
+        totalXp: { type: integer }
+        currentStreak: { type: integer }
+        longestStreak: { type: integer }
+        lastGoalDay: { type: ['string', 'null'], format: date }
+        cardCount: { type: integer, maximum: 20000 }
+        mediaBytes: { type: integer }
+
+    DailyActivity:
+      type: object
+      required: [studyDay, reviews, xp, goalXp, allAvailableDone, goalMet]
+      properties:
+        studyDay: { type: string, format: date }
+        reviews: { type: integer }
+        xp: { type: integer }
+        goalXp: { type: integer }
+        allAvailableDone: { type: boolean }
+        goalMet: { type: boolean }
+
+    ReviewEvent:
+      type: object
+      required: [type, id, cardId, grade, reviewedAt, durationMs, sessionId, schedulerVersion, stateBefore, stateAfter]
+      properties:
+        type: { const: review }
+        id: { type: string, format: uuid, description: UUIDv7 generated on device }
+        cardId: { type: string, format: uuid }
+        sessionId: { type: string, format: uuid }
+        grade: { type: integer, enum: [1, 2, 3, 4], description: '1 Again, 2 Hard, 3 Good, 4 Easy' }
+        reviewedAt: { type: string, format: date-time }
+        durationMs: { type: integer, minimum: 0 }
+        studyAhead: { type: boolean, default: false }
+        schedulerVersion: { type: string }
+        stateBefore: { $ref: '#/components/schemas/FsrsState' }
+        stateAfter:
+          $ref: '#/components/schemas/FsrsState'
+          description: Client's optimistic result. The server recomputes it and its own result wins.
+
+    RevokeEvent:
+      type: object
+      required: [type, id, reviewId, revokedAt]
+      properties:
+        type: { const: revoke }
+        id: { type: string, format: uuid }
+        reviewId: { type: string, format: uuid }
+        revokedAt: { type: string, format: date-time }
+
+    SessionEvent:
+      type: object
+      required: [type, id, deckId, kind, startedAt, plannedCount, cardsReviewed, correctCount, completed]
+      properties:
+        type: { const: session }
+        id: { type: string, format: uuid, description: Equals StudySession.id. Re-sent with updates }
+        deckId: { type: string, format: uuid }
+        kind: { type: string, enum: [node, review, ahead] }
+        nodeIndex: { type: ['integer', 'null'] }
+        startedAt: { type: string, format: date-time }
+        endedAt: { type: ['string', 'null'], format: date-time }
+        plannedCount: { type: integer, minimum: 0 }
+        cardsReviewed: { type: integer, minimum: 0 }
+        correctCount: { type: integer, minimum: 0 }
+        completed: { type: boolean }
+
+    DayFlagEvent:
+      type: object
+      description: The client reports that every card available today has been studied (FR-025).
+      required: [type, id, studyDay, allAvailableDone]
+      properties:
+        type: { const: day_flag }
+        id: { type: string, format: uuid }
+        studyDay: { type: string, format: date }
+        allAvailableDone: { const: true }
