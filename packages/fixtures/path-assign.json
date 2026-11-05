@@ -1,0 +1,71 @@
+{
+  "description": "assignNodeIndex(lastNodeIndex, lastNodeCount): a card joins the deck's last node while it has fewer than 10 cards, else the next node. Assignments never change afterwards (Story 3 #2).",
+  "cases": [
+    {
+      "name": "empty deck starts at node 0",
+      "lastNodeIndex": null,
+      "lastNodeCount": 0,
+      "expected": 0
+    },
+    {
+      "name": "last node has 1 card",
+      "lastNodeIndex": 0,
+      "lastNodeCount": 1,
+      "expected": 0
+    },
+    {
+      "name": "last node has 9 cards: still room",
+      "lastNodeIndex": 3,
+      "lastNodeCount": 9,
+      "expected": 3
+    },
+    {
+      "name": "last node is full (10): start the next node",
+      "lastNodeIndex": 3,
+      "lastNodeCount": 10,
+      "expected": 4
+    },
+    {
+      "name": "first node full",
+      "lastNodeIndex": 0,
+      "lastNodeCount": 10,
+      "expected": 1
+    },
+    {
+      "name": "a node over-full (e.g. after import races) still moves on",
+      "lastNodeIndex": 2,
+      "lastNodeCount": 12,
+      "expected": 3
+    }
+  ],
+  "sequences": [
+    {
+      "name": "25 cards created in an empty deck fill nodes 0,0..,1..,2",
+      "count": 25,
+      "expectedNodeIndexes": [
+        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2
+      ]
+    },
+    {
+      "name": "deleting cards never reassigns: next card goes after the highest node (count of that node is what is live)",
+      "existing": [
+        {
+          "nodeIndex": 0
+        },
+        {
+          "nodeIndex": 0
+        },
+        {
+          "nodeIndex": 1
+        }
+      ],
+      "deleted": [
+        {
+          "nodeIndex": 0
+        }
+      ],
+      "add": 2,
+      "expectedNodeIndexes": [1, 1]
+    }
+  ]
+}

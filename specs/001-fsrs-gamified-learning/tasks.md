@@ -529,14 +529,14 @@ and final count match the file. Then edit one card to add an image and audio, an
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T087 [P] [US2] Add `packages/fixtures/path-assign.json`: creating cards in an empty deck,
+- [X] T087 [P] [US2] Add `packages/fixtures/path-assign.json`: creating cards in an empty deck,
   in a deck whose last node has fewer than 10 cards, and in a deck whose last node is full.
   Assignments never change after deletion.
 - [ ] T088 [P] [US2] Add the import fixtures in `packages/fixtures/import/`: `basic-200.tsv`,
   `semicolon-header.csv`, `malformed.csv`, `dupes.csv`, `10000-rows.csv`, `latin1.csv`,
   `one-column.csv`, `bom-utf8.csv`, and `expected.json` with the expected detection and per-row
   results.
-- [ ] T089 [P] [US2] Write the failing test `packages/domain/tests/path-assign.test.ts`, which
+- [X] T089 [P] [US2] Write the failing test `packages/domain/tests/path-assign.test.ts`, which
   runs `path-assign.json`.
 - [ ] T090 [P] [US2] Write the failing test `packages/domain/tests/import-rows.test.ts`:
   - `normaliseFront` (lower-case, NFC, trimmed, whitespace collapsed);
@@ -612,7 +612,7 @@ and final count match the file. Then edit one card to add an image and audio, an
 
 ### Implementation for User Story 2
 
-- [ ] T100 [P] [US2] Implement `assignNodeIndex(lastNodeIndex, lastNodeCount)` in
+- [X] T100 [P] [US2] Implement `assignNodeIndex(lastNodeIndex, lastNodeCount)` in
   `packages/domain/src/path/assign.ts`: "if the deck's last node has fewer than 10 cards, use
   that node; otherwise use last + 1". `T089` must pass.
 - [ ] T101 [P] [US2] Implement `normaliseFront`, `validateRow` and `splitTags` in
