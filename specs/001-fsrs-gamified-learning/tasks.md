@@ -278,32 +278,32 @@ shell that every story needs.
 - [X] T043 On user creation, insert `learner_settings` and `learner_stats` with their defaults,
   in `apps/api/src/services/account.ts`. `locale` comes from `Accept-Language` ("`vi` → `vi`,
   otherwise `en`") and `time_zone` from the client-sent IANA zone. Extend `T041` to assert this.
-- [ ] T044 [P] Write the failing test `apps/api/tests/integration/rate-limit.test.ts`: the 61st
+- [X] T044 [P] Write the failing test `apps/api/tests/integration/rate-limit.test.ts`: the 61st
   request within a minute to `/api/v1/sync/*` or `/api/v1/decks/*/import` gets 429
   `rate_limited` with `Retry-After`; the counter is per user.
-- [ ] T045 [P] Implement `apps/api/src/rate-limit.ts` (Postgres `rate_limit_bucket`, 60
+- [X] T045 [P] Implement `apps/api/src/rate-limit.ts` (Postgres `rate_limit_bucket`, 60
   requests/min/user).
-- [ ] T046 [P] Write the failing test `apps/edge/tests/proxy.test.ts`:
+- [X] T046 [P] Write the failing test `apps/edge/tests/proxy.test.ts`:
   - `/api/*` is forwarded to `LAMBDA_URL` with method, path, query, streamed body and `Cookie`;
   - an incoming `x-origin-secret` is stripped and replaced with the bound secret;
   - `x-forwarded-for` comes from `CF-Connecting-IP`;
   - `Set-Cookie` is returned unchanged;
   - the response is not cached;
   - non-`/api` paths never reach the script.
-- [ ] T046a [P] Write the failing test `apps/edge/tests/headers.test.ts`, which parses
+- [X] T046a [P] Write the failing test `apps/edge/tests/headers.test.ts`, which parses
   `apps/web/public/_headers`:
   - `/assets/*` is `public, max-age=31536000, immutable`;
   - `/index.html` and `/sw.js` are `no-cache`;
   - the CSP has `object-src 'none'` and `script-src 'self'`, and no `unsafe-inline`.
-- [ ] T047 [P] Implement the proxy in `apps/edge/src/index.ts` (`T046` must pass). Add
+- [X] T047 [P] Implement the proxy in `apps/edge/src/index.ts` (`T046` must pass). Add
   `apps/web/public/_headers` (`T046a` must pass):
   - `/assets/*` `Cache-Control: public, max-age=31536000, immutable`;
   - `/index.html` and `/sw.js` `no-cache`;
   - a CSP: `default-src 'self'; img-src 'self' https: blob:; media-src 'self' https: blob:;
     script-src 'self'; object-src 'none'`.
-- [ ] T048 Write the failing test `apps/api/tests/integration/settings.test.ts`: `PATCH
+- [X] T048 Write the failing test `apps/api/tests/integration/settings.test.ts`: `PATCH
   /api/v1/me/settings` validates every range in `T032` and returns `Settings`.
-- [ ] T049 Implement the `PATCH /api/v1/me/settings` route and service in
+- [X] T049 Implement the `PATCH /api/v1/me/settings` route and service in
   `apps/api/src/routes/me.ts` and `apps/api/src/services/settings.ts`, with its contract schema
   registered in `packages/contract/src/me.ts`.
 

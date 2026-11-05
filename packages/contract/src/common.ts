@@ -86,13 +86,26 @@ export const MediaSchema = z
   })
   .openapi('Media');
 
+function isIanaZone(tz: string): boolean {
+  try {
+    new Intl.DateTimeFormat('en', { timeZone: tz });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export const SettingsFields = {
   locale: z.enum(['vi', 'en']),
-  timeZone: z.string(),
+  timeZone: z.string().refine(isIanaZone, { message: 'must be an IANA time zone' }),
   dayStartHour: z.number().int().min(0).max(23),
   desiredRetention: z.number().min(0.7).max(0.97),
   maximumIntervalDays: z.number().int().min(1).max(36500),
-  dailyXpGoal: z.union([z.literal(10), z.literal(20), z.literal(30), z.literal(50)]),
+  dailyXpGoal: z
+    .number()
+    .int()
+    .refine((v) => [10, 20, 30, 50].includes(v), { message: 'must be one of 10, 20, 30, 50' })
+    .openapi({ enum: [10, 20, 30, 50] }),
   sessionSize: z.number().int().min(5).max(50),
   soundEnabled: z.boolean(),
   motion: z.enum(['system', 'reduced', 'full']),
@@ -104,7 +117,7 @@ export const SettingsPatchSchema = z
   .object(SettingsFields)
   .partial()
   .refine((v) => Object.keys(v).length > 0, { message: 'at least one field is required' })
-  .openapi('SettingsPatch');
+  .openapi('SettingsPatch', { minProperties: 1 });
 
 export const StatsSchema = z
   .object({

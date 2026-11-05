@@ -7,6 +7,8 @@ import { hashUserId, logRequest, outcomeOf } from './log.js';
 import type { Mailer } from './mailer.js';
 import { requireUser } from './middleware/require-user.js';
 import { originGuard } from './origin-guard.js';
+import { rateLimit } from './rate-limit.js';
+import { registerMe } from './routes/me.js';
 import { ApiProblem, problemResponse, validationHook } from './problem.js';
 
 export interface AppDeps {
@@ -86,6 +88,10 @@ export function createApp(deps: AppDeps) {
     return auth.handler(c.req.raw);
   });
   app.use('/api/v1/*', requireUser);
+  app.use('/api/v1/sync/*', rateLimit());
+  app.use('/api/v1/decks/*/import', rateLimit());
+
+  registerMe(app);
 
   return app;
 }
