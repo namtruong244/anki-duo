@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { NavLink, Outlet } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { connectivity } from '../../client/connectivity';
+import { useSyncStatus } from '../../client/sync-status-context';
 
 const links = [
   { to: '/', key: 'nav.home', end: true },
@@ -22,6 +23,13 @@ function useOnline() {
 export function AppLayout() {
   const { t } = useTranslation();
   const online = useOnline();
+  const status = useSyncStatus();
+  const label =
+    !online || status === 'error'
+      ? t('sync.offline')
+      : status === 'syncing'
+        ? t('sync.syncing')
+        : t('sync.online');
   const nav = (
     <ul className="flex gap-1 md:flex-col">
       {links.map((l) => (
@@ -50,7 +58,7 @@ export function AppLayout() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex justify-end p-3">
           <span role="status" className="text-sm text-text-muted">
-            {online ? t('sync.online') : t('sync.offline')}
+            {label}
           </span>
         </header>
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-24 md:pb-8">

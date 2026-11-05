@@ -1,0 +1,145 @@
+{
+  "description": "Expected parser results per fixture. `row` numbers are 1-based lines in the source file (the header is line 1). `invalid` lists rows the parser or row validation rejects before any API call.",
+  "files": {
+    "basic-200.tsv": {
+      "delimiter": "\t",
+      "hasHeader": true,
+      "columns": [
+        "front",
+        "back",
+        "tags"
+      ],
+      "dataRows": 200,
+      "invalid": [],
+      "firstRow": {
+        "front": "word1",
+        "back": "meaning 1",
+        "tags": [
+          "topic1",
+          "common"
+        ]
+      }
+    },
+    "semicolon-header.csv": {
+      "delimiter": ";",
+      "hasHeader": true,
+      "columns": [
+        "Mặt trước",
+        "Mặt sau",
+        "Thẻ"
+      ],
+      "dataRows": 3,
+      "invalid": [],
+      "rows": [
+        {
+          "row": 2,
+          "front": "xin chào",
+          "back": "hello; hi",
+          "tags": [
+            "greeting"
+          ]
+        },
+        {
+          "row": 3,
+          "front": "cảm ơn",
+          "back": "thank you\nthanks",
+          "tags": [
+            "polite",
+            "basic"
+          ]
+        },
+        {
+          "row": 5,
+          "front": "quote",
+          "back": "she said \"hi\"",
+          "tags": []
+        }
+      ]
+    },
+    "malformed.csv": {
+      "delimiter": ",",
+      "hasHeader": true,
+      "columns": [
+        "front",
+        "back",
+        "tags"
+      ],
+      "dataRows": 5,
+      "valid": 2,
+      "invalid": [
+        {
+          "row": 3,
+          "reason": "malformed_row"
+        },
+        {
+          "row": 4,
+          "reason": "empty_front"
+        },
+        {
+          "row": 6,
+          "reason": "malformed_row"
+        }
+      ]
+    },
+    "dupes.csv": {
+      "delimiter": ",",
+      "hasHeader": true,
+      "columns": [
+        "front",
+        "back"
+      ],
+      "dataRows": 7,
+      "invalid": [],
+      "duplicateKeys": {
+        "hello": [
+          2,
+          3,
+          4
+        ],
+        "café": [
+          6,
+          7
+        ]
+      },
+      "note": "Rows 2,3,4 share a normalised front; rows 6,7 share one only after NFC normalisation."
+    },
+    "10000-rows.csv": {
+      "delimiter": ",",
+      "hasHeader": true,
+      "columns": [
+        "front",
+        "back",
+        "tags"
+      ],
+      "dataRows": 10000,
+      "invalid": []
+    },
+    "latin1.csv": {
+      "error": "import_bad_encoding"
+    },
+    "one-column.csv": {
+      "error": "single_column"
+    },
+    "bom-utf8.csv": {
+      "delimiter": ",",
+      "hasHeader": true,
+      "columns": [
+        "front",
+        "back"
+      ],
+      "dataRows": 2,
+      "invalid": [],
+      "firstRow": {
+        "front": "việt",
+        "back": "Vietnamese",
+        "tags": []
+      }
+    }
+  },
+  "limits": {
+    "maxBytes": 10485760,
+    "maxRows": 10000,
+    "tooManyRowsError": "import_too_large",
+    "tooLargeError": "import_too_large"
+  }
+}

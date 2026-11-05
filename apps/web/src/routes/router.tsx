@@ -1,12 +1,18 @@
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../client/auth-context';
+import { useSyncRuntime, useToastMessage } from '../client/use-sync';
+import { SyncStatusContext } from '../client/sync-status-context';
+import { Toast } from '../components/ui';
 import { AppLayout } from '../components/layout/AppLayout';
 import { SignInPage } from './auth/SignInPage';
 import { SignUpPage } from './auth/SignUpPage';
 import { VerifyEmailPage } from './auth/VerifyEmailPage';
 import { ResetPasswordPage } from './auth/ResetPasswordPage';
-import { DashboardPage, DeckListPage, HomePage, PathPage, SettingsPage } from './Placeholders';
+import { DashboardPage, HomePage, PathPage } from './Placeholders';
+import { DeckListPage } from './decks/DeckListPage';
+import { SessionPage } from './session/SessionPage';
+import { SettingsPage } from './settings/SettingsPage';
 
 function Loading() {
   const { t } = useTranslation();
@@ -14,6 +20,17 @@ function Loading() {
     <p role="status" className="p-6">
       {t('common.loading')}
     </p>
+  );
+}
+
+function Runtime({ userId }: { userId: string }) {
+  const status = useSyncRuntime(userId);
+  const [message, dismiss] = useToastMessage();
+  return (
+    <SyncStatusContext.Provider value={status}>
+      <Outlet />
+      {message && <Toast message={message} onDismiss={dismiss} />}
+    </SyncStatusContext.Provider>
   );
 }
 
@@ -26,7 +43,7 @@ function RequireVerifiedSession() {
   if (!user.emailVerified) {
     return <Navigate to={`/verify-email?email=${encodeURIComponent(user.email)}`} replace />;
   }
-  return <Outlet />;
+  return <Runtime userId={user.id} />;
 }
 
 /** Auth pages are for signed-out visitors; a verified user goes home. */
@@ -47,6 +64,7 @@ export function AppRoutes() {
       </Route>
       <Route path="/verify-email" element={<VerifyEmailPage />} />
       <Route element={<RequireVerifiedSession />}>
+        <Route path="/session/:deckId" element={<SessionPage />} />
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="/decks" element={<DeckListPage />} />

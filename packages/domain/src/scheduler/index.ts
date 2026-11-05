@@ -124,3 +124,8 @@ function fromFsrs(c: FsrsCard): FsrsState {
     lastReview: c.last_review ?? null,
   };
 }
+
+/** The 21 FSRS weights in use (written into exports). */
+export function fsrsWeights(): number[] {
+  return [...generatorParameters().w];
+}

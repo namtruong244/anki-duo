@@ -1,5 +1,7 @@
 {
-  "app": { "name": "Anki Duo" },
+  "app": {
+    "name": "Anki Duo"
+  },
   "nav": {
     "home": "Trang chủ",
     "decks": "Bộ thẻ",
@@ -43,5 +45,74 @@
     "haveAccount": "Đã có tài khoản?",
     "error": "Đã xảy ra lỗi. Vui lòng thử lại."
   },
-  "pwa": { "installed": "Đã cài đặt" }
+  "pwa": {
+    "installed": "Đã cài đặt"
+  },
+  "session": {
+    "reveal": "Hiện đáp án",
+    "undo": "Hoàn tác",
+    "progress": "{done}/{total}",
+    "front": "Câu hỏi",
+    "back": "Đáp án",
+    "title": "Phiên học",
+    "summaryTitle": "Hoàn thành phiên học",
+    "reviewed": "Số thẻ đã ôn",
+    "accuracy": "Độ chính xác",
+    "time": "Thời gian",
+    "xp": "XP nhận được",
+    "backToDecks": "Về danh sách bộ thẻ",
+    "resumeTitle": "Tiếp tục phiên học?",
+    "resumeBody": "Bạn có một phiên học chưa hoàn thành.",
+    "resume": "Tiếp tục",
+    "discard": "Bắt đầu lại",
+    "emptyTitle": "Bạn đã học hết rồi",
+    "nextDue": "Lần ôn tiếp theo: {when}",
+    "noNext": "Chưa có thẻ nào được lên lịch.",
+    "studyAhead": "Học trước",
+    "studyAheadHint": "Luyện tập thêm không nhận XP.",
+    "loading": "Đang chuẩn bị thẻ…",
+    "missingDeck": "Bộ thẻ này không còn tồn tại.",
+    "saveFailed": "Không lưu được câu trả lời gần nhất. Vui lòng thử lại.",
+    "progressLabel": "Tiến độ phiên học",
+    "gradeBar": "Chấm điểm thẻ này",
+    "shortcuts": "Phím tắt: Space hiện đáp án, 1–4 chấm điểm, Z hoàn tác."
+  },
+  "grade": {
+    "again": "Lại",
+    "hard": "Khó",
+    "good": "Tốt",
+    "easy": "Dễ",
+    "label": "{grade} · {interval}"
+  },
+  "interval": {
+    "lessThanMinute": "<1 ph",
+    "minutes": "{n} ph",
+    "hours": "{n} giờ",
+    "days": "{n} ngày",
+    "months": "{n} tháng",
+    "years": "{n} năm"
+  },
+  "decks": {
+    "title": "Bộ thẻ",
+    "empty": "Chưa có bộ thẻ nào.",
+    "due": "{n} cần ôn",
+    "new": "{n} thẻ mới",
+    "review": "Ôn tập",
+    "nothingToday": "Hôm nay không có gì để học"
+  },
+  "learning": {
+    "title": "Học tập",
+    "retention": "Mức ghi nhớ mong muốn",
+    "retentionHint": "70–97%, mặc định 90%",
+    "maxInterval": "Khoảng cách tối đa (ngày)",
+    "maxIntervalHint": "1–36500",
+    "sessionSize": "Số thẻ mỗi phiên",
+    "sessionSizeHint": "5–50, mặc định 20",
+    "dayStart": "Ngày bắt đầu lúc (giờ)",
+    "dayStartHint": "0–23, mặc định 4",
+    "save": "Lưu",
+    "saved": "Đã lưu cài đặt",
+    "saveFailed": "Không lưu được cài đặt",
+    "futureOnly": "Thay đổi chỉ áp dụng cho các lần ôn sau."
+  }
 }

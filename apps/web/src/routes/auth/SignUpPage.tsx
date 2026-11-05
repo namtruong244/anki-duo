@@ -21,9 +21,11 @@ export function SignUpPage() {
       email,
       password: String(f.get('password')),
       name: String(f.get('name') || email),
-      // Sent so the server can store the learner's IANA zone (T043).
-      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    } as Parameters<typeof authClient.signUp.email>[0]);
+      // The server stores the learner's IANA zone from this header (T043).
+      fetchOptions: {
+        headers: { 'x-time-zone': Intl.DateTimeFormat().resolvedOptions().timeZone },
+      },
+    });
     setBusy(false);
     if (err) setError(t('auth.error'));
     else navigate(`/verify-email?email=${encodeURIComponent(email)}`);

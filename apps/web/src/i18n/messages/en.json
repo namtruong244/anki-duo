@@ -1,5 +1,7 @@
 {
-  "app": { "name": "Anki Duo" },
+  "app": {
+    "name": "Anki Duo"
+  },
   "nav": {
     "home": "Home",
     "decks": "Decks",
@@ -15,7 +17,11 @@
     "save": "Save",
     "retry": "Try again"
   },
-  "sync": { "online": "Saved", "offline": "Offline – will sync", "syncing": "Syncing…" },
+  "sync": {
+    "online": "Saved",
+    "offline": "Offline – will sync",
+    "syncing": "Syncing…"
+  },
   "auth": {
     "signIn": "Sign in",
     "signUp": "Create account",
@@ -39,5 +45,74 @@
     "haveAccount": "Already have an account?",
     "error": "Something went wrong. Please try again."
   },
-  "pwa": { "installed": "Installed" }
+  "pwa": {
+    "installed": "Installed"
+  },
+  "session": {
+    "reveal": "Show answer",
+    "undo": "Undo",
+    "progress": "{done} of {total}",
+    "front": "Question",
+    "back": "Answer",
+    "title": "Study session",
+    "summaryTitle": "Session complete",
+    "reviewed": "Cards reviewed",
+    "accuracy": "Accuracy",
+    "time": "Time",
+    "xp": "XP earned",
+    "backToDecks": "Back to decks",
+    "resumeTitle": "Continue your session?",
+    "resumeBody": "You have an unfinished session.",
+    "resume": "Continue",
+    "discard": "Start over",
+    "emptyTitle": "You're all caught up",
+    "nextDue": "Next review: {when}",
+    "noNext": "Nothing is scheduled yet.",
+    "studyAhead": "Study ahead",
+    "studyAheadHint": "Extra practice earns no XP.",
+    "loading": "Preparing your cards…",
+    "missingDeck": "This deck no longer exists.",
+    "saveFailed": "We couldn't save your last answer. Please try again.",
+    "progressLabel": "Session progress",
+    "gradeBar": "Grade this card",
+    "shortcuts": "Shortcuts: Space shows the answer, 1–4 grade, Z undoes."
+  },
+  "grade": {
+    "again": "Again",
+    "hard": "Hard",
+    "good": "Good",
+    "easy": "Easy",
+    "label": "{grade} · {interval}"
+  },
+  "interval": {
+    "lessThanMinute": "<1m",
+    "minutes": "{n}m",
+    "hours": "{n}h",
+    "days": "{n}d",
+    "months": "{n}mo",
+    "years": "{n}y"
+  },
+  "decks": {
+    "title": "Decks",
+    "empty": "No decks yet.",
+    "due": "{n, plural, one {# due} other {# due}}",
+    "new": "{n, plural, one {# new} other {# new}}",
+    "review": "Review",
+    "nothingToday": "Nothing to study today"
+  },
+  "learning": {
+    "title": "Learning",
+    "retention": "Desired retention",
+    "retentionHint": "70–97%, default 90%",
+    "maxInterval": "Maximum interval (days)",
+    "maxIntervalHint": "1–36500",
+    "sessionSize": "Session size",
+    "sessionSizeHint": "5–50, default 20",
+    "dayStart": "Day starts at (hour)",
+    "dayStartHint": "0–23, default 4",
+    "save": "Save",
+    "saved": "Settings saved",
+    "saveFailed": "Could not save settings",
+    "futureOnly": "Changes apply to future reviews only."
+  }
 }

@@ -410,7 +410,7 @@ survive offline and tab closes (V3), and appear on a second device (V4).
   - progress counts each queued card once.
 - [X] T067 [P] [US1] Write the failing test `packages/domain/tests/queue.test.ts`, which runs
   every `queue.json` case for the `review` and `ahead` kinds.
-- [ ] T068 [P] [US1] Write the failing test `apps/web/tests/session/session-machine.test.ts`:
+- [X] T068 [P] [US1] Write the failing test `apps/web/tests/session/session-machine.test.ts`:
   - reveal shows four interval labels (FR-002);
   - grading advances to the next card synchronously, before `gradeTransaction` resolves
     (FR-016);
@@ -420,7 +420,7 @@ survive offline and tab closes (V3), and appear on a second device (V4).
   - resume from `LocalStore.sessions` after reload (FR-019);
   - the summary has cards reviewed, accuracy (grade ≥ 2), time and XP (Story 1 #5);
   - `study_ahead` is set for ahead sessions.
-- [ ] T069 [P] [US1] Write the failing test `apps/web/tests/sync/push.test.ts`:
+- [X] T069 [P] [US1] Write the failing test `apps/web/tests/sync/push.test.ts`:
   - the outbox is pushed in batches of ≤ 500;
   - acknowledged (`applied`/`duplicate`) events are removed;
   - `rejected` events are removed and reported to `/api/v1/client-events`;
@@ -441,18 +441,18 @@ survive offline and tab closes (V3), and appear on a second device (V4).
     `review_not_found`;
   - `session` events upsert by id;
   - at most 500 events per request.
-- [ ] T071 [P] [US1] Write the failing test `apps/web/tests/components/card-content.test.tsx`:
+- [X] T071 [P] [US1] Write the failing test `apps/web/tests/components/card-content.test.tsx`:
   - Markdown renders bold, lists, code and GFM tables;
   - raw HTML and `<script>` render as text;
   - `javascript:` links are stripped;
   - non-`https` external images are blocked (FR-010, FR-034).
-- [ ] T072 [P] [US1] Write the e2e test `tests/e2e/session.spec.ts` (V2): reveal and grade with
+- [X] T072 [P] [US1] Write the e2e test `tests/e2e/session.spec.ts` (V2): reveal and grade with
   touch (mobile) and `Space`/`1`–`4`/`Z` (desktop). With CPU throttling ×4, 95% of grade →
   next-card paint times are ≤ 100 ms (SC-001).
-- [ ] T073 [P] [US1] Write the e2e test `tests/e2e/offline.spec.ts` (V3, SC-005): 500 grades with
+- [X] T073 [P] [US1] Write the e2e test `tests/e2e/offline.spec.ts` (V3, SC-005): 500 grades with
   random offline toggles and tab reloads. After reconnecting, the server holds exactly 500
   non-revoked review logs and the local cards match the server.
-- [ ] T074 [P] [US1] Write the e2e test `tests/e2e/two-devices.spec.ts` (V4, SC-008):
+- [X] T074 [P] [US1] Write the e2e test `tests/e2e/two-devices.spec.ts` (V4, SC-008):
   - two browser contexts signed in as the same learner;
   - a grade on A is visible on B within 60 s;
   - grading the same card offline on both devices, then reconnecting, keeps both logs, and the
@@ -475,10 +475,10 @@ survive offline and tab closes (V3), and appear on a second device (V4).
   - accept `day_flag` (stored for US4);
   - return per-event results.
   `T070` must pass.
-- [ ] T078 [US1] Implement the push half of the sync engine in
+- [X] T078 [US1] Implement the push half of the sync engine in
   `apps/web/src/client/sync/push.ts` and the scheduler of sync triggers in
   `apps/web/src/client/sync/sync-engine.ts`. `T069` must pass.
-- [ ] T079 [US1] Implement the session state machine in
+- [X] T079 [US1] Implement the session state machine in
   `apps/web/src/client/session/session-machine.ts`:
   - loads the queue via `buildQueue`;
   - grades with `schedule()` and `LocalStore.gradeTransaction` without awaiting it;
@@ -486,30 +486,30 @@ survive offline and tab closes (V3), and appear on a second device (V4).
   - persists progress to `sessions`;
   - emits `SessionEvent` on start and end.
   `T068` must pass.
-- [ ] T080 [P] [US1] Implement `CardContent` in
+- [X] T080 [P] [US1] Implement `CardContent` in
   `apps/web/src/components/session/CardContent.tsx` (react-markdown + remark-gfm +
   rehype-sanitize strict schema, research R11). `T071` must pass.
-- [ ] T081 [P] [US1] Implement `GradeBar` in `apps/web/src/components/session/GradeBar.tsx`:
+- [X] T081 [P] [US1] Implement `GradeBar` in `apps/web/src/components/session/GradeBar.tsx`:
   - four `ChunkyButton`s labelled with grade name and preview interval (e.g. "Good · 3d"), in
     vi/en;
   - keyboard `1`–`4`; `Space` reveals;
   - stays reachable when content is long (edge case).
-- [ ] T082 [US1] Implement `SessionPage` in `apps/web/src/routes/session/SessionPage.tsx`:
+- [X] T082 [US1] Implement `SessionPage` in `apps/web/src/routes/session/SessionPage.tsx`:
   - card area with an internal scroll;
   - reveal, grade bar, undo (`Z` / button), progress bar (FR-015);
   - summary screen;
   - resume prompt on return.
-- [ ] T083 [US1] Implement `DeckListPage` in `apps/web/src/routes/decks/DeckListPage.tsx`: decks
+- [X] T083 [US1] Implement `DeckListPage` in `apps/web/src/routes/decks/DeckListPage.tsx`: decks
   with counts of due and new cards today from `LocalStore`, and a "Review" button that starts a
   `review` session.
-- [ ] T084 [US1] Implement the empty state in `apps/web/src/routes/session/EmptyQueue.tsx`. With
+- [X] T084 [US1] Implement the empty state in `apps/web/src/routes/session/EmptyQueue.tsx`. With
   nothing due and no new cards left, it shows the next due time and an optional "Study ahead"
   that starts an `ahead` session (edge case; 0 XP).
-- [ ] T085 [US1] Implement the learning section of `SettingsPage` in
+- [X] T085 [US1] Implement the learning section of `SettingsPage` in
   `apps/web/src/routes/settings/SettingsPage.tsx`: desired retention ("70–97%", default 90%),
   maximum interval, session size ("5–50", default 20), day-start hour. Saved through
   `PATCH /me/settings` and applied to future reviews only (FR-004).
-- [ ] T086 [US1] Show a toast when a save fails permanently, and a "Saved"/"Offline – will sync"
+- [X] T086 [US1] Show a toast when a save fails permanently, and a "Saved"/"Offline – will sync"
   indicator in `apps/web/src/components/layout/AppLayout.tsx` (edge case: optimistic save
   failures are never silent).
 

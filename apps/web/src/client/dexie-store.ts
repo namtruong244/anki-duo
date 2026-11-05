@@ -114,7 +114,8 @@ export class DexieStore extends Dexie implements LocalStore {
     return limit ? q.limit(limit).toArray() : q.toArray();
   }
   async appendOutbox(event: OutboxEvent) {
-    await this.outbox.add(event);
+    // `put`: session events are re-sent with the same id as they progress (upsert by id).
+    await this.outbox.put(event);
   }
   async removeOutbox(ids: string[]) {
     await this.outbox.bulkDelete(ids);
