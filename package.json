@@ -1,0 +1,42 @@
+{
+  "name": "anki-duo",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@9.12.3",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @anki-duo/api --filter @anki-duo/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "lint": "eslint . && prettier --check .",
+    "test:unit": "vitest run --project unit",
+    "test:int": "vitest run --project int-api --project int-web",
+    "test:contract": "vitest run --project unit packages/contract",
+    "test:i18n": "vitest run --project int-web i18n",
+    "test:e2e": "playwright test",
+    "test:load": "k6 run tests/load/sync-mix.js",
+    "verify": "bash scripts/verify.sh",
+    "db:migrate": "pnpm --filter @anki-duo/api db:migrate",
+    "db:seed": "pnpm --filter @anki-duo/api db:seed",
+    "gen:api": "pnpm --filter @anki-duo/contract gen:api",
+    "sst": "sst"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.6",
+    "ajv": "^8.20.0",
+    "esbuild": "^0.28.2",
+    "eslint": "^10.14.0",
+    "fast-check": "^4.10.2",
+    "prettier": "^3.9.10",
+    "sst": "^4.17.2",
+    "tsx": "^4.23.15",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
+  }
+}

@@ -34,57 +34,57 @@ demoed on its own.
 
 **Purpose**: monorepo, tooling and empty deployables that build and run.
 
-- [ ] T001 Create the monorepo root:
+- [X] T001 Create the monorepo root:
   - `package.json` with scripts `dev`, `build`, `typecheck`, `lint`, `test:unit`, `test:int`,
     `test:contract`, `test:i18n`, `test:e2e`, `test:load`, `verify`, `db:migrate`, `db:seed`,
     `gen:api`, `sst`;
   - `pnpm-workspace.yaml` (`apps/*`, `packages/*`), `.nvmrc` (`24`), `.gitignore`,
     `.editorconfig`.
-- [ ] T002 [P] Create `tsconfig.base.json` (`strict`, `noUncheckedIndexedAccess`,
+- [X] T002 [P] Create `tsconfig.base.json` (`strict`, `noUncheckedIndexedAccess`,
   `exactOptionalPropertyTypes`, ES2023, bundler module resolution) and per-workspace
   `tsconfig.json` files that extend it.
-- [ ] T003 [P] Configure ESLint (flat config) and Prettier:
+- [X] T003 [P] Configure ESLint (flat config) and Prettier:
   - `eslint.config.js` and `.prettierrc`;
   - for `packages/domain/**`, `no-restricted-globals` / `no-restricted-syntax` rules that forbid
     `Date.now`, `new Date()` with no arguments, and `Math.random` (constitution Principle I,
     plan Constitution Check).
-- [ ] T004 [P] Create `vitest.workspace.ts` with projects:
+- [X] T004 [P] Create `vitest.workspace.ts` with projects:
   - `unit`: `packages/*`;
   - `int-api`: `apps/api`;
   - `int-web`: `apps/web`, jsdom + fake-indexeddb;
   - `edge`: `apps/edge`, `@cloudflare/vitest-pool-workers`.
   Also add a shared fake-clock helper in `packages/domain/tests/helpers/clock.ts`.
-- [ ] T005 [P] Scaffold `packages/domain`: `package.json` with `ts-fsrs` pinned to an exact
+- [X] T005 [P] Scaffold `packages/domain`: `package.json` with `ts-fsrs` pinned to an exact
   version (no caret), `src/index.ts`, `tests/`.
-- [ ] T006 [P] Scaffold `packages/contract`: `package.json` (zod, `@hono/zod-openapi`),
+- [X] T006 [P] Scaffold `packages/contract`: `package.json` (zod, `@hono/zod-openapi`),
   `src/index.ts`, `tests/`.
-- [ ] T007 [P] Scaffold `packages/fixtures`:
+- [X] T007 [P] Scaffold `packages/fixtures`:
   - `package.json`, `schema/`, `import/`;
   - `src/index.ts`, which exports typed loaders for every fixture JSON file.
-- [ ] T008 [P] Scaffold `apps/api`:
+- [X] T008 [P] Scaffold `apps/api`:
   - dependencies: hono, `@hono/node-server`, drizzle-orm, drizzle-kit,
     `@neondatabase/serverless`, `@electric-sql/pglite`, better-auth, `@aws-sdk/client-s3`,
     `@aws-sdk/s3-request-presigner`, resend, uuid;
   - files: `src/app.ts` (empty Hono app), `src/node.ts` (serves on `:8787`), `src/lambda.ts`
     (`hono/aws-lambda` handler), `drizzle.config.ts`, `.env.example` listing `DATABASE_URL`,
     `BETTER_AUTH_SECRET`, `ORIGIN_SECRET`, `R2_*`/`MINIO_*`, `RESEND_API_KEY`, `GOOGLE_*`.
-- [ ] T009 [P] Scaffold `apps/web`:
+- [X] T009 [P] Scaffold `apps/web`:
   - Vite + React 19 + TypeScript, React Router, Tailwind CSS v4;
   - `vite.config.ts` proxies `/api` to `http://localhost:8787` (research R18);
   - `index.html` and `src/main.tsx`.
-- [ ] T010 [P] Scaffold `apps/edge`:
+- [X] T010 [P] Scaffold `apps/edge`:
   - `wrangler.jsonc` with `assets.directory = ../web/dist`,
     `assets.not_found_handling = "single-page-application"` and the Worker script running only
     for `/api/*`;
   - placeholder `src/index.ts`.
-- [ ] T011 [P] Create `playwright.config.ts` with:
+- [X] T011 [P] Create `playwright.config.ts` with:
   - projects `mobile` (Pixel 7, viewport width 320) and `desktop` (1440×900);
   - a `webServer` running `pnpm dev`;
   - test directory `tests/e2e/`;
   - `@axe-core/playwright` installed.
-- [ ] T012 [P] Create `docker-compose.yml` with MinIO and a one-shot bucket-creation container
+- [X] T012 [P] Create `docker-compose.yml` with MinIO and a one-shot bucket-creation container
   for local media (research R18).
-- [ ] T013 Create the `sst.config.ts` skeleton (research R16):
+- [X] T013 Create the `sst.config.ts` skeleton (research R16):
   - providers: AWS (`ap-southeast-1`) and Cloudflare;
   - secrets: `DatabaseUrl`, `BetterAuthSecret`, `OriginSecret`, `R2AccessKeyId`,
     `R2SecretAccessKey`, `R2Bucket`, `R2Endpoint`, `ResendApiKey`, `GoogleClientId`,
@@ -94,7 +94,7 @@ demoed on its own.
   - Cloudflare Worker: `apps/edge` with static assets `apps/web/dist`, bindings `LAMBDA_URL` and
     `ORIGIN_SECRET`;
   - an AWS Budgets alert at $1/month.
-- [ ] T014 Add `scripts/verify.sh` (typecheck → lint → unit → int → contract → i18n → Playwright,
+- [X] T014 Add `scripts/verify.sh` (typecheck → lint → unit → int → contract → i18n → Playwright,
   all specs on both projects; k6 excluded) wired to `pnpm verify`, `.github/workflows/verify.yml` running it, and
   `.github/pull_request_template.md` with a constitution checklist:
   - Principle I items;

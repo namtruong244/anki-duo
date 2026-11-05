@@ -1,0 +1,13 @@
+{
+  "name": "@anki-duo/domain",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p ."
+  },
+  "dependencies": {
+    "ts-fsrs": "6.0.0"
+  },
+  "main": "src/index.ts"
+}

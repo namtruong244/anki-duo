@@ -1,0 +1,19 @@
+{
+  "name": "@anki-duo/contract",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc -p .",
+    "gen:api": "openapi-typescript ../../specs/001-fsrs-gamified-learning/contracts/openapi.yaml -o ../../apps/web/src/client/api-types.ts"
+  },
+  "dependencies": {
+    "@hono/zod-openapi": "^1.6.3",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.13.0",
+    "yaml": "^2.9.1"
+  },
+  "main": "src/index.ts"
+}
