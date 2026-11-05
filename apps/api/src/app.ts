@@ -8,7 +8,9 @@ import type { Mailer } from './mailer.js';
 import { requireUser } from './middleware/require-user.js';
 import { originGuard } from './origin-guard.js';
 import { rateLimit } from './rate-limit.js';
+import { registerExport } from './routes/export.js';
 import { registerMe } from './routes/me.js';
+import { registerMedia } from './routes/media.js';
 import { registerSync } from './routes/sync.js';
 import { ApiProblem, problemResponse, validationHook } from './problem.js';
 
@@ -94,6 +96,8 @@ export function createApp(deps: AppDeps) {
 
   registerMe(app);
   registerSync(app);
+  registerMedia(app);
+  registerExport(app);
 
   return app;
 }

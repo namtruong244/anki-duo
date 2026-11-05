@@ -53,13 +53,11 @@ export const ReviewEventSchema = z
     sessionId: z.uuid(),
     // Documented as 1-4 but not enforced here: an out-of-range grade must reject that one event
     // (`invalid_grade`), not fail the whole batch.
-    grade: z
-      .number()
-      .openapi({
-        type: 'integer',
-        enum: [1, 2, 3, 4],
-        description: '1 Again, 2 Hard, 3 Good, 4 Easy',
-      }),
+    grade: z.number().openapi({
+      type: 'integer',
+      enum: [1, 2, 3, 4],
+      description: '1 Again, 2 Hard, 3 Good, 4 Easy',
+    }),
     reviewedAt: isoDate,
     durationMs: z.number().int().min(0),
     studyAhead: z.boolean().default(false).optional(),
