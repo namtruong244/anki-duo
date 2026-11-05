@@ -9,6 +9,7 @@ import { requireUser } from './middleware/require-user.js';
 import { originGuard } from './origin-guard.js';
 import { rateLimit } from './rate-limit.js';
 import { registerMe } from './routes/me.js';
+import { registerSync } from './routes/sync.js';
 import { ApiProblem, problemResponse, validationHook } from './problem.js';
 
 export interface AppDeps {
@@ -92,6 +93,7 @@ export function createApp(deps: AppDeps) {
   app.use('/api/v1/decks/*/import', rateLimit());
 
   registerMe(app);
+  registerSync(app);
 
   return app;
 }

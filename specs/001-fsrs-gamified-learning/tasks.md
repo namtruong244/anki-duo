@@ -309,16 +309,16 @@ shell that every story needs.
 
 ### Pull sync (read path used by every story)
 
-- [ ] T050 Write the failing test `apps/api/tests/integration/sync-pull.test.ts`:
+- [X] T050 Write the failing test `apps/api/tests/integration/sync-pull.test.ts`:
   - `cursor` and `limit` (1–2000, default 1000) return rows with `change_seq > cursor` in order;
   - `hasMore` paging;
   - tombstones for deleted decks, cards and media (content omitted);
   - only the caller's rows;
   - `Device.last_pull_seq` and `last_seen_at` are updated.
-- [ ] T051 Implement `GET /api/v1/sync/pull` in `apps/api/src/sync/pull.ts` and
+- [X] T051 Implement `GET /api/v1/sync/pull` in `apps/api/src/sync/pull.ts` and
   `apps/api/src/routes/sync.ts`, with the contract in `packages/contract/src/sync.ts`. FSRS state
   is expanded from the card columns.
-- [ ] T052 Implement the seed script `apps/api/scripts/seed.ts` (`pnpm db:seed`):
+- [X] T052 Implement the seed script `apps/api/scripts/seed.ts` (`pnpm db:seed`):
   - demo learner `demo@anki-duo.local` / `demo-password-123`;
   - decks "Từ vựng N3", "English idioms", "Media sample";
   - 90 days of history;
