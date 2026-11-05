@@ -1,0 +1,109 @@
+{
+  "description": "reviewXp and sessionBonusXp (FR-024). Any grade earns the same XP.",
+  "review": [
+    {
+      "name": "Again earns 2",
+      "log": {
+        "kind": "review",
+        "grade": 1,
+        "studyAhead": false,
+        "revokedAt": null
+      },
+      "xp": 2
+    },
+    {
+      "name": "Hard earns 2",
+      "log": {
+        "kind": "review",
+        "grade": 2,
+        "studyAhead": false,
+        "revokedAt": null
+      },
+      "xp": 2
+    },
+    {
+      "name": "Good earns 2",
+      "log": {
+        "kind": "review",
+        "grade": 3,
+        "studyAhead": false,
+        "revokedAt": null
+      },
+      "xp": 2
+    },
+    {
+      "name": "Easy earns 2",
+      "log": {
+        "kind": "review",
+        "grade": 4,
+        "studyAhead": false,
+        "revokedAt": null
+      },
+      "xp": 2
+    },
+    {
+      "name": "study ahead earns 0",
+      "log": {
+        "kind": "review",
+        "grade": 3,
+        "studyAhead": true,
+        "revokedAt": null
+      },
+      "xp": 0
+    },
+    {
+      "name": "revoked earns 0",
+      "log": {
+        "kind": "review",
+        "grade": 3,
+        "studyAhead": false,
+        "revokedAt": "2026-01-01T00:00:00.000Z"
+      },
+      "xp": 0
+    },
+    {
+      "name": "reset earns 0",
+      "log": {
+        "kind": "reset",
+        "grade": null,
+        "studyAhead": false,
+        "revokedAt": null
+      },
+      "xp": 0
+    }
+  ],
+  "sessionBonus": [
+    {
+      "name": "completed review session",
+      "session": {
+        "completed": true,
+        "kind": "review"
+      },
+      "xp": 5
+    },
+    {
+      "name": "completed node session",
+      "session": {
+        "completed": true,
+        "kind": "node"
+      },
+      "xp": 5
+    },
+    {
+      "name": "completed ahead session",
+      "session": {
+        "completed": true,
+        "kind": "ahead"
+      },
+      "xp": 0
+    },
+    {
+      "name": "incomplete session",
+      "session": {
+        "completed": false,
+        "kind": "review"
+      },
+      "xp": 0
+    }
+  ]
+}

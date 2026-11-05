@@ -6,5 +6,8 @@
   "scripts": {
     "typecheck": "tsc -p ."
   },
-  "main": "src/index.ts"
+  "main": "src/index.ts",
+  "devDependencies": {
+    "ajv": "^8.20.0"
+  }
 }

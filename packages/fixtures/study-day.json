@@ -1,0 +1,165 @@
+{
+  "description": "studyDay(instant, timeZone, dayStartHour) and endOfStudyDay, computed independently with GNU date and wall-clock arithmetic (research R14).",
+  "cases": [
+    {
+      "name": "hcm 03:59 local is still the previous day (start 4)",
+      "instant": "2026-03-09T20:59:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "studyDay": "2026-03-09",
+      "endOfStudyDay": "2026-03-09T21:00:00.000Z"
+    },
+    {
+      "name": "hcm 04:00 local starts the new day (start 4)",
+      "instant": "2026-03-09T21:00:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "studyDay": "2026-03-10",
+      "endOfStudyDay": "2026-03-10T21:00:00.000Z"
+    },
+    {
+      "name": "hcm start 0: 23:59 local",
+      "instant": "2026-03-09T16:59:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 0,
+      "studyDay": "2026-03-09",
+      "endOfStudyDay": "2026-03-09T17:00:00.000Z"
+    },
+    {
+      "name": "hcm start 0: 00:00 local",
+      "instant": "2026-03-09T17:00:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 0,
+      "studyDay": "2026-03-10",
+      "endOfStudyDay": "2026-03-10T17:00:00.000Z"
+    },
+    {
+      "name": "hcm start 23: 22:59 local",
+      "instant": "2026-03-09T15:59:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 23,
+      "studyDay": "2026-03-08",
+      "endOfStudyDay": "2026-03-09T16:00:00.000Z"
+    },
+    {
+      "name": "hcm start 23: 23:00 local",
+      "instant": "2026-03-09T16:00:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 23,
+      "studyDay": "2026-03-09",
+      "endOfStudyDay": "2026-03-10T16:00:00.000Z"
+    },
+    {
+      "name": "hcm mid-day",
+      "instant": "2026-06-15T05:00:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "studyDay": "2026-06-15",
+      "endOfStudyDay": "2026-06-15T21:00:00.000Z"
+    },
+    {
+      "name": "new york before spring-forward (start 4)",
+      "instant": "2026-03-07T12:00:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 4,
+      "studyDay": "2026-03-07",
+      "endOfStudyDay": "2026-03-08T08:00:00.000Z"
+    },
+    {
+      "name": "new york spring-forward day 03:59 EDT (start 4)",
+      "instant": "2026-03-08T07:59:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 4,
+      "studyDay": "2026-03-07",
+      "endOfStudyDay": "2026-03-08T08:00:00.000Z"
+    },
+    {
+      "name": "new york spring-forward day 04:00 EDT (start 4)",
+      "instant": "2026-03-08T08:00:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 4,
+      "studyDay": "2026-03-08",
+      "endOfStudyDay": "2026-03-09T08:00:00.000Z"
+    },
+    {
+      "name": "new york spring-forward day midday (start 4)",
+      "instant": "2026-03-08T16:00:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 4,
+      "studyDay": "2026-03-08",
+      "endOfStudyDay": "2026-03-09T08:00:00.000Z"
+    },
+    {
+      "name": "new york spring-forward day (start 0)",
+      "instant": "2026-03-08T12:00:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 0,
+      "studyDay": "2026-03-08",
+      "endOfStudyDay": "2026-03-09T04:00:00.000Z"
+    },
+    {
+      "name": "new york fall-back day, after repeated hour (start 0)",
+      "instant": "2026-11-01T07:30:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 0,
+      "studyDay": "2026-11-01",
+      "endOfStudyDay": "2026-11-02T05:00:00.000Z"
+    },
+    {
+      "name": "new york fall-back day, before midnight rollover (start 0)",
+      "instant": "2026-11-01T04:30:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 0,
+      "studyDay": "2026-11-01",
+      "endOfStudyDay": "2026-11-02T05:00:00.000Z"
+    },
+    {
+      "name": "new york fall-back (start 4) 03:59 EST",
+      "instant": "2026-11-01T08:59:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 4,
+      "studyDay": "2026-10-31",
+      "endOfStudyDay": "2026-11-01T09:00:00.000Z"
+    },
+    {
+      "name": "new york fall-back (start 4) 04:00 EST",
+      "instant": "2026-11-01T09:00:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 4,
+      "studyDay": "2026-11-01",
+      "endOfStudyDay": "2026-11-02T09:00:00.000Z"
+    },
+    {
+      "name": "new york start 23: 22:59 EST",
+      "instant": "2026-01-15T03:59:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 23,
+      "studyDay": "2026-01-13",
+      "endOfStudyDay": "2026-01-15T04:00:00.000Z"
+    },
+    {
+      "name": "new york start 23: 23:00 EST",
+      "instant": "2026-01-15T04:00:00Z",
+      "timeZone": "America/New_York",
+      "dayStartHour": 23,
+      "studyDay": "2026-01-14",
+      "endOfStudyDay": "2026-01-16T04:00:00.000Z"
+    },
+    {
+      "name": "new year boundary hcm before start",
+      "instant": "2025-12-31T20:59:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "studyDay": "2025-12-31",
+      "endOfStudyDay": "2025-12-31T21:00:00.000Z"
+    },
+    {
+      "name": "new year boundary hcm after start",
+      "instant": "2025-12-31T21:00:00Z",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "studyDay": "2026-01-01",
+      "endOfStudyDay": "2026-01-01T21:00:00.000Z"
+    }
+  ]
+}

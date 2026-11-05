@@ -115,11 +115,11 @@ shell that every story needs.
 
 ### Fixtures and pure domain core
 
-- [ ] T015 [P] Write a JSON Schema for each fixture file in `packages/fixtures/schema/`
+- [X] T015 [P] Write a JSON Schema for each fixture file in `packages/fixtures/schema/`
   (`fsrs-vectors`, `study-day`, `xp`, `queue`, `path-assign`, `path-status`, `streak`,
   `donut`). Write `packages/fixtures/tests/schema.test.ts`, which validates every
   `packages/fixtures/*.json` against its schema. It fails until fixtures exist.
-- [ ] T016 [P] Add the FSRS reference vectors in `packages/fixtures/fsrs-vectors.json`, taken from
+- [X] T016 [P] Add the FSRS reference vectors in `packages/fixtures/fsrs-vectors.json`, taken from
   the pinned `ts-fsrs` version's own test cases and the FSRS reference. Record `source`, `version`
   and `parameters` in the file header. Cover:
   - first review with each grade;
@@ -127,20 +127,20 @@ shell that every story needs.
   - lapse → relearning;
   - maximum interval cap;
   - desired retention 0.70 and 0.97.
-- [ ] T017 [P] Add `packages/fixtures/study-day.json` cases (research R14):
+- [X] T017 [P] Add `packages/fixtures/study-day.json` cases (research R14):
   - zones `Asia/Ho_Chi_Minh` and `America/New_York` (DST transitions);
   - `day_start_hour` 0, 4 (default) and 23;
   - instants just before and after the boundary.
-- [ ] T018 [P] Add `packages/fixtures/xp.json` cases. Rule:
+- [X] T018 [P] Add `packages/fixtures/xp.json` cases. Rule:
   - `xp = 0 if revoked or study_ahead or kind = reset`;
   - `2 otherwise`, with one case per grade (Again, Hard, Good, Easy) all giving 2 (FR-024);
   - session bonus `5 if completed and kind ≠ ahead`.
-- [ ] T019 Write the failing test `packages/domain/tests/study-day.test.ts`, which runs every case
+- [X] T019 Write the failing test `packages/domain/tests/study-day.test.ts`, which runs every case
   in `study-day.json`.
-- [ ] T020 Implement `studyDay(instant, timeZone, dayStartHour)` and
+- [X] T020 Implement `studyDay(instant, timeZone, dayStartHour)` and
   `endOfStudyDay(studyDay, timeZone, dayStartHour)` in `packages/domain/src/time/study-day.ts`.
   `T019` must pass.
-- [ ] T021 Write the failing test `packages/domain/tests/scheduler.test.ts`:
+- [X] T021 Write the failing test `packages/domain/tests/scheduler.test.ts`:
   - every case in `fsrs-vectors.json` gives identical `due`, `stability`, `difficulty`, `state`,
     `reps`, `lapses` (SC-004);
   - the same inputs give the same output twice;
@@ -148,28 +148,28 @@ shell that every story needs.
   - `previewIntervals` returns 4 intervals ordered Again ≤ Hard ≤ Good ≤ Easy;
   - `desired_retention` outside "0.70–0.97" and `maximum_interval_days` outside "1–36500" are
     rejected.
-- [ ] T022 Implement `packages/domain/src/scheduler/index.ts` (research R2):
+- [X] T022 Implement `packages/domain/src/scheduler/index.ts` (research R2):
   - `schedule(card, grade, now, params)` returns `{ card, log }`;
   - `previewIntervals(card, now, params)`;
   - `resetCard(card, now)`;
   - a `SCHEDULER_VERSION` constant (`ts-fsrs@<exact>/fsrs-6`);
   - wraps `ts-fsrs` with `enable_fuzz: false`.
-- [ ] T023 [P] Write the failing test `packages/domain/tests/state-codec.test.ts`: round-trip of
+- [X] T023 [P] Write the failing test `packages/domain/tests/state-codec.test.ts`: round-trip of
   `FsrsState` ↔ `double precision[8]`
   `[stateCode, dueEpochSec, stability, difficulty, learningSteps, reps, lapses, lastReviewEpochSec]`
   (data-model ReviewLog). A null `lastReview` encodes as `NaN`.
-- [ ] T024 [P] Implement `encodeState` and `decodeState` in
+- [X] T024 [P] Implement `encodeState` and `decodeState` in
   `packages/domain/src/scheduler/state-codec.ts`.
-- [ ] T025 Write the failing test `packages/domain/tests/replay.test.ts`:
+- [X] T025 Write the failing test `packages/domain/tests/replay.test.ts`:
   - replay in `(reviewed_at, id)` order;
   - revoked logs are skipped;
   - `kind = reset` returns the card to `new`;
   - out-of-order input gives the same result as sorted input;
   - the result equals applying `schedule` step by step.
-- [ ] T026 Implement `replay(initialCard, logs, params)` in
+- [X] T026 Implement `replay(initialCard, logs, params)` in
   `packages/domain/src/scheduler/replay.ts`.
-- [ ] T027 [P] Write the failing test `packages/domain/tests/xp.test.ts`, which runs `xp.json`.
-- [ ] T028 [P] Implement `reviewXp(log)` and `sessionBonusXp(session)` in
+- [X] T027 [P] Write the failing test `packages/domain/tests/xp.test.ts`, which runs `xp.json`.
+- [X] T028 [P] Implement `reviewXp(log)` and `sessionBonusXp(session)` in
   `packages/domain/src/gamification/xp.ts`.
 
 ### Contract package

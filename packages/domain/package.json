@@ -9,5 +9,8 @@
   "dependencies": {
     "ts-fsrs": "6.0.0"
   },
-  "main": "src/index.ts"
+  "main": "src/index.ts",
+  "devDependencies": {
+    "@anki-duo/fixtures": "workspace:^"
+  }
 }
