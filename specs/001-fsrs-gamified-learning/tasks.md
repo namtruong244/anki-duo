@@ -569,7 +569,7 @@ and final count match the file. Then edit one card to add an image and audio, an
   - `isLast` sets `completed_at`;
   - `totalRows` > 10,000 gives `import_too_large`;
   - cards get `position` and `node_index` in file order.
-- [ ] T094 [P] [US2] Write the failing test `apps/web/tests/import/parse.test.ts`, which runs
+- [X] T094 [P] [US2] Write the failing test `apps/web/tests/import/parse.test.ts`, which runs
   `expected.json` for every fixture file:
   - delimiter detection among `,` `;` `\t` `|`;
   - header detection with names `front`, `back`, `tags`, `question`, `answer`, `mặt trước`,
@@ -596,17 +596,17 @@ and final count match the file. Then edit one card to add an image and audio, an
   - restore creates a new deck with new ids and identical FSRS state for every card;
   - a tampered history fails with `export_invalid` and creates nothing;
   - restore applies the 20,000-card limit.
-- [ ] T097 [P] [US2] Write the failing test `apps/web/tests/media/media-selection.test.ts`:
+- [X] T097 [P] [US2] Write the failing test `apps/web/tests/media/media-selection.test.ts`:
   `mediaForToday(queueCards, mediaRows)` returns exactly the media of today's due and new cards;
   `evictionPlan` keeps the cache ≤ 200 MB and never evicts media for today's queue.
-- [ ] T098 [P] [US2] Write the e2e test `tests/e2e/editor.spec.ts` (V5):
+- [X] T098 [P] [US2] Write the e2e test `tests/e2e/editor.spec.ts` (V5):
   - deck CRUD with delete confirmation;
   - card with `**bold**`, a table and `<script>alert(1)</script>` (no dialog fires);
   - PNG on the front, MP3 on the back with a replay button in review;
   - a 6 MB image is rejected with the limit shown;
   - with the network offline, create/edit/delete/import are disabled with a "needs connection"
     message and review still works with images and audio (FR-017).
-- [ ] T099 [P] [US2] Write the e2e test `tests/e2e/import.spec.ts` (V6): `basic-200.tsv` from
+- [X] T099 [P] [US2] Write the e2e test `tests/e2e/import.spec.ts` (V6): `basic-200.tsv` from
   sign-up to the first graded card in < 3 min (SC-002); `10000-rows.csv` finishes in < 15 s with
   accurate counts (SC-006); the skipped-rows report can be downloaded as CSV.
 
@@ -641,30 +641,30 @@ and final count match the file. Then edit one card to add an image and audio, an
   (`GET /decks/{id}/export`, `POST /decks/restore`) in `apps/api/src/services/export.ts` and
   `apps/api/src/routes/export.ts`. Restore replays the history and verifies equality. `T096` must
   pass.
-- [ ] T108 [P] [US2] Implement the import parser Web Worker in
+- [X] T108 [P] [US2] Implement the import parser Web Worker in
   `apps/web/src/client/import/parse.worker.ts` (Papa Parse, encoding check, limits, header
   heuristic). `T094` must pass.
-- [ ] T109 [US2] Implement `useOnlineOnly()` in `apps/web/src/client/online-only.ts`. It disables
+- [X] T109 [US2] Implement `useOnlineOnly()` in `apps/web/src/client/online-only.ts`. It disables
   wrapped actions while offline and shows a "needs connection" message (FR-017).
-- [ ] T110 [US2] Extend `DeckListPage` (`apps/web/src/routes/decks/DeckListPage.tsx`) and add
+- [X] T110 [US2] Extend `DeckListPage` (`apps/web/src/routes/decks/DeckListPage.tsx`) and add
   `apps/web/src/routes/decks/DeckSettingsDialog.tsx`: create, rename, "new cards per day", and
   delete with a confirmation `Dialog` that names the deck and its card count.
-- [ ] T111 [US2] Implement `CardListPage` in `apps/web/src/routes/cards/CardListPage.tsx`: search
+- [X] T111 [US2] Implement `CardListPage` in `apps/web/src/routes/cards/CardListPage.tsx`: search
   over front and back, tag filter, suspend/unsuspend, reset to New with confirmation, delete
   (FR-009, FR-012).
-- [ ] T112 [US2] Implement `CardEditorPage` in `apps/web/src/routes/cards/CardEditorPage.tsx`:
+- [X] T112 [US2] Implement `CardEditorPage` in `apps/web/src/routes/cards/CardEditorPage.tsx`:
   front and back Markdown editors with a live preview using `CardContent`, a tags input, and
   validation messages for the limits in `T092`.
-- [ ] T113 [US2] Implement `MediaPicker` in `apps/web/src/components/editor/MediaPicker.tsx`
+- [X] T113 [US2] Implement `MediaPicker` in `apps/web/src/components/editor/MediaPicker.tsx`
   (upload-url → direct PUT → complete, with progress and limit errors). Extend `CardContent` to
   render `![alt](media:{id})` and `[[audio:{id}]]` with an audio replay control (Story 2 #3).
-- [ ] T114 [US2] Implement the offline media cache:
+- [X] T114 [US2] Implement the offline media cache:
   - `apps/web/src/client/media-cache.ts`: `mediaForToday` and `evictionPlan`, which ask the
     service worker to prefetch and evict after each pull;
   - a `/api/v1/media/*` cache-first route and message handler in `apps/web/src/sw.ts`;
   - a placeholder for media that wasn't downloaded (edge case).
   `T097` must pass.
-- [ ] T115 [US2] Implement `ImportPage` in `apps/web/src/routes/import/ImportPage.tsx`:
+- [X] T115 [US2] Implement `ImportPage` in `apps/web/src/routes/import/ImportPage.tsx`:
   - file pick;
   - delimiter and header overrides;
   - column mapping (Front required, Back and Tags optional);
@@ -672,7 +672,7 @@ and final count match the file. Then edit one card to add an image and audio, an
   - duplicate-mode choice;
   - chunked upload with a progress bar;
   - final report table with downloadable CSV.
-- [ ] T116 [US2] Add export and restore actions to `DeckSettingsDialog` and `DeckListPage`:
+- [X] T116 [US2] Add export and restore actions to `DeckSettingsDialog` and `DeckListPage`:
   download `{deck-name}.anki-duo.json`, and restore from a file with an error message for
   `export_invalid`.
 

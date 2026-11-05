@@ -174,8 +174,13 @@ export class DexieStore extends Dexie implements LocalStore {
         if (page.settings) await this.putSettings(userId, page.settings);
         if (page.stats) await this.putStats(userId, page.stats);
         for (const d of page.decks ?? []) {
-          if (d.deletedAt) await this.decks.delete(d.id);
-          else await this.decks.put(d);
+          if (d.deletedAt) {
+            // A deck delete is hard on the server and sends no card tombstones: drop them here.
+            const ids = (await this.cards.where('deckId').equals(d.id).primaryKeys()) as string[];
+            await this.media.where('cardId').anyOf(ids).delete();
+            await this.cards.bulkDelete(ids);
+            await this.decks.delete(d.id);
+          } else await this.decks.put(d);
         }
         for (const c of page.cards ?? []) {
           if (c.deletedAt) await this.cards.delete(c.id);

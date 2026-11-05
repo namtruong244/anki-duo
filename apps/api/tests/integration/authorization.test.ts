@@ -29,19 +29,17 @@ beforeEach(async () => {
   cardId = (await createCard(t.db, alice, deckId, { createdAt: new Date('2026-01-01T00:00:00Z') }))
     .id;
   mediaId = randomUUID();
-  await t.db
-    .insert(schema.mediaAsset)
-    .values({
-      id: mediaId,
-      userId: alice,
-      cardId,
-      side: 'front',
-      kind: 'image',
-      mime: 'image/png',
-      bytes: 5,
-      storageKey: `u/${alice}/m`,
-      status: 'ready',
-    });
+  await t.db.insert(schema.mediaAsset).values({
+    id: mediaId,
+    userId: alice,
+    cardId,
+    side: 'front',
+    kind: 'image',
+    mime: 'image/png',
+    bytes: 5,
+    storageKey: `u/${alice}/m`,
+    status: 'ready',
+  });
   const fsrs = {
     state: 'new',
     due: '2026-01-01T00:00:00.000Z',

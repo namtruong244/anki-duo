@@ -140,3 +140,55 @@ describe('pullAll', () => {
     expect(await store.getMeta('pullCursor')).toBe('5');
   });
 });
+
+describe('deck tombstones', () => {
+  it("remove the deck's cards and media too (the server sends no card tombstones for a deck delete)", async () => {
+    const s = new DexieStore(`tomb-${Math.random()}`);
+    await s.putDecks([
+      { id: 'd1', name: 'Gone', newCardsPerDay: 20, createdAt: '', updatedAt: '', deletedAt: null },
+    ]);
+    await s.putDecks([
+      { id: 'd2', name: 'Kept', newCardsPerDay: 20, createdAt: '', updatedAt: '', deletedAt: null },
+    ]);
+    await s.putCards([card('c1'), { ...card('c2'), deckId: 'd2' }]);
+    await s.putMedia([
+      {
+        id: 'm1',
+        cardId: 'c1',
+        side: 'front',
+        kind: 'image',
+        mime: 'image/png',
+        bytes: 1,
+        sort: 0,
+        deletedAt: null,
+      },
+      {
+        id: 'm2',
+        cardId: 'c2',
+        side: 'front',
+        kind: 'image',
+        mime: 'image/png',
+        bytes: 1,
+        sort: 0,
+        deletedAt: null,
+      },
+    ]);
+    await s.applyPull({
+      decks: [
+        {
+          id: 'd1',
+          name: '',
+          newCardsPerDay: 20,
+          createdAt: '',
+          updatedAt: '',
+          deletedAt: '2026-01-02T00:00:00.000Z',
+        },
+      ],
+    });
+    expect(await s.getDeck('d1')).toBeUndefined();
+    expect(await s.listCards('d1')).toEqual([]);
+    expect(await s.listMedia('c1')).toEqual([]);
+    expect(await s.listCards('d2')).toHaveLength(1);
+    expect(await s.listMedia('c2')).toHaveLength(1);
+  });
+});

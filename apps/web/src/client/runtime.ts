@@ -2,6 +2,8 @@ import { v7 as uuidv7 } from 'uuid';
 import { api } from './api';
 import { connectivity } from './connectivity';
 import { dexieStore } from './store';
+import { maintainMediaCache, swTransport } from './media-cache';
+import { createContentActions } from './content';
 import { createSyncEngine } from './sync/sync-engine';
 import type { LocalStore } from './local-store';
 
@@ -17,5 +19,13 @@ export async function ensureIdentity(store: LocalStore, userId: string): Promise
 }
 
 /** The app-wide sync engine. */
-export const syncEngine = createSyncEngine({ store: dexieStore, api, connectivity });
+export const syncEngine = createSyncEngine({
+  store: dexieStore,
+  api,
+  connectivity,
+  afterPull: () => maintainMediaCache(dexieStore, swTransport()),
+});
 export const newId = () => uuidv7();
+
+/** Online-only content actions (decks, cards, import helpers) that mirror results into LocalStore. */
+export const content = createContentActions(api, dexieStore);

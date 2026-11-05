@@ -11,6 +11,9 @@ import { VerifyEmailPage } from './auth/VerifyEmailPage';
 import { ResetPasswordPage } from './auth/ResetPasswordPage';
 import { DashboardPage, HomePage, PathPage } from './Placeholders';
 import { DeckListPage } from './decks/DeckListPage';
+import { CardEditorPage } from './cards/CardEditorPage';
+import { CardListPage } from './cards/CardListPage';
+import { ImportPage } from './import/ImportPage';
 import { SessionPage } from './session/SessionPage';
 import { SettingsPage } from './settings/SettingsPage';
 
@@ -68,6 +71,10 @@ export function AppRoutes() {
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
           <Route path="/decks" element={<DeckListPage />} />
+          <Route path="/decks/:deckId/cards" element={<CardListPage />} />
+          <Route path="/decks/:deckId/cards/new" element={<CardEditorPage />} />
+          <Route path="/decks/:deckId/cards/:cardId" element={<CardEditorPage />} />
+          <Route path="/decks/:deckId/import" element={<ImportPage />} />
           <Route path="/path" element={<PathPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />

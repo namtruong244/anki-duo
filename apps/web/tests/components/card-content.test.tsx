@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { CardContent } from '../../src/components/session/CardContent';
 
@@ -65,5 +65,29 @@ describe('CardContent', () => {
   it('keeps long content scrollable inside its own box (FR edge case)', () => {
     const { container } = render(<CardContent markdown={'x '.repeat(5000)} />);
     expect((container.firstElementChild as HTMLElement).className).toContain('overflow-y-auto');
+  });
+});
+
+describe('media tokens (T113, Story 2 #3)', () => {
+  const id = '11111111-2222-4333-8444-555555555555';
+
+  it('renders ![alt](media:id) as an image from the media endpoint', () => {
+    render(<CardContent markdown={`![a cat](media:${id})`} />);
+    expect(screen.getByRole('img', { name: 'a cat' }).getAttribute('src')).toBe(
+      `/api/v1/media/${id}`,
+    );
+  });
+
+  it('renders [[audio:id]] as an audio clip with a replay button', () => {
+    const { container } = render(<CardContent markdown={`say it [[audio:${id}]]`} />);
+    expect(container.querySelector('audio')?.getAttribute('src')).toBe(`/api/v1/media/${id}`);
+    expect(screen.getByRole('button', { name: /replay|media\.replay/i })).toBeTruthy();
+  });
+
+  it('shows a placeholder when the image cannot be loaded offline', () => {
+    render(<CardContent markdown={`![a cat](media:${id})`} />);
+    fireEvent.error(screen.getByRole('img'));
+    expect(screen.queryByRole('img')).toBeNull();
+    expect(screen.getByText('a cat')).toBeTruthy();
   });
 });

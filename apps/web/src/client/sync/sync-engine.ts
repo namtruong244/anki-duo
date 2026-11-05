@@ -30,6 +30,8 @@ export function createSyncEngine(deps: {
   connectivity: Connectivity;
   isVisible?: () => boolean;
   onError?: (e: unknown) => void;
+  /** Runs after every successful pull, e.g. to refresh the media cache. Errors are ignored. */
+  afterPull?: () => Promise<void>;
 }): SyncEngine {
   const { store, api, connectivity } = deps;
   const isVisible =
@@ -56,6 +58,7 @@ export function createSyncEngine(deps: {
     try {
       await pushOutbox(store, api);
       await pullAll(store, api);
+      await deps.afterPull?.().catch(() => undefined);
       failures = 0;
       connectivity.reportSuccess();
       set('idle');
