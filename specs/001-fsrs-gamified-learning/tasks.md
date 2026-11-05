@@ -761,7 +761,7 @@ longest. Finishing every available card in a 3-card deck meets the goal (V8).
   - day boundaries at 04:00 local in `Asia/Ho_Chi_Minh`.
 - [X] T126 [P] [US4] Write the failing test `packages/domain/tests/streak.test.ts`, which runs
   `streak.json`.
-- [ ] T127 [P] [US4] Write the failing test `apps/api/tests/integration/activity.test.ts`:
+- [X] T127 [P] [US4] Write the failing test `apps/api/tests/integration/activity.test.ts`:
   - `daily_activity` is recomputed for the affected study days on push and on revoke;
   - `reviews` counts non-revoked `kind=review` logs;
   - `xp` is review XP plus session bonuses;
@@ -783,7 +783,7 @@ longest. Finishing every available card in a 3-card deck meets the goal (V8).
 
 - [X] T130 [US4] Implement `goalMet`, `currentStreak`, `longestStreak` and `streakStatus`
   (`met | at_risk | broken`) in `packages/domain/src/gamification/streak.ts`. `T126` must pass.
-- [ ] T131 [US4] Implement the activity recompute in `apps/api/src/services/activity.ts`, called
+- [X] T131 [US4] Implement the activity recompute in `apps/api/src/services/activity.ts`, called
   in the same transaction from `apps/api/src/sync/push.ts` (reviews, revokes, sessions, day
   flags). `T127` must pass.
 - [ ] T132 [US4] Implement the client gamification in `apps/web/src/client/gamification.ts`:

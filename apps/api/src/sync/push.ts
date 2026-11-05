@@ -15,6 +15,7 @@ import {
   type SchedulerParams,
 } from '@anki-duo/domain';
 import { schema, type Db } from '../db/client.js';
+import { recomputeActivity } from '../services/activity.js';
 
 export type PushResult = {
   id: string;
@@ -37,6 +38,8 @@ interface Ctx {
   timeZone: string;
   dayStartHour: number;
   params: SchedulerParams;
+  /** Study days whose daily activity must be recomputed after the event. */
+  touched: Set<string>;
 }
 
 /**
@@ -62,10 +65,19 @@ export async function pushEvents(
       desiredRetention: Number(s?.desiredRetention ?? '0.90'),
       maximumIntervalDays: s?.maximumIntervalDays ?? 36500,
     },
+    touched: new Set(),
   };
   const results: PushResult[] = [];
   for (const event of events) {
-    results.push(await db.transaction((tx) => applyEvent(tx as unknown as Db, ctx, event)));
+    results.push(
+      await db.transaction(async (t) => {
+        const tx = t as unknown as Db;
+        ctx.touched.clear();
+        const result = await applyEvent(tx, ctx, event);
+        if (result.status === 'applied') await recomputeActivity(tx, userId, ctx.touched, now);
+        return result;
+      }),
+    );
   }
   return results;
 }
@@ -209,6 +221,7 @@ async function applyReview(
   if (!inserted.length) return duplicate(e.id);
 
   await rebuildCard(tx, card, await cardLogs(tx, card.id), ctx.params);
+  ctx.touched.add(studyDay(reviewedAt, ctx.timeZone, ctx.dayStartHour));
   return applied(e.id);
 }
 
@@ -231,6 +244,7 @@ async function applyRevoke(
     .set({ revokedAt: new Date(e.revokedAt), xp: 0 })
     .where(and(eq(schema.reviewLog.id, log.id), isNull(schema.reviewLog.revokedAt)));
   await rebuildCard(tx, card, await cardLogs(tx, card.id), ctx.params);
+  ctx.touched.add(studyDay(log.reviewedAt, ctx.timeZone, ctx.dayStartHour));
   return applied(e.id);
 }
 
@@ -273,6 +287,7 @@ async function applySession(
       setWhere: eq(schema.studySession.userId, ctx.userId),
     })
     .returning({ id: schema.studySession.id });
+  if (rows.length) ctx.touched.add(values.studyDay);
   return rows.length ? applied(e.id) : duplicate(e.id);
 }
 
@@ -298,5 +313,6 @@ async function applyDayFlag(
       target: [schema.dailyActivity.userId, schema.dailyActivity.studyDay],
       set: { allAvailableDone: true, goalMet: true },
     });
+  ctx.touched.add(e.studyDay);
   return applied(e.id);
 }
