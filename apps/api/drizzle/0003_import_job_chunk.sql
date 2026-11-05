@@ -1,0 +1,1 @@
+ALTER TABLE "import_job" ADD COLUMN "last_chunk_index" integer DEFAULT -1 NOT NULL;

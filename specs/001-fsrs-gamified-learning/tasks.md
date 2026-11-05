@@ -532,24 +532,24 @@ and final count match the file. Then edit one card to add an image and audio, an
 - [X] T087 [P] [US2] Add `packages/fixtures/path-assign.json`: creating cards in an empty deck,
   in a deck whose last node has fewer than 10 cards, and in a deck whose last node is full.
   Assignments never change after deletion.
-- [ ] T088 [P] [US2] Add the import fixtures in `packages/fixtures/import/`: `basic-200.tsv`,
+- [X] T088 [P] [US2] Add the import fixtures in `packages/fixtures/import/`: `basic-200.tsv`,
   `semicolon-header.csv`, `malformed.csv`, `dupes.csv`, `10000-rows.csv`, `latin1.csv`,
   `one-column.csv`, `bom-utf8.csv`, and `expected.json` with the expected detection and per-row
   results.
 - [X] T089 [P] [US2] Write the failing test `packages/domain/tests/path-assign.test.ts`, which
   runs `path-assign.json`.
-- [ ] T090 [P] [US2] Write the failing test `packages/domain/tests/import-rows.test.ts`:
+- [X] T090 [P] [US2] Write the failing test `packages/domain/tests/import-rows.test.ts`:
   - `normaliseFront` (lower-case, NFC, trimmed, whitespace collapsed);
   - row reason codes `empty_front`, `front_too_long`, `back_too_long`, `too_many_tags`,
     `tag_invalid`, `malformed_row`, `duplicate_skipped`, `card_limit_reached`;
   - tags split on whitespace or `;`.
-- [ ] T091 [P] [US2] Write the failing test `apps/api/tests/integration/decks.test.ts`:
+- [X] T091 [P] [US2] Write the failing test `apps/api/tests/integration/decks.test.ts`:
   - create, rename, delete;
   - `name` "1–100 chars after trimming; unique per user, case-insensitive, among non-deleted
     decks" gives `deck_name_taken` (409);
   - `newCardsPerDay` "0–999";
   - delete removes cards, media objects and review logs, and leaves a tombstone visible in pull.
-- [ ] T092 [P] [US2] Write the failing test `apps/api/tests/integration/cards.test.ts`:
+- [X] T092 [P] [US2] Write the failing test `apps/api/tests/integration/cards.test.ts`:
   - `front` "1–10,000 chars", `back` "0–10,000";
   - `tags` "≤ 20 tags, each 1–50 chars, no whitespace";
   - `position` and `node_index` assignment;
@@ -558,7 +558,7 @@ and final count match the file. Then edit one card to add an image and audio, an
   - suspend excludes the card from pulls' due counts;
   - `POST /cards/{id}/reset` writes a `ReviewLog` with `kind=reset` and the card becomes `new`
     (FR-012).
-- [ ] T093 [P] [US2] Write the failing test `apps/api/tests/integration/import.test.ts`
+- [X] T093 [P] [US2] Write the failing test `apps/api/tests/integration/import.test.ts`
   (contracts/csv-import.md):
   - chunks of ≤ 1,000 rows with the same `jobId`;
   - re-sending a `chunkIndex` is idempotent;
@@ -579,7 +579,7 @@ and final count match the file. Then edit one card to add an image and audio, an
     call;
   - more than 10 MB or 10,000 rows rejected with `import_too_large`;
   - a 1-column file gives `single_column`.
-- [ ] T095 [P] [US2] Write the failing test `apps/api/tests/integration/media.test.ts`:
+- [X] T095 [P] [US2] Write the failing test `apps/api/tests/integration/media.test.ts`:
   - `upload-url` accepts only `image/png`, `image/jpeg`, `image/webp`, `image/gif`,
     `image/svg+xml`, `audio/mpeg`, `audio/mp4`, `audio/aac`, `audio/ogg`, `audio/wav`, and
     `bytes` "1 – 5,242,880";
@@ -589,7 +589,7 @@ and final count match the file. Then edit one card to add an image and audio, an
   - `pending` rows older than 24 h are purged;
   - `GET /media/{id}` returns 302 for the owner and 404 for others;
   - `DELETE` removes the object and the row.
-- [ ] T096 [P] [US2] Write the failing test `apps/api/tests/integration/export-restore.test.ts`
+- [X] T096 [P] [US2] Write the failing test `apps/api/tests/integration/export-restore.test.ts`
   (V11, contracts/export-format.md):
   - export contains `format`, `version: 1`, scheduler parameters, cards, full review history
     (including revoked) and a media manifest with `sha256`;
@@ -615,28 +615,28 @@ and final count match the file. Then edit one card to add an image and audio, an
 - [X] T100 [P] [US2] Implement `assignNodeIndex(lastNodeIndex, lastNodeCount)` in
   `packages/domain/src/path/assign.ts`: "if the deck's last node has fewer than 10 cards, use
   that node; otherwise use last + 1". `T089` must pass.
-- [ ] T101 [P] [US2] Implement `normaliseFront`, `validateRow` and `splitTags` in
+- [X] T101 [P] [US2] Implement `normaliseFront`, `validateRow` and `splitTags` in
   `packages/domain/src/import/rows.ts`. `T090` must pass.
-- [ ] T102 [US2] Register the contract schemas for decks, cards (create and patch), reset, import,
+- [X] T102 [US2] Register the contract schemas for decks, cards (create and patch), reset, import,
   export/restore and media in `packages/contract/src/decks.ts`, `cards.ts`, `import.ts`,
   `export.ts` and `media.ts`, exactly as in contracts/openapi.yaml.
-- [ ] T103 [US2] Implement the deck service and routes (`POST /decks`, `PATCH /decks/{id}`,
+- [X] T103 [US2] Implement the deck service and routes (`POST /decks`, `PATCH /decks/{id}`,
   `DELETE /decks/{id}`) in `apps/api/src/services/decks.ts` and `apps/api/src/routes/decks.ts`.
   `T091` must pass.
-- [ ] T104 [US2] Implement the card service and routes (`POST /decks/{id}/cards`,
+- [X] T104 [US2] Implement the card service and routes (`POST /decks/{id}/cards`,
   `PATCH /cards/{id}`, `DELETE /cards/{id}`, `POST /cards/{id}/reset`) in
   `apps/api/src/services/cards.ts` and `apps/api/src/routes/cards.ts`:
   - `position` comes from `deck.next_position` and `node_index` from `assignNodeIndex`;
   - `front_norm` is stored;
   - `learner_stats.card_count` is updated.
   `T092` must pass.
-- [ ] T105 [US2] Implement the import service and route (`POST /decks/{id}/import`) in
+- [X] T105 [US2] Implement the import service and route (`POST /decks/{id}/import`) in
   `apps/api/src/services/import.ts` and `apps/api/src/routes/import.ts`. `T093` must pass.
-- [ ] T106 [US2] Implement `apps/api/src/storage.ts` (R2/MinIO presign PUT and GET, `HeadObject`
+- [X] T106 [US2] Implement `apps/api/src/storage.ts` (R2/MinIO presign PUT and GET, `HeadObject`
   verify, delete), the media service and routes in `apps/api/src/services/media.ts` and
   `apps/api/src/routes/media.ts`, and the pending purge job (run opportunistically on
   `upload-url`). `T095` must pass.
-- [ ] T107 [US2] Implement the export schema and verifier in
+- [X] T107 [US2] Implement the export schema and verifier in
   `packages/domain/src/export/schema.ts`, and the export/restore service and routes
   (`GET /decks/{id}/export`, `POST /decks/restore`) in `apps/api/src/services/export.ts` and
   `apps/api/src/routes/export.ts`. Restore replays the history and verifies equality. `T096` must

@@ -96,3 +96,12 @@ export async function createCard(
 }
 
 export const initialStateArray = (now = FIXED_NOW) => encodeState(newCard(now));
+
+/** Inserts `count` live cards in one statement, for limit tests. */
+export async function bulkCards(db: Db, userId: string, deckId: string, count: number) {
+  const { sql } = await import('drizzle-orm');
+  await db.execute(sql`
+    insert into card (id, user_id, deck_id, position, node_index, front, front_norm, due)
+    select gen_random_uuid(), ${userId}, ${deckId}, 1000000 + g, 1000000 + g, 'bulk ' || g, 'bulk ' || g, now()
+    from generate_series(1, ${count}) g`);
+}

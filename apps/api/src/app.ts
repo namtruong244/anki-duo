@@ -5,10 +5,14 @@ import type { Db } from './db/client.js';
 import type { Env } from './env.js';
 import { hashUserId, logRequest, outcomeOf } from './log.js';
 import type { Mailer } from './mailer.js';
+import type { Storage } from './storage.js';
 import { requireUser } from './middleware/require-user.js';
 import { originGuard } from './origin-guard.js';
 import { rateLimit } from './rate-limit.js';
+import { registerCards } from './routes/cards.js';
+import { registerDecks } from './routes/decks.js';
 import { registerExport } from './routes/export.js';
+import { registerImport } from './routes/import.js';
 import { registerMe } from './routes/me.js';
 import { registerMedia } from './routes/media.js';
 import { registerSync } from './routes/sync.js';
@@ -21,6 +25,7 @@ export interface AppDeps {
   now: () => Date;
   log?: (line: string) => void;
   mailer?: Mailer;
+  storage?: Storage | undefined;
   auth?: Auth;
 }
 
@@ -96,6 +101,9 @@ export function createApp(deps: AppDeps) {
 
   registerMe(app);
   registerSync(app);
+  registerDecks(app);
+  registerCards(app);
+  registerImport(app);
   registerMedia(app);
   registerExport(app);
 

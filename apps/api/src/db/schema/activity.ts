@@ -140,6 +140,8 @@ export const importJob = pgTable(
     errors: jsonb('errors')
       .notNull()
       .default(sql`'[]'::jsonb`),
+    // Chunks arrive in order; re-sending one at or below this index changes nothing.
+    lastChunkIndex: integer('last_chunk_index').notNull().default(-1),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     completedAt: timestamp('completed_at', { withTimezone: true }),
   },

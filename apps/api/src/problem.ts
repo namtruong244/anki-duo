@@ -65,7 +65,7 @@ export function validationHook(
   c: Context,
 ) {
   if (result.success) return undefined;
-  const status = /\/(cards|import|restore|me\/settings)(\/|$)/.test(c.req.path) ? 422 : 400;
+  const status = /\/(cards|decks|import|restore|me\/settings)(\/|$)/.test(c.req.path) ? 422 : 400;
   return problemResponse(
     new ApiProblem(
       status,

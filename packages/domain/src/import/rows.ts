@@ -34,7 +34,9 @@ const length = (s: string) => [...s].length;
 
 export function validateRow(
   row: RowInput,
-): { ok: true; value: RowInput } | { ok: false; reason: RowReason } {
+):
+  | { ok: true; value: { front: string; back: string; tags: string[] } }
+  | { ok: false; reason: RowReason } {
   const front = row.front.trim();
   if (front.length === 0) return { ok: false, reason: 'empty_front' };
   if (length(front) > MAX_FRONT) return { ok: false, reason: 'front_too_long' };

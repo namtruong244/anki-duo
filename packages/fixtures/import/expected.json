@@ -4,30 +4,19 @@
     "basic-200.tsv": {
       "delimiter": "\t",
       "hasHeader": true,
-      "columns": [
-        "front",
-        "back",
-        "tags"
-      ],
+      "columns": ["front", "back", "tags"],
       "dataRows": 200,
       "invalid": [],
       "firstRow": {
         "front": "word1",
         "back": "meaning 1",
-        "tags": [
-          "topic1",
-          "common"
-        ]
+        "tags": ["topic1", "common"]
       }
     },
     "semicolon-header.csv": {
       "delimiter": ";",
       "hasHeader": true,
-      "columns": [
-        "Mặt trước",
-        "Mặt sau",
-        "Thẻ"
-      ],
+      "columns": ["Mặt trước", "Mặt sau", "Thẻ"],
       "dataRows": 3,
       "invalid": [],
       "rows": [
@@ -35,18 +24,13 @@
           "row": 2,
           "front": "xin chào",
           "back": "hello; hi",
-          "tags": [
-            "greeting"
-          ]
+          "tags": ["greeting"]
         },
         {
           "row": 3,
           "front": "cảm ơn",
           "back": "thank you\nthanks",
-          "tags": [
-            "polite",
-            "basic"
-          ]
+          "tags": ["polite", "basic"]
         },
         {
           "row": 5,
@@ -59,11 +43,7 @@
     "malformed.csv": {
       "delimiter": ",",
       "hasHeader": true,
-      "columns": [
-        "front",
-        "back",
-        "tags"
-      ],
+      "columns": ["front", "back", "tags"],
       "dataRows": 5,
       "valid": 2,
       "invalid": [
@@ -84,33 +64,19 @@
     "dupes.csv": {
       "delimiter": ",",
       "hasHeader": true,
-      "columns": [
-        "front",
-        "back"
-      ],
+      "columns": ["front", "back"],
       "dataRows": 7,
       "invalid": [],
       "duplicateKeys": {
-        "hello": [
-          2,
-          3,
-          4
-        ],
-        "café": [
-          6,
-          7
-        ]
+        "hello": [2, 3, 4],
+        "café": [6, 7]
       },
       "note": "Rows 2,3,4 share a normalised front; rows 6,7 share one only after NFC normalisation."
     },
     "10000-rows.csv": {
       "delimiter": ",",
       "hasHeader": true,
-      "columns": [
-        "front",
-        "back",
-        "tags"
-      ],
+      "columns": ["front", "back", "tags"],
       "dataRows": 10000,
       "invalid": []
     },
@@ -123,10 +89,7 @@
     "bom-utf8.csv": {
       "delimiter": ",",
       "hasHeader": true,
-      "columns": [
-        "front",
-        "back"
-      ],
+      "columns": ["front", "back"],
       "dataRows": 2,
       "invalid": [],
       "firstRow": {
