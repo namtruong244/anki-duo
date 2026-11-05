@@ -1,0 +1,277 @@
+{
+  "description": "Streak rules (FR-025): goalMet = xp >= goalXp OR allAvailableDone; current streak = consecutive met days ending yesterday, plus today if met; longest never decreases; status met | at_risk | broken.",
+  "goalMet": [
+    {
+      "xp": 20,
+      "goalXp": 20,
+      "allAvailableDone": false,
+      "expected": true
+    },
+    {
+      "xp": 19,
+      "goalXp": 20,
+      "allAvailableDone": false,
+      "expected": false
+    },
+    {
+      "xp": 0,
+      "goalXp": 20,
+      "allAvailableDone": true,
+      "expected": true
+    },
+    {
+      "xp": 10,
+      "goalXp": 10,
+      "allAvailableDone": false,
+      "expected": true
+    },
+    {
+      "xp": 9,
+      "goalXp": 10,
+      "allAvailableDone": false,
+      "expected": false
+    },
+    {
+      "xp": 50,
+      "goalXp": 50,
+      "allAvailableDone": false,
+      "expected": true
+    },
+    {
+      "xp": 49,
+      "goalXp": 50,
+      "allAvailableDone": false,
+      "expected": false
+    },
+    {
+      "xp": 0,
+      "goalXp": 30,
+      "allAvailableDone": false,
+      "expected": false
+    },
+    {
+      "xp": 31,
+      "goalXp": 30,
+      "allAvailableDone": false,
+      "expected": true
+    }
+  ],
+  "cases": [
+    {
+      "name": "met today and the two days before",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-08", "2026-03-09", "2026-03-10"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 3,
+        "longest": 3,
+        "status": "met"
+      }
+    },
+    {
+      "name": "today unmet but yesterday met is at risk",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-07", "2026-03-08", "2026-03-09"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 3,
+        "longest": 3,
+        "status": "at_risk"
+      }
+    },
+    {
+      "name": "a full missed day breaks the streak",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-06", "2026-03-07", "2026-03-08"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 0,
+        "longest": 3,
+        "status": "broken"
+      }
+    },
+    {
+      "name": "longest keeps the earlier run",
+      "today": "2026-03-10",
+      "metDays": [
+        "2026-02-18",
+        "2026-02-19",
+        "2026-02-20",
+        "2026-02-21",
+        "2026-02-22",
+        "2026-03-09",
+        "2026-03-10"
+      ],
+      "previousLongest": 0,
+      "expected": {
+        "current": 2,
+        "longest": 5,
+        "status": "met"
+      }
+    },
+    {
+      "name": "previous longest never decreases",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-10"],
+      "previousLongest": 10,
+      "expected": {
+        "current": 1,
+        "longest": 10,
+        "status": "met"
+      }
+    },
+    {
+      "name": "no activity at all",
+      "today": "2026-03-10",
+      "metDays": [],
+      "previousLongest": 0,
+      "expected": {
+        "current": 0,
+        "longest": 0,
+        "status": "broken"
+      }
+    },
+    {
+      "name": "only today met",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-10"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 1,
+        "longest": 1,
+        "status": "met"
+      }
+    },
+    {
+      "name": "only yesterday met is at risk",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-09"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 1,
+        "longest": 1,
+        "status": "at_risk"
+      }
+    },
+    {
+      "name": "a gap in the middle resets the count",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-07", "2026-03-08", "2026-03-10"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 1,
+        "longest": 2,
+        "status": "met"
+      }
+    },
+    {
+      "name": "crosses a year boundary",
+      "today": "2027-01-02",
+      "metDays": ["2026-12-30", "2026-12-31", "2027-01-01", "2027-01-02"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 4,
+        "longest": 4,
+        "status": "met"
+      }
+    },
+    {
+      "name": "crosses a leap day",
+      "today": "2028-03-01",
+      "metDays": ["2028-02-28", "2028-02-29", "2028-03-01"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 3,
+        "longest": 3,
+        "status": "met"
+      }
+    },
+    {
+      "name": "future days are ignored",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-10", "2026-03-11", "2026-03-12"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 1,
+        "longest": 1,
+        "status": "met"
+      }
+    },
+    {
+      "name": "duplicates are counted once",
+      "today": "2026-03-10",
+      "metDays": ["2026-03-09", "2026-03-09", "2026-03-10", "2026-03-10"],
+      "previousLongest": 0,
+      "expected": {
+        "current": 2,
+        "longest": 2,
+        "status": "met"
+      }
+    }
+  ],
+  "fromEvents": [
+    {
+      "name": "reviews just before 04:00 local belong to the previous study day",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "goalXp": 20,
+      "events": [
+        {
+          "at": "2026-03-01T20:59:00.000Z",
+          "xp": 20
+        },
+        {
+          "at": "2026-03-01T21:00:00.000Z",
+          "xp": 20
+        }
+      ],
+      "now": "2026-03-02T21:30:00.000Z",
+      "expected": {
+        "current": 2,
+        "status": "at_risk"
+      }
+    },
+    {
+      "name": "XP split across the 04:00 boundary does not meet the goal on either day",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "goalXp": 20,
+      "events": [
+        {
+          "at": "2026-03-01T20:59:00.000Z",
+          "xp": 10
+        },
+        {
+          "at": "2026-03-01T21:00:00.000Z",
+          "xp": 10
+        }
+      ],
+      "now": "2026-03-01T22:00:00.000Z",
+      "expected": {
+        "current": 0,
+        "status": "broken"
+      }
+    },
+    {
+      "name": "met today with a 04:00 start",
+      "timeZone": "Asia/Ho_Chi_Minh",
+      "dayStartHour": 4,
+      "goalXp": 10,
+      "events": [
+        {
+          "at": "2026-03-01T21:00:00.000Z",
+          "xp": 6
+        },
+        {
+          "at": "2026-03-02T05:00:00.000Z",
+          "xp": 6
+        }
+      ],
+      "now": "2026-03-02T10:00:00.000Z",
+      "expected": {
+        "current": 1,
+        "status": "met"
+      }
+    }
+  ]
+}

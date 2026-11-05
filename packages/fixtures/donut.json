@@ -1,0 +1,570 @@
+{
+  "description": "classifyCard / donutCounts / todayWorkload (data-model: Dashboard donut segments). Segments are checked in order Suspended, New, Learning, Due, Not due. centre = Due + Learning due today + New still allowed today.",
+  "cases": [
+    {
+      "name": "one card in each segment",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "s",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": true
+        },
+        {
+          "id": "n",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "l",
+          "deckId": "d1",
+          "state": "learning",
+          "due": "2026-03-01T15:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "du",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "nd",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-03-05T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 1,
+          "new": 1,
+          "learning": 1,
+          "due": 1,
+          "notDue": 1
+        },
+        "centre": 3
+      }
+    },
+    {
+      "name": "suspended wins over every other state",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "a",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": true
+        },
+        {
+          "id": "b",
+          "deckId": "d1",
+          "state": "learning",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": true
+        },
+        {
+          "id": "c",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": true
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 3,
+          "new": 0,
+          "learning": 0,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 0
+      }
+    },
+    {
+      "name": "review due exactly at the end of the study day is due",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "x",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-03-01T21:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 0,
+          "learning": 0,
+          "due": 1,
+          "notDue": 0
+        },
+        "centre": 1
+      }
+    },
+    {
+      "name": "review due one millisecond later is not due",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "x",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-03-01T21:00:00.001Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 0,
+          "learning": 0,
+          "due": 0,
+          "notDue": 1
+        },
+        "centre": 0
+      }
+    },
+    {
+      "name": "learning and relearning both count as learning",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "a",
+          "deckId": "d1",
+          "state": "learning",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "b",
+          "deckId": "d1",
+          "state": "relearning",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 0,
+          "learning": 2,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 2
+      }
+    },
+    {
+      "name": "learning cards not due today are in the segment but not the workload",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "a",
+          "deckId": "d1",
+          "state": "learning",
+          "due": "2026-03-02T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 0,
+          "learning": 1,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 0
+      }
+    },
+    {
+      "name": "new cards in the workload are capped by the allowance",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 4,
+          "introducedToday": 1
+        }
+      ],
+      "cards": [
+        {
+          "id": "n0",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n1",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n2",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n3",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n4",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n5",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n6",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n7",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n8",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n9",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 10,
+          "learning": 0,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 3
+      }
+    },
+    {
+      "name": "allowance used up gives no new cards in the workload",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 2,
+          "introducedToday": 2
+        }
+      ],
+      "cards": [
+        {
+          "id": "n0",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n1",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "n2",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 3,
+          "learning": 0,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 0
+      }
+    },
+    {
+      "name": "allowance is per deck",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 1,
+          "introducedToday": 0
+        },
+        {
+          "id": "d2",
+          "newCardsPerDay": 5,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "a1",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "a2",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "b1",
+          "deckId": "d2",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "b2",
+          "deckId": "d2",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 4,
+          "learning": 0,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 3
+      }
+    },
+    {
+      "name": "suspended new cards are not in the workload",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "a",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": true
+        },
+        {
+          "id": "b",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 1,
+          "new": 1,
+          "learning": 0,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 1
+      }
+    },
+    {
+      "name": "empty",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 20,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 0,
+          "learning": 0,
+          "due": 0,
+          "notDue": 0
+        },
+        "centre": 0
+      }
+    },
+    {
+      "name": "mixed workload: 2 due + 1 learning today + 2 new allowed",
+      "now": "2026-03-01T12:00:00.000Z",
+      "studyDayEnd": "2026-03-01T21:00:00.000Z",
+      "decks": [
+        {
+          "id": "d1",
+          "newCardsPerDay": 2,
+          "introducedToday": 0
+        }
+      ],
+      "cards": [
+        {
+          "id": "a",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "b",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-03-01T15:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "c",
+          "deckId": "d1",
+          "state": "learning",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "d",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "e",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "f",
+          "deckId": "d1",
+          "state": "new",
+          "due": "2026-02-20T00:00:00.000Z",
+          "suspended": false
+        },
+        {
+          "id": "g",
+          "deckId": "d1",
+          "state": "review",
+          "due": "2026-03-05T00:00:00.000Z",
+          "suspended": false
+        }
+      ],
+      "expected": {
+        "counts": {
+          "suspended": 0,
+          "new": 3,
+          "learning": 1,
+          "due": 2,
+          "notDue": 1
+        },
+        "centre": 5
+      }
+    }
+  ]
+}

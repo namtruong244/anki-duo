@@ -1,0 +1,1190 @@
+{
+  "description": "pathNodes(cards): node status, studied count and mastery (data-model: Path). Statuses: completed, available, in_progress, locked.",
+  "cases": [
+    {
+      "name": "25 new cards: node 0 available, nodes 1-2 locked",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-3",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-4",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-5",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-6",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-7",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-8",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-9",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-2",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-3",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-4",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-5",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-6",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-7",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-8",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-9",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-0",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-1",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-2",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-3",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-4",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "available",
+          "cardCount": 10,
+          "studiedCount": 0,
+          "mastery": 0
+        },
+        {
+          "index": 1,
+          "status": "locked",
+          "cardCount": 10,
+          "studiedCount": 0,
+          "mastery": 0
+        },
+        {
+          "index": 2,
+          "status": "locked",
+          "cardCount": 5,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "partly studied first node is in_progress; others locked",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "learning",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "learning",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "learning",
+          "suspended": false
+        },
+        {
+          "id": "c0-3",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-4",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-5",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-6",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-7",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-8",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-9",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-2",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-3",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-4",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-5",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-6",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-7",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-8",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-9",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "in_progress",
+          "cardCount": 10,
+          "studiedCount": 3,
+          "mastery": 0
+        },
+        {
+          "index": 1,
+          "status": "locked",
+          "cardCount": 10,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "fully studied node completes and unlocks the next",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-3",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-4",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-5",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-6",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-7",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-8",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-9",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-2",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-3",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-4",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-5",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-6",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-7",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-8",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-9",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-0",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-1",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-2",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-3",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-4",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "completed",
+          "cardCount": 10,
+          "studiedCount": 10,
+          "mastery": 1
+        },
+        {
+          "index": 1,
+          "status": "available",
+          "cardCount": 10,
+          "studiedCount": 0,
+          "mastery": 0
+        },
+        {
+          "index": 2,
+          "status": "locked",
+          "cardCount": 5,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "mastery counts review-state cards only",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-3",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-4",
+          "nodeIndex": 0,
+          "state": "learning",
+          "suspended": false
+        },
+        {
+          "id": "c0-5",
+          "nodeIndex": 0,
+          "state": "learning",
+          "suspended": false
+        },
+        {
+          "id": "c0-6",
+          "nodeIndex": 0,
+          "state": "learning",
+          "suspended": false
+        },
+        {
+          "id": "c0-7",
+          "nodeIndex": 0,
+          "state": "relearning",
+          "suspended": false
+        },
+        {
+          "id": "c0-8",
+          "nodeIndex": 0,
+          "state": "relearning",
+          "suspended": false
+        },
+        {
+          "id": "c0-9",
+          "nodeIndex": 0,
+          "state": "relearning",
+          "suspended": false
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "completed",
+          "cardCount": 10,
+          "studiedCount": 10,
+          "mastery": 0.4
+        },
+        {
+          "index": 1,
+          "status": "available",
+          "cardCount": 2,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "next node in progress once started",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-3",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-4",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-5",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-6",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-7",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-8",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-9",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "learning",
+          "suspended": false
+        },
+        {
+          "id": "c1-2",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-3",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-4",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-5",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-6",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-7",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-8",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-9",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "completed",
+          "cardCount": 10,
+          "studiedCount": 10,
+          "mastery": 1
+        },
+        {
+          "index": 1,
+          "status": "in_progress",
+          "cardCount": 10,
+          "studiedCount": 2,
+          "mastery": 0.1
+        }
+      ]
+    },
+    {
+      "name": "a node with only suspended new cards left counts as completed",
+      "cards": [
+        {
+          "id": "ca0",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "ca1",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": true
+        },
+        {
+          "id": "ca2",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": true
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-2",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "completed",
+          "cardCount": 3,
+          "studiedCount": 1,
+          "mastery": 0.3333333333333333
+        },
+        {
+          "index": 1,
+          "status": "available",
+          "cardCount": 3,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "a suspended new card does not block completion, an unsuspended one does",
+      "cards": [
+        {
+          "id": "cb0",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "cb1",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": true
+        },
+        {
+          "id": "cb2",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "in_progress",
+          "cardCount": 3,
+          "studiedCount": 1,
+          "mastery": 0.3333333333333333
+        },
+        {
+          "index": 1,
+          "status": "locked",
+          "cardCount": 2,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "single node deck",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "available",
+          "cardCount": 3,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "empty deck has no nodes",
+      "cards": [],
+      "expected": []
+    },
+    {
+      "name": "gap in node indexes: the next existing node follows the previous one",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-3",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-4",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-5",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-6",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-7",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-8",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c0-9",
+          "nodeIndex": 0,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c2-0",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-1",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-2",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c2-3",
+          "nodeIndex": 2,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "completed",
+          "cardCount": 10,
+          "studiedCount": 10,
+          "mastery": 1
+        },
+        {
+          "index": 2,
+          "status": "available",
+          "cardCount": 4,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "first remaining node is available even if node 0 was deleted",
+      "cards": [
+        {
+          "id": "c3-0",
+          "nodeIndex": 3,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c3-1",
+          "nodeIndex": 3,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c3-2",
+          "nodeIndex": 3,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c3-3",
+          "nodeIndex": 3,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c3-4",
+          "nodeIndex": 3,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c4-0",
+          "nodeIndex": 4,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c4-1",
+          "nodeIndex": 4,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 3,
+          "status": "available",
+          "cardCount": 5,
+          "studiedCount": 0,
+          "mastery": 0
+        },
+        {
+          "index": 4,
+          "status": "locked",
+          "cardCount": 2,
+          "studiedCount": 0,
+          "mastery": 0
+        }
+      ]
+    },
+    {
+      "name": "studying ahead in a locked node does not unlock it but shows progress",
+      "cards": [
+        {
+          "id": "c0-0",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-1",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-2",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-3",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-4",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-5",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-6",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-7",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-8",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c0-9",
+          "nodeIndex": 0,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-0",
+          "nodeIndex": 1,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c1-1",
+          "nodeIndex": 1,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c1-2",
+          "nodeIndex": 1,
+          "state": "review",
+          "suspended": false
+        },
+        {
+          "id": "c1-3",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-4",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-5",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-6",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-7",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-8",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        },
+        {
+          "id": "c1-9",
+          "nodeIndex": 1,
+          "state": "new",
+          "suspended": false
+        }
+      ],
+      "expected": [
+        {
+          "index": 0,
+          "status": "available",
+          "cardCount": 10,
+          "studiedCount": 0,
+          "mastery": 0
+        },
+        {
+          "index": 1,
+          "status": "locked",
+          "cardCount": 10,
+          "studiedCount": 3,
+          "mastery": 0.3
+        }
+      ]
+    }
+  ]
+}

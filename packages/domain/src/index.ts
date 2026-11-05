@@ -5,3 +5,7 @@ export * from './queue/build-queue.js';
 export * from './path/assign.js';
 export * from './import/rows.js';
 export * from './export/schema.js';
+export * from './path/status.js';
+export * from './gamification/streak.js';
+export * from './stats/donut.js';
+export * from './stats/heatmap.js';

@@ -31,11 +31,14 @@ interface Case {
 const { cases } = loadFixture<{ cases: Case[] }>('queue');
 
 describe('buildQueue / requeueAfterGrade (fixtures/queue.json)', () => {
-  for (const c of cases.filter((x) => x.kind === 'review' || x.kind === 'ahead')) {
+  for (const c of cases.filter(
+    (x) => x.kind === 'review' || x.kind === 'ahead' || x.kind === 'node',
+  )) {
     it(`${c.kind}: ${c.name}`, () => {
       const i = c.input;
       const ids = buildQueue({
-        kind: c.kind as 'review' | 'ahead',
+        kind: c.kind as 'review' | 'ahead' | 'node',
+        ...(i.nodeIndex !== undefined ? { nodeIndex: i.nodeIndex } : {}),
         cards: i.cards.map((x) => ({ ...x, due: new Date(x.due) })),
         now: new Date(i.now),
         settings: { sessionSize: i.sessionSize, newCardsPerDay: i.newCardsPerDay },

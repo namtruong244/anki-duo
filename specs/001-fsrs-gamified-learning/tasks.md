@@ -693,19 +693,19 @@ card is due, it holds the node's 10 new cards (V7).
 
 ### Tests for User Story 3 ⚠️
 
-- [ ] T117 [P] [US3] Add `packages/fixtures/path-status.json` (data-model "Path" rules):
+- [X] T117 [P] [US3] Add `packages/fixtures/path-status.json` (data-model "Path" rules):
   - `completed` when `studied_count = card count` or no non-suspended new cards remain;
   - `available` for node 0, or when the previous node is completed and `studied_count = 0`;
   - `in_progress` when available and `0 < studied_count < card count`;
   - `locked` otherwise;
   - mastery = cards in `review` ÷ cards in the node.
-- [ ] T118 [P] [US3] Add `node` session cases to `packages/fixtures/queue.json` (FR-023a):
+- [X] T118 [P] [US3] Add `node` session cases to `packages/fixtures/queue.json` (FR-023a):
   - up to 10 due cards, most overdue first;
   - 6 due: the 6 due cards, then the node's `new` cards by `position`, up to 10, capped by
     `deck.new_cards_per_day − introduced_today`;
   - 11 or 25 due: the 10 most overdue due cards and no new card (FR-006);
   - remaining due cards are not included.
-- [ ] T119 [P] [US3] Write the failing test `packages/domain/tests/path-status.test.ts`, which runs
+- [X] T119 [P] [US3] Write the failing test `packages/domain/tests/path-status.test.ts`, which runs
   `path-status.json`, and extend `packages/domain/tests/queue.test.ts` to the `node` kind.
 - [ ] T120 [P] [US3] Write the e2e test `tests/e2e/path.spec.ts` (V7):
   - node layout and states;
@@ -718,9 +718,9 @@ card is due, it holds the node's 10 new cards (V7).
 
 ### Implementation for User Story 3
 
-- [ ] T121 [P] [US3] Implement `pathNodes(cards)` (status, studied count, mastery) in
+- [X] T121 [P] [US3] Implement `pathNodes(cards)` (status, studied count, mastery) in
   `packages/domain/src/path/status.ts`. `T119` (path part) must pass.
-- [ ] T122 [P] [US3] Extend `buildQueue` with the `node` kind in
+- [X] T122 [P] [US3] Extend `buildQueue` with the `node` kind in
   `packages/domain/src/queue/build-queue.ts`. `T119` (queue part) must pass.
 - [ ] T123 [US3] Implement the path components:
   - `PathMap` in `apps/web/src/components/path/PathMap.tsx`: a winding layout of round nodes that
@@ -751,7 +751,7 @@ longest. Finishing every available card in a 3-card deck meets the goal (V8).
 
 ### Tests for User Story 4 ⚠️
 
-- [ ] T125 [P] [US4] Add `packages/fixtures/streak.json`:
+- [X] T125 [P] [US4] Add `packages/fixtures/streak.json`:
   - goal options "10, 20, 30, 50";
   - `goal_met = xp ≥ goal_xp OR all_available_done`;
   - consecutive met days ending yesterday, plus today if met;
@@ -759,7 +759,7 @@ longest. Finishing every available card in a 3-card deck meets the goal (V8).
   - reset after a full missed day;
   - `longest_streak` never decreases;
   - day boundaries at 04:00 local in `Asia/Ho_Chi_Minh`.
-- [ ] T126 [P] [US4] Write the failing test `packages/domain/tests/streak.test.ts`, which runs
+- [X] T126 [P] [US4] Write the failing test `packages/domain/tests/streak.test.ts`, which runs
   `streak.json`.
 - [ ] T127 [P] [US4] Write the failing test `apps/api/tests/integration/activity.test.ts`:
   - `daily_activity` is recomputed for the affected study days on push and on revoke;
@@ -781,7 +781,7 @@ longest. Finishing every available card in a 3-card deck meets the goal (V8).
 
 ### Implementation for User Story 4
 
-- [ ] T130 [US4] Implement `goalMet`, `currentStreak`, `longestStreak` and `streakStatus`
+- [X] T130 [US4] Implement `goalMet`, `currentStreak`, `longestStreak` and `streakStatus`
   (`met | at_risk | broken`) in `packages/domain/src/gamification/streak.ts`. `T126` must pass.
 - [ ] T131 [US4] Implement the activity recompute in `apps/api/src/services/activity.ts`, called
   in the same transaction from `apps/api/src/sync/push.ts` (reviews, revokes, sessions, day
@@ -825,11 +825,11 @@ counts and donut segments match card counts per state. Filtering by deck updates
 
 ### Tests for User Story 5 ⚠️
 
-- [ ] T137 [P] [US5] Add `packages/fixtures/donut.json` (data-model "Dashboard donut segments",
+- [X] T137 [P] [US5] Add `packages/fixtures/donut.json` (data-model "Dashboard donut segments",
   checked in order: Suspended → New → Learning → Due (`review` and `due ≤ end of current study
   day`) → Not due), including the expected centre value: "Due + Learning that are due today + New
   still allowed today".
-- [ ] T138 [P] [US5] Write the failing test `packages/domain/tests/stats.test.ts`:
+- [X] T138 [P] [US5] Write the failing test `packages/domain/tests/stats.test.ts`:
   - runs `donut.json`;
   - a property-based test (fast-check) that the sum of segments equals the card count for random
     card sets;
@@ -843,7 +843,7 @@ counts and donut segments match card counts per state. Filtering by deck updates
 
 ### Implementation for User Story 5
 
-- [ ] T141 [P] [US5] Implement `classifyCard`, `donutCounts` and `todayWorkload` in
+- [X] T141 [P] [US5] Implement `classifyCard`, `donutCounts` and `todayWorkload` in
   `packages/domain/src/stats/donut.ts`, and `heatmapBuckets` in
   `packages/domain/src/stats/heatmap.ts`. `T138` must pass.
 - [ ] T142 [P] [US5] Implement `DonutRing` in `apps/web/src/components/charts/DonutRing.tsx` and

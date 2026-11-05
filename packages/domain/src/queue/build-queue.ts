@@ -15,7 +15,9 @@ export interface QueueSettings {
 }
 
 export interface BuildQueueInput {
-  kind: 'review' | 'ahead';
+  kind: 'review' | 'ahead' | 'node';
+  /** Required for `node` sessions. */
+  nodeIndex?: number;
   cards: readonly QueueCard[];
   now: Date;
   settings: QueueSettings;
@@ -61,6 +63,8 @@ export function buildQueue(input: BuildQueueInput): string[] {
       .map((c) => c.id);
   }
 
+  if (input.kind === 'node') return buildNodeQueue(input);
+
   const due = dueCards(cards, studyDayEnd);
   const picked = due.slice(0, settings.sessionSize);
   if (due.length > settings.sessionSize) return picked.map((c) => c.id);
@@ -71,6 +75,28 @@ export function buildQueue(input: BuildQueueInput): string[] {
   );
   const fresh = cards
     .filter((c) => !c.suspended && c.state === 'new')
+    .sort(byPosition)
+    .slice(0, room);
+  return [...picked, ...fresh].map((c) => c.id);
+}
+
+export const NODE_SESSION_SIZE = 10;
+
+/**
+ * Node sessions (FR-023a): up to 10 due cards of the deck, most overdue first. Only when that
+ * covers every card due today do the node's new cards follow (up to 10, within the daily allowance).
+ */
+function buildNodeQueue(input: BuildQueueInput): string[] {
+  const { cards, settings, studyDayEnd } = input;
+  const due = cards
+    .filter((c) => !c.suspended && c.state !== 'new' && c.due.getTime() <= studyDayEnd.getTime())
+    .sort(byDue);
+  const picked = due.slice(0, NODE_SESSION_SIZE);
+  if (due.length > NODE_SESSION_SIZE) return picked.map((c) => c.id);
+
+  const room = Math.min(NODE_SESSION_SIZE, newCardAllowance(settings, input.introducedToday));
+  const fresh = cards
+    .filter((c) => !c.suspended && c.state === 'new' && c.nodeIndex === input.nodeIndex)
     .sort(byPosition)
     .slice(0, room);
   return [...picked, ...fresh].map((c) => c.id);

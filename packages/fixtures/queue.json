@@ -1854,6 +1854,1333 @@
         "studyDayEnd": "2026-03-01T21:00:00.000Z"
       },
       "expected": ["a", "b", "x"]
+    },
+    {
+      "name": "6 due: the 6 due cards then the node's new cards, up to 10",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "d01",
+            "state": "review",
+            "due": "2026-02-01T00:00:00.000Z",
+            "position": 51,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d02",
+            "state": "review",
+            "due": "2026-02-02T00:00:00.000Z",
+            "position": 52,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d03",
+            "state": "review",
+            "due": "2026-02-03T00:00:00.000Z",
+            "position": 53,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d04",
+            "state": "review",
+            "due": "2026-02-04T00:00:00.000Z",
+            "position": 54,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d05",
+            "state": "review",
+            "due": "2026-02-05T00:00:00.000Z",
+            "position": 55,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d06",
+            "state": "review",
+            "due": "2026-02-06T00:00:00.000Z",
+            "position": 56,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 105,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-06",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 106,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-07",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 107,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-08",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 108,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-09",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 109,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-10",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 110,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-11",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 111,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-12",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 112,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": [
+        "d01",
+        "d02",
+        "d03",
+        "d04",
+        "d05",
+        "d06",
+        "n1-01",
+        "n1-02",
+        "n1-03",
+        "n1-04",
+        "n1-05",
+        "n1-06",
+        "n1-07",
+        "n1-08",
+        "n1-09",
+        "n1-10"
+      ]
+    },
+    {
+      "name": "11 due: the 10 most overdue and no new card (FR-006)",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "d01",
+            "state": "review",
+            "due": "2026-02-01T00:00:00.000Z",
+            "position": 51,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d02",
+            "state": "review",
+            "due": "2026-02-02T00:00:00.000Z",
+            "position": 52,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d03",
+            "state": "review",
+            "due": "2026-02-03T00:00:00.000Z",
+            "position": 53,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d04",
+            "state": "review",
+            "due": "2026-02-04T00:00:00.000Z",
+            "position": 54,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d05",
+            "state": "review",
+            "due": "2026-02-05T00:00:00.000Z",
+            "position": 55,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d06",
+            "state": "review",
+            "due": "2026-02-06T00:00:00.000Z",
+            "position": 56,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d07",
+            "state": "review",
+            "due": "2026-02-07T00:00:00.000Z",
+            "position": 57,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d08",
+            "state": "review",
+            "due": "2026-02-08T00:00:00.000Z",
+            "position": 58,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d09",
+            "state": "review",
+            "due": "2026-02-09T00:00:00.000Z",
+            "position": 59,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d10",
+            "state": "review",
+            "due": "2026-02-10T00:00:00.000Z",
+            "position": 60,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d11",
+            "state": "review",
+            "due": "2026-02-11T00:00:00.000Z",
+            "position": 61,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 105,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": ["d01", "d02", "d03", "d04", "d05", "d06", "d07", "d08", "d09", "d10"]
+    },
+    {
+      "name": "25 due: the 10 most overdue; remaining due cards are not included",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "d01",
+            "state": "review",
+            "due": "2026-02-01T00:00:00.000Z",
+            "position": 51,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d02",
+            "state": "review",
+            "due": "2026-02-02T00:00:00.000Z",
+            "position": 52,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d03",
+            "state": "review",
+            "due": "2026-02-03T00:00:00.000Z",
+            "position": 53,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d04",
+            "state": "review",
+            "due": "2026-02-04T00:00:00.000Z",
+            "position": 54,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d05",
+            "state": "review",
+            "due": "2026-02-05T00:00:00.000Z",
+            "position": 55,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d06",
+            "state": "review",
+            "due": "2026-02-06T00:00:00.000Z",
+            "position": 56,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d07",
+            "state": "review",
+            "due": "2026-02-07T00:00:00.000Z",
+            "position": 57,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d08",
+            "state": "review",
+            "due": "2026-02-08T00:00:00.000Z",
+            "position": 58,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d09",
+            "state": "review",
+            "due": "2026-02-09T00:00:00.000Z",
+            "position": 59,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d10",
+            "state": "review",
+            "due": "2026-02-10T00:00:00.000Z",
+            "position": 60,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d11",
+            "state": "review",
+            "due": "2026-02-11T00:00:00.000Z",
+            "position": 61,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d12",
+            "state": "review",
+            "due": "2026-02-12T00:00:00.000Z",
+            "position": 62,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d13",
+            "state": "review",
+            "due": "2026-02-13T00:00:00.000Z",
+            "position": 63,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d14",
+            "state": "review",
+            "due": "2026-02-14T00:00:00.000Z",
+            "position": 64,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d15",
+            "state": "review",
+            "due": "2026-02-15T00:00:00.000Z",
+            "position": 65,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d16",
+            "state": "review",
+            "due": "2026-02-16T00:00:00.000Z",
+            "position": 66,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d17",
+            "state": "review",
+            "due": "2026-02-17T00:00:00.000Z",
+            "position": 67,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d18",
+            "state": "review",
+            "due": "2026-02-18T00:00:00.000Z",
+            "position": 68,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d19",
+            "state": "review",
+            "due": "2026-02-19T00:00:00.000Z",
+            "position": 69,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d20",
+            "state": "review",
+            "due": "2026-02-20T00:00:00.000Z",
+            "position": 70,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d21",
+            "state": "review",
+            "due": "2026-02-21T00:00:00.000Z",
+            "position": 71,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d22",
+            "state": "review",
+            "due": "2026-02-22T00:00:00.000Z",
+            "position": 72,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d23",
+            "state": "review",
+            "due": "2026-02-23T00:00:00.000Z",
+            "position": 73,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d24",
+            "state": "review",
+            "due": "2026-02-24T00:00:00.000Z",
+            "position": 74,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d25",
+            "state": "review",
+            "due": "2026-02-25T00:00:00.000Z",
+            "position": 75,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 105,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": ["d01", "d02", "d03", "d04", "d05", "d06", "d07", "d08", "d09", "d10"]
+    },
+    {
+      "name": "exactly 10 due includes every due card, so new cards follow",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "d01",
+            "state": "review",
+            "due": "2026-02-01T00:00:00.000Z",
+            "position": 51,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d02",
+            "state": "review",
+            "due": "2026-02-02T00:00:00.000Z",
+            "position": 52,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d03",
+            "state": "review",
+            "due": "2026-02-03T00:00:00.000Z",
+            "position": 53,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d04",
+            "state": "review",
+            "due": "2026-02-04T00:00:00.000Z",
+            "position": 54,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d05",
+            "state": "review",
+            "due": "2026-02-05T00:00:00.000Z",
+            "position": 55,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d06",
+            "state": "review",
+            "due": "2026-02-06T00:00:00.000Z",
+            "position": 56,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d07",
+            "state": "review",
+            "due": "2026-02-07T00:00:00.000Z",
+            "position": 57,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d08",
+            "state": "review",
+            "due": "2026-02-08T00:00:00.000Z",
+            "position": 58,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d09",
+            "state": "review",
+            "due": "2026-02-09T00:00:00.000Z",
+            "position": 59,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d10",
+            "state": "review",
+            "due": "2026-02-10T00:00:00.000Z",
+            "position": 60,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": [
+        "d01",
+        "d02",
+        "d03",
+        "d04",
+        "d05",
+        "d06",
+        "d07",
+        "d08",
+        "d09",
+        "d10",
+        "n1-01",
+        "n1-02",
+        "n1-03",
+        "n1-04"
+      ]
+    },
+    {
+      "name": "no due cards: the node's 10 new cards",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 105,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-06",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 106,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-07",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 107,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-08",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 108,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-09",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 109,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-10",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 110,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-11",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 111,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-12",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 112,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-13",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 113,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-14",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 114,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-15",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 115,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": [
+        "n1-01",
+        "n1-02",
+        "n1-03",
+        "n1-04",
+        "n1-05",
+        "n1-06",
+        "n1-07",
+        "n1-08",
+        "n1-09",
+        "n1-10"
+      ]
+    },
+    {
+      "name": "new cards capped by new_cards_per_day - introduced_today",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 5,
+        "introducedToday": 2,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 105,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-06",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 106,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-07",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 107,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-08",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 108,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-09",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 109,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-10",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 110,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-11",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 111,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-12",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 112,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-13",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 113,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-14",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 114,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-15",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 115,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": ["n1-01", "n1-02", "n1-03"]
+    },
+    {
+      "name": "no new cards when the allowance is used up",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 5,
+        "introducedToday": 5,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 105,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": []
+    },
+    {
+      "name": "due cards from other nodes are included, new cards only from this node",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "d01",
+            "state": "review",
+            "due": "2026-02-01T00:00:00.000Z",
+            "position": 51,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "d02",
+            "state": "review",
+            "due": "2026-02-02T00:00:00.000Z",
+            "position": 52,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "d03",
+            "state": "review",
+            "due": "2026-02-03T00:00:00.000Z",
+            "position": 53,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "n0-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 1,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "n0-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 2,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "n0-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 3,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "n0-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 4,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "n0-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 5,
+            "suspended": false,
+            "nodeIndex": 0
+          },
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 103,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-04",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 104,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-05",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 105,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": ["d01", "d02", "d03", "n1-01", "n1-02", "n1-03", "n1-04", "n1-05"]
+    },
+    {
+      "name": "suspended cards are excluded",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "d1",
+            "state": "review",
+            "due": "2026-02-01T00:00:00.000Z",
+            "position": 1,
+            "suspended": true,
+            "nodeIndex": 1
+          },
+          {
+            "id": "d2",
+            "state": "review",
+            "due": "2026-02-02T00:00:00.000Z",
+            "position": 2,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 3,
+            "suspended": true,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n2",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 4,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": ["d2", "n2"]
+    },
+    {
+      "name": "cards due after the study day ends are not due",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "late",
+            "state": "review",
+            "due": "2026-03-01T21:00:00.001Z",
+            "position": 1,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 101,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "n1-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 102,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": ["n1-01", "n1-02"]
+    },
+    {
+      "name": "learning cards are ordered by how overdue they are like the rest",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "l1",
+            "state": "learning",
+            "due": "2026-03-01T11:00:00.000Z",
+            "position": 1,
+            "suspended": false,
+            "nodeIndex": 1
+          },
+          {
+            "id": "r1",
+            "state": "review",
+            "due": "2026-02-01T00:00:00.000Z",
+            "position": 2,
+            "suspended": false,
+            "nodeIndex": 1
+          }
+        ]
+      },
+      "expected": ["r1", "l1"]
+    },
+    {
+      "name": "empty node and nothing due",
+      "kind": "node",
+      "input": {
+        "now": "2026-03-01T12:00:00.000Z",
+        "studyDayEnd": "2026-03-01T21:00:00.000Z",
+        "sessionSize": 20,
+        "newCardsPerDay": 20,
+        "introducedToday": 0,
+        "nodeIndex": 1,
+        "cards": [
+          {
+            "id": "n2-01",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 201,
+            "suspended": false,
+            "nodeIndex": 2
+          },
+          {
+            "id": "n2-02",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 202,
+            "suspended": false,
+            "nodeIndex": 2
+          },
+          {
+            "id": "n2-03",
+            "state": "new",
+            "due": "2026-01-01T00:00:00.000Z",
+            "position": 203,
+            "suspended": false,
+            "nodeIndex": 2
+          }
+        ]
+      },
+      "expected": []
     }
   ]
 }
