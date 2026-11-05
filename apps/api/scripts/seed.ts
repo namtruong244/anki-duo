@@ -5,6 +5,7 @@
  *   heavy    20,000 cards and 3 years of history (SC-010 load check)
  */
 import { randomUUID } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { eq } from 'drizzle-orm';
 import { hashPassword } from 'better-auth/crypto';
 import {
@@ -224,6 +225,10 @@ export async function seed(db: Db, opts: { scenario?: Scenario; now?: Date } = {
 }
 
 if (import.meta.url === `file://${process.argv[1]}`) {
+  const envFile = new URL('../.env', import.meta.url);
+  if (existsSync(envFile)) {
+    process.loadEnvFile(envFile);
+  }
   const arg = process.argv.find((a) => a.startsWith('--scenario='))?.split('=')[1] as
     Scenario | undefined;
   const scenario = arg ?? 'default';
