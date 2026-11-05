@@ -1,0 +1,47 @@
+{
+  "app": { "name": "Anki Duo" },
+  "nav": {
+    "home": "Trang chủ",
+    "decks": "Bộ thẻ",
+    "path": "Lộ trình",
+    "dashboard": "Thống kê",
+    "settings": "Cài đặt"
+  },
+  "common": {
+    "loading": "Đang tải…",
+    "cancel": "Hủy",
+    "confirm": "Xác nhận",
+    "close": "Đóng",
+    "save": "Lưu",
+    "retry": "Thử lại"
+  },
+  "sync": {
+    "online": "Đã lưu",
+    "offline": "Ngoại tuyến – sẽ đồng bộ sau",
+    "syncing": "Đang đồng bộ…"
+  },
+  "auth": {
+    "signIn": "Đăng nhập",
+    "signUp": "Tạo tài khoản",
+    "signOut": "Đăng xuất",
+    "email": "Email",
+    "password": "Mật khẩu",
+    "name": "Tên",
+    "google": "Tiếp tục với Google",
+    "forgotPassword": "Quên mật khẩu?",
+    "resetPassword": "Đặt lại mật khẩu",
+    "sendResetLink": "Gửi liên kết đặt lại",
+    "newPassword": "Mật khẩu mới",
+    "verifyTitle": "Xác minh email của bạn",
+    "verifySent": "Chúng tôi đã gửi liên kết xác minh tới {email}. Hãy mở liên kết để tiếp tục.",
+    "verifying": "Đang xác minh…",
+    "verified": "Đã xác minh email. Bạn có thể đăng nhập.",
+    "verifyFailed": "Liên kết xác minh không hợp lệ hoặc đã hết hạn.",
+    "resetSent": "Nếu email này có tài khoản, liên kết đặt lại đang được gửi tới bạn.",
+    "resetDone": "Đã cập nhật mật khẩu. Bạn có thể đăng nhập.",
+    "noAccount": "Chưa có tài khoản?",
+    "haveAccount": "Đã có tài khoản?",
+    "error": "Đã xảy ra lỗi. Vui lòng thử lại."
+  },
+  "pwa": { "installed": "Đã cài đặt" }
+}

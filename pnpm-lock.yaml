@@ -53,6 +53,9 @@ importers:
 
   apps/api:
     dependencies:
+      '@anki-duo/contract':
+        specifier: workspace:^
+        version: link:../../packages/contract
       '@anki-duo/domain':
         specifier: workspace:^
         version: link:../../packages/domain
@@ -68,6 +71,9 @@ importers:
       '@hono/node-server':
         specifier: ^2.1.6
         version: 2.1.6(hono@4.13.16)
+      '@hono/zod-openapi':
+        specifier: ^1.6.3
+        version: 1.6.3(hono@4.13.16)(zod@4.6.7)
       '@neondatabase/serverless':
         specifier: ^1.2.0
         version: 1.2.0
@@ -89,6 +95,9 @@ importers:
       uuid:
         specifier: ^14.0.3
         version: 14.0.3
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
     devDependencies:
       '@types/aws-lambda':
         specifier: ^8.10.164

@@ -1,0 +1,53 @@
+@theme {
+  /* Surfaces and text */
+  --color-bg: #ffffff;
+  --color-surface: #f4f7f2;
+  --color-border: #d7ded3;
+  --color-text: #1f2a1c;
+  --color-text-muted: #4b5a46;
+
+  /* Controls: each background has a text colour that meets 4.5:1 (WCAG 2.2 AA) */
+  --color-primary: #2e7d00;
+  --color-primary-depth: #1f5700;
+  --color-on-primary: #ffffff;
+  --color-secondary: #1558b0;
+  --color-secondary-depth: #0e3f80;
+  --color-on-secondary: #ffffff;
+  --color-danger: #b42318;
+  --color-danger-depth: #7a1810;
+  --color-on-danger: #ffffff;
+  --color-neutral: #e5e9e2;
+  --color-neutral-depth: #b8c0b3;
+  --color-on-neutral: #1f2a1c;
+  --color-focus: #0b5fff;
+
+  /* Shape and depth */
+  --radius-card: 1.25rem;
+  --radius-button: 1rem;
+  --button-depth: 4px;
+  --button-press-offset: 3px;
+
+  /* Motion */
+  --duration-fast: 120ms;
+  --duration-base: 220ms;
+  --duration-slow: 420ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root[data-theme='auto'] {
+    color-scheme: dark;
+  }
+}
+
+:root[data-motion='reduced'] *,
+:root[data-motion='reduced'] *::before,
+:root[data-motion='reduced'] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}

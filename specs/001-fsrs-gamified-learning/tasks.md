@@ -246,26 +246,26 @@ shell that every story needs.
 
 ### API skeleton, auth and edge
 
-- [ ] T038 Implement the cross-cutting API code:
+- [X] T038 Implement the cross-cutting API code:
   - `apps/api/src/log.ts`: structured JSON logs with request id, user id hash, route, duration
     and outcome;
   - `apps/api/src/problem.ts`: `application/problem+json` error handler and Zod validation hook
     mapping to `validation_failed`;
   - `apps/api/src/app.ts`: route tree, request-id middleware.
-- [ ] T039 [P] Write the failing test `apps/api/tests/integration/origin-guard.test.ts`:
+- [X] T039 [P] Write the failing test `apps/api/tests/integration/origin-guard.test.ts`:
   - 403 without `x-origin-secret` or with a wrong one;
   - accepts the current secret and, during rotation, the previous one;
   - the comparison is constant-time.
-- [ ] T040 [P] Implement `apps/api/src/origin-guard.ts` and mount it first in `app.ts`. Skip it
+- [X] T040 [P] Implement `apps/api/src/origin-guard.ts` and mount it first in `app.ts`. Skip it
   when `NODE_ENV=development` (Vite proxy).
-- [ ] T041 Write the failing test `apps/api/tests/integration/auth.test.ts` (V13, V14):
+- [X] T041 Write the failing test `apps/api/tests/integration/auth.test.ts` (V13, V14):
   - sign-up sends a verification email (captured by the console sender);
   - an unverified user gets 401 on `/api/v1/*`;
   - after verification a cookie session works;
   - `Authorization: Bearer` works without a cookie;
   - a revoked token gets 401;
   - password reset works.
-- [ ] T042 Implement Better Auth in `apps/api/src/auth.ts` (research R4):
+- [X] T042 Implement Better Auth in `apps/api/src/auth.ts` (research R4):
   - Drizzle adapter, email/password with `requireEmailVerification`, password reset;
   - Google provider, including `idToken` sign-in;
   - `bearer` plugin;
@@ -275,7 +275,7 @@ shell that every story needs.
   - IP taken from `x-forwarded-for`.
   Mount it at `/api/auth/*`, and add `requireUser` middleware (verified users only) in
   `apps/api/src/middleware/require-user.ts`.
-- [ ] T043 On user creation, insert `learner_settings` and `learner_stats` with their defaults,
+- [X] T043 On user creation, insert `learner_settings` and `learner_stats` with their defaults,
   in `apps/api/src/services/account.ts`. `locale` comes from `Accept-Language` ("`vi` → `vi`,
   otherwise `en`") and `time_zone` from the client-sent IANA zone. Extend `T041` to assert this.
 - [ ] T044 [P] Write the failing test `apps/api/tests/integration/rate-limit.test.ts`: the 61st
@@ -326,48 +326,48 @@ shell that every story needs.
 
 ### Web foundation
 
-- [ ] T053 [P] Write the failing test `apps/web/tests/local-store.test.ts` (fake-indexeddb). For
+- [X] T053 [P] Write the failing test `apps/web/tests/local-store.test.ts` (fake-indexeddb). For
   every store in the data-model "Client store" table (`meta`, `settings`, `stats`, `decks`,
   `cards`, `media`, `outbox`, `sessions`, `dailyActivity`), test CRUD, the compound indexes
   `[deckId+state+due]` and `[deckId+nodeIndex]`, an atomic `gradeTransaction` (card update +
   outbox append), and that `clearAll()` empties everything.
-- [ ] T054 [P] Define the `LocalStore` interface in `apps/web/src/client/local-store.ts`, the
+- [X] T054 [P] Define the `LocalStore` interface in `apps/web/src/client/local-store.ts`, the
   platform-neutral contract from research R6/R17.
-- [ ] T055 Implement `DexieStore` in `apps/web/src/client/dexie-store.ts`. `T053` must pass.
-- [ ] T056 [P] Implement the typed API client in `apps/web/src/client/api.ts` (openapi-fetch over
+- [X] T055 Implement `DexieStore` in `apps/web/src/client/dexie-store.ts`. `T053` must pass.
+- [X] T056 [P] Implement the typed API client in `apps/web/src/client/api.ts` (openapi-fetch over
   `api-types.ts`, same-origin credentials, parsing of `application/problem+json` into a typed
   `ApiError` with `code`).
-- [ ] T057 Write the failing test `apps/web/tests/sync/pull.test.ts`: the pull loop pages until
+- [X] T057 Write the failing test `apps/web/tests/sync/pull.test.ts`: the pull loop pages until
   `!hasMore`, applies tombstones, writes everything to `LocalStore`, and persists `pullCursor`.
-- [ ] T058 Implement the pull half of the sync engine in `apps/web/src/client/sync/pull.ts` and
+- [X] T058 Implement the pull half of the sync engine in `apps/web/src/client/sync/pull.ts` and
   the connectivity tracker `apps/web/src/client/connectivity.ts` (`online`/`offline` events plus
   a failed-request heuristic).
-- [ ] T059 [P] Set up i18n in `apps/web/src/i18n/index.ts`:
+- [X] T059 [P] Set up i18n in `apps/web/src/i18n/index.ts`:
   - i18next + react-i18next + i18next-icu;
   - initial locale from `navigator.languages` (`vi*` → `vi`, otherwise `en`); settings override
     it;
   - catalogs `apps/web/src/i18n/messages/vi.json` and `en.json`.
   Write the failing parity test `apps/web/tests/i18n.test.ts`: identical key sets and valid ICU
   messages (SC-009).
-- [ ] T060 [P] Create the design tokens in `apps/web/src/styles/tokens.css`:
+- [X] T060 [P] Create the design tokens in `apps/web/src/styles/tokens.css`:
   - bright palette with every text/control pair ≥ 4.5:1 (WCAG 2.2 AA);
   - large radii;
   - chunky-button depth and press offset;
   - motion durations.
   Add `useMotionPreference()` in `apps/web/src/lib/motion.ts` (settings `system | reduced | full`
   + `prefers-reduced-motion`, FR-022).
-- [ ] T061 [P] Write the failing test `apps/web/tests/components/ui.test.tsx`: `ChunkyButton` has
+- [X] T061 [P] Write the failing test `apps/web/tests/components/ui.test.tsx`: `ChunkyButton` has
   an accessible name, visible focus and a pressed state; `ProgressBar` exposes `role=progressbar`
   with `aria-valuenow`; `Dialog` traps focus.
-- [ ] T062 [P] Implement `ChunkyButton`, `ProgressBar`, `Dialog` and `Toast` in
+- [X] T062 [P] Implement `ChunkyButton`, `ProgressBar`, `Dialog` and `Toast` in
   `apps/web/src/components/ui/`. `T061` must pass.
-- [ ] T063 Implement the auth client `apps/web/src/client/auth.ts` (better-auth/react) and the
+- [X] T063 Implement the auth client `apps/web/src/client/auth.ts` (better-auth/react) and the
   auth routes in `apps/web/src/routes/auth/`: `SignInPage.tsx`, `SignUpPage.tsx`,
   `VerifyEmailPage.tsx`, `ResetPasswordPage.tsx`, with Google button.
-- [ ] T063a [P] Write the failing test `apps/web/tests/sign-out.test.ts` (fake-indexeddb, a
+- [X] T063a [P] Write the failing test `apps/web/tests/sign-out.test.ts` (fake-indexeddb, a
   `caches` stub): after sign-out every `LocalStore` store is empty, `caches.keys()` holds no
   media or API cache, and a protected route redirects to sign-in.
-- [ ] T064 Implement the router and app shell (`T063a` must pass):
+- [X] T064 Implement the router and app shell (`T063a` must pass):
   - `apps/web/src/routes/router.tsx` with a verified-session guard;
   - `apps/web/src/components/layout/AppLayout.tsx` (bottom nav on mobile, side nav ≥ 768 px,
     sync/connectivity indicator).
@@ -377,7 +377,7 @@ shell that every story needs.
   - the manifest is valid: name, 192 px and 512 px icons, `display: standalone`;
   - the service worker is registered and controls the page;
   - offline, reloading `/` still shows the app shell.
-- [ ] T065 Configure the PWA (`T064a` must pass):
+- [X] T065 Configure the PWA (`T064a` must pass):
   - `vite-plugin-pwa` (`injectManifest`) in `apps/web/vite.config.ts`, with the manifest (name,
     icons in `apps/web/public/icons/`, `display: standalone`, theme colours);
   - `apps/web/src/sw.ts`: precache, SPA navigation fallback, and network-first for API GETs.

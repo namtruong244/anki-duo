@@ -1,0 +1,43 @@
+{
+  "app": { "name": "Anki Duo" },
+  "nav": {
+    "home": "Home",
+    "decks": "Decks",
+    "path": "Path",
+    "dashboard": "Dashboard",
+    "settings": "Settings"
+  },
+  "common": {
+    "loading": "Loading…",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "save": "Save",
+    "retry": "Try again"
+  },
+  "sync": { "online": "Saved", "offline": "Offline – will sync", "syncing": "Syncing…" },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Create account",
+    "signOut": "Sign out",
+    "email": "Email",
+    "password": "Password",
+    "name": "Name",
+    "google": "Continue with Google",
+    "forgotPassword": "Forgot password?",
+    "resetPassword": "Reset password",
+    "sendResetLink": "Send reset link",
+    "newPassword": "New password",
+    "verifyTitle": "Verify your email",
+    "verifySent": "We sent a verification link to {email}. Open it to continue.",
+    "verifying": "Verifying…",
+    "verified": "Email verified. You can sign in now.",
+    "verifyFailed": "This verification link is invalid or expired.",
+    "resetSent": "If an account exists for that email, a reset link is on its way.",
+    "resetDone": "Password updated. You can sign in now.",
+    "noAccount": "No account yet?",
+    "haveAccount": "Already have an account?",
+    "error": "Something went wrong. Please try again."
+  },
+  "pwa": { "installed": "Installed" }
+}
