@@ -13,6 +13,7 @@ import { registerCards } from './routes/cards.js';
 import { registerDecks } from './routes/decks.js';
 import { registerExport } from './routes/export.js';
 import { registerImport } from './routes/import.js';
+import { registerClientEvents } from './routes/client-events.js';
 import { registerMe } from './routes/me.js';
 import { registerMedia } from './routes/media.js';
 import { registerSync } from './routes/sync.js';
@@ -33,6 +34,7 @@ export interface AppVariables {
   deps: AppDeps;
   requestId: string;
   userId?: string;
+  sessionCreatedAt?: Date;
 }
 export type AppEnv = { Variables: AppVariables };
 
@@ -100,6 +102,7 @@ export function createApp(deps: AppDeps) {
   app.use('/api/v1/decks/*/import', rateLimit());
 
   registerMe(app);
+  registerClientEvents(app);
   registerSync(app);
   registerDecks(app);
   registerCards(app);

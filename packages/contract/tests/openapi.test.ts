@@ -24,6 +24,7 @@ describe('generated OpenAPI matches contracts/openapi.yaml', () => {
     expect(Object.keys(doc.components.securitySchemes).sort()).toEqual(Object.keys(s).sort());
   });
 
-  // Becomes active in T157, once every route is registered.
-  it.todo('registers every path of contracts/openapi.yaml');
+  it('registers every path and operation of contracts/openapi.yaml', () => {
+    expect([...generated.keys()].sort()).toEqual([...spec.keys()].sort());
+  });
 });

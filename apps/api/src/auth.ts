@@ -51,6 +51,9 @@ export function createAuth(deps: Pick<AppDeps, 'db' | 'env' | 'mailer'>) {
     advanced: {
       // The Worker puts the real client address in x-forwarded-for.
       ipAddress: { ipAddressHeaders: ['x-forwarded-for'] },
+      // Anything but local development is served over HTTPS.
+      useSecureCookies: env.NODE_ENV !== 'development',
+      defaultCookieAttributes: { httpOnly: true, sameSite: 'lax' },
       database: { generateId: () => randomUUID() },
     },
     databaseHooks: {

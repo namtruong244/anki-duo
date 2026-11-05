@@ -17,7 +17,12 @@ export function appAs(db: Db, over: Partial<AppDeps> = {}) {
       ...real.api,
       getSession: async ({ headers }: { headers: Headers }) => {
         const id = headers.get('authorization')?.replace('Bearer ', '');
-        return id && id !== 'nope' ? { user: { id, emailVerified: true }, session: {} } : null;
+        // `x-test-session-age` (minutes) lets tests simulate an old session.
+        const ageMin = Number(headers.get('x-test-session-age') ?? '1');
+        const createdAt = new Date(deps.now().getTime() - ageMin * 60_000);
+        return id && id !== 'nope'
+          ? { user: { id, emailVerified: true }, session: { createdAt } }
+          : null;
       },
     },
   } as unknown as NonNullable<AppDeps['auth']>;

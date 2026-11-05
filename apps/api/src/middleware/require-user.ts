@@ -9,5 +9,6 @@ export const requireUser: MiddlewareHandler<AppEnv> = async (c, next) => {
   if (!session?.user.emailVerified)
     throw new ApiProblem(401, 'reauth_required', 'Sign in required');
   c.set('userId', session.user.id);
+  c.set('sessionCreatedAt', new Date(session.session.createdAt));
   await next();
 };

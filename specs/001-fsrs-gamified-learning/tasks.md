@@ -862,11 +862,11 @@ counts and donut segments match card counts per state. Filtering by deck updates
 **Purpose**: account lifecycle, language switch, observability, accessibility, responsiveness,
 scale, security, deployment and final validation.
 
-- [ ] T144 Write the failing test `apps/api/tests/integration/account-delete.test.ts` (V13): `DELETE
+- [X] T144 Write the failing test `apps/api/tests/integration/account-delete.test.ts` (V13): `DELETE
   /api/v1/me` requires a session signed in within the last 10 minutes, otherwise 403
   `reauth_required`. It removes every row for the user and every R2 object under
   `u/{user_id}/`.
-- [ ] T145 Implement `DELETE /api/v1/me` in `apps/api/src/services/account.ts` and
+- [X] T145 Implement `DELETE /api/v1/me` in `apps/api/src/services/account.ts` and
   `apps/api/src/routes/me.ts`. Add the "Delete account" danger zone (re-auth, then confirm) and
   "Sign out" to `SettingsPage` (FR-030).
 - [ ] T146 [P] Add the language switch (vi/en) to `SettingsPage`. It saves to the account, takes
@@ -912,7 +912,7 @@ scale, security, deployment and final validation.
   - cache headers.
 - [ ] T156 Run the whole `quickstart.md` validation (V1–V14) against `staging` and record the
   results in `specs/001-fsrs-gamified-learning/checklists/validation.md`.
-- [ ] T157 Change the contract completeness test from `it.todo` to an active test in
+- [X] T157 Change the contract completeness test from `it.todo` to an active test in
   `packages/contract/tests/openapi.test.ts`: the generated document's paths equal those in
   `contracts/openapi.yaml`. Smoke-generate a Dart client with
   `openapi-generator-cli generate -g dart-dio` (V14; not committed).
