@@ -174,7 +174,7 @@ shell that every story needs.
 
 ### Contract package
 
-- [ ] T029 Define the shared Zod schemas in `packages/contract/src/common.ts`:
+- [X] T029 Define the shared Zod schemas in `packages/contract/src/common.ts`:
   - `Problem` with `code` enum exactly: `validation_failed`, `not_found`, `deck_name_taken`,
     `card_limit_reached`, `media_quota_exceeded`, `media_too_large`, `unsupported_media_type`,
     `import_too_large`, `import_bad_encoding`, `export_invalid`, `rate_limited`,
@@ -182,17 +182,17 @@ shell that every story needs.
   - `FsrsState`, `Deck`, `Card`, `Media`, `Settings`, `SettingsPatch`, `Stats`,
     `DailyActivity`, as specified in [contracts/openapi.yaml](./contracts/openapi.yaml);
   - security schemes `sessionCookie` and `bearerSession`.
-- [ ] T030 Write `packages/contract/tests/openapi.test.ts`. For every path the generated document
+- [X] T030 Write `packages/contract/tests/openapi.test.ts`. For every path the generated document
   defines, it MUST deep-equal the same path in
   `specs/001-fsrs-gamified-learning/contracts/openapi.yaml`. A second test (`it.todo` until
   T157) asserts that the set of paths is complete.
-- [ ] T031 Add `packages/contract/src/openapi.ts` (builds the document from registered routes) and
+- [X] T031 Add `packages/contract/src/openapi.ts` (builds the document from registered routes) and
   the `gen:api` script, which runs `openapi-typescript` on the contract file and writes
   `apps/web/src/client/api-types.ts`.
 
 ### Database
 
-- [ ] T032 Define the identity and learner tables in `apps/api/src/db/schema/learner.ts`:
+- [X] T032 Define the identity and learner tables in `apps/api/src/db/schema/learner.ts`:
   - the Better Auth tables;
   - `learner_settings` with defaults and CHECK constraints:
     - `locale` "vi | en";
@@ -205,7 +205,7 @@ shell that every story needs.
     - `motion` "system | reduced | full", default `system`;
   - `learner_stats`, including `card_count` "≤ 20,000" and `media_bytes` "≤ 500 MB";
   - `device`.
-- [ ] T033 [P] Define the content tables in `apps/api/src/db/schema/content.ts`:
+- [X] T033 [P] Define the content tables in `apps/api/src/db/schema/content.ts`:
   - `deck`:
     - `name` "1–100 chars after trimming; unique per user, case-insensitive, among non-deleted
       decks" (partial unique index on `lower(name)` where `deleted_at is null`);
@@ -220,7 +220,7 @@ shell that every story needs.
     - indexes `(user_id, deck_id, state, due)`, `(deck_id, node_index)`,
       `(deck_id, front_norm)`, `(user_id, change_seq)`.
   - `media_asset`: `bytes` "1 – 5,242,880", `status` "pending | ready".
-- [ ] T034 [P] Define the activity tables in `apps/api/src/db/schema/activity.ts`:
+- [X] T034 [P] Define the activity tables in `apps/api/src/db/schema/activity.ts`:
   - `review_log`:
     - `id` client UUID primary key;
     - `kind` "review | reset";
@@ -232,15 +232,15 @@ shell that every story needs.
   - `daily_activity`, with PK `(user_id, study_day)`;
   - `import_job`, with `total_rows` "≤ 10,000" and `duplicate_mode` "skip | update | keep_both";
   - `rate_limit_bucket`.
-- [ ] T035 Generate the migrations in `apps/api/drizzle/` and hand-write
+- [X] T035 Generate the migrations in `apps/api/drizzle/` and hand-write
   `apps/api/drizzle/0001_change_seq.sql`:
   - one global sequence;
   - triggers that set `change_seq` on insert or update for `learner_settings`, `learner_stats`,
     `deck`, `card`, `media_asset`, `daily_activity`.
-- [ ] T036 Implement the DB client in `apps/api/src/db/client.ts`: Neon HTTP driver in production,
+- [X] T036 Implement the DB client in `apps/api/src/db/client.ts`: Neon HTTP driver in production,
   PGlite injectable in tests. Add the test harness `apps/api/tests/helpers/db.ts`: a fresh PGlite
   with all migrations, a fixed clock, and user/deck/card factories.
-- [ ] T037 Write the failing test `apps/api/tests/integration/migrations.test.ts`: apply every
+- [X] T037 Write the failing test `apps/api/tests/integration/migrations.test.ts`: apply every
   migration to PGlite seeded with review logs, replay every card with `replay()`, and assert the
   card FSRS columns are unchanged (constitution Principle II, migration rule).
 

@@ -1,0 +1,151 @@
+import { z } from '@hono/zod-openapi';
+
+export const PROBLEM_CODES = [
+  'validation_failed',
+  'not_found',
+  'deck_name_taken',
+  'card_limit_reached',
+  'media_quota_exceeded',
+  'media_too_large',
+  'unsupported_media_type',
+  'import_too_large',
+  'import_bad_encoding',
+  'export_invalid',
+  'rate_limited',
+  'reauth_required',
+] as const;
+export type ProblemCode = (typeof PROBLEM_CODES)[number];
+
+export const ProblemSchema = z
+  .object({
+    type: z.string(),
+    title: z.string(),
+    status: z.number().int(),
+    code: z.enum(PROBLEM_CODES),
+    detail: z.string().optional(),
+    errors: z
+      .array(z.object({ path: z.string().optional(), message: z.string().optional() }))
+      .optional(),
+  })
+  .openapi('Problem');
+
+export const FsrsStateSchema = z
+  .object({
+    state: z.enum(['new', 'learning', 'review', 'relearning']),
+    due: z.iso.datetime(),
+    stability: z.number().min(0),
+    difficulty: z.number().min(0).max(10),
+    learningSteps: z.number().int().min(0),
+    reps: z.number().int().min(0),
+    lapses: z.number().int().min(0),
+    lastReview: z.iso.datetime().nullable(),
+  })
+  .openapi('FsrsState');
+
+const nullableDate = z.iso.datetime().nullable();
+
+export const DeckSchema = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    newCardsPerDay: z.number().int(),
+    createdAt: z.iso.datetime(),
+    updatedAt: z.iso.datetime(),
+    deletedAt: nullableDate,
+  })
+  .openapi('Deck');
+
+export const TagSchema = z.string().min(1).max(50).regex(/^\S+$/);
+
+export const CardSchema = z
+  .object({
+    id: z.uuid(),
+    deckId: z.uuid(),
+    position: z.number().int(),
+    nodeIndex: z.number().int(),
+    front: z.string(),
+    back: z.string(),
+    tags: z.array(z.string()),
+    suspended: z.boolean(),
+    fsrs: FsrsStateSchema,
+    updatedAt: z.iso.datetime(),
+    deletedAt: nullableDate,
+  })
+  .openapi('Card');
+
+export const MediaSchema = z
+  .object({
+    id: z.uuid(),
+    cardId: z.uuid(),
+    side: z.enum(['front', 'back']),
+    kind: z.enum(['image', 'audio']),
+    mime: z.string(),
+    bytes: z.number().int(),
+    sort: z.number().int(),
+    deletedAt: nullableDate,
+  })
+  .openapi('Media');
+
+export const SettingsFields = {
+  locale: z.enum(['vi', 'en']),
+  timeZone: z.string(),
+  dayStartHour: z.number().int().min(0).max(23),
+  desiredRetention: z.number().min(0.7).max(0.97),
+  maximumIntervalDays: z.number().int().min(1).max(36500),
+  dailyXpGoal: z.union([z.literal(10), z.literal(20), z.literal(30), z.literal(50)]),
+  sessionSize: z.number().int().min(5).max(50),
+  soundEnabled: z.boolean(),
+  motion: z.enum(['system', 'reduced', 'full']),
+};
+
+export const SettingsSchema = z.object(SettingsFields).openapi('Settings');
+
+export const SettingsPatchSchema = z
+  .object(SettingsFields)
+  .partial()
+  .refine((v) => Object.keys(v).length > 0, { message: 'at least one field is required' })
+  .openapi('SettingsPatch');
+
+export const StatsSchema = z
+  .object({
+    totalXp: z.number().int(),
+    currentStreak: z.number().int(),
+    longestStreak: z.number().int(),
+    lastGoalDay: z.iso.date().nullable(),
+    cardCount: z.number().int().max(20000),
+    mediaBytes: z.number().int(),
+  })
+  .openapi('Stats');
+
+export const DailyActivitySchema = z
+  .object({
+    studyDay: z.iso.date(),
+    reviews: z.number().int(),
+    xp: z.number().int(),
+    goalXp: z.number().int(),
+    allAvailableDone: z.boolean(),
+    goalMet: z.boolean(),
+  })
+  .openapi('DailyActivity');
+
+export const SECURITY = [{ sessionCookie: [] }, { bearerSession: [] }];
+export const securitySchemes = {
+  sessionCookie: {
+    type: 'apiKey' as const,
+    in: 'cookie' as const,
+    name: 'better-auth.session_token',
+    description:
+      'Session cookie set by Better Auth (httpOnly, Secure, SameSite=Lax). Web app only.',
+  },
+  bearerSession: {
+    type: 'http' as const,
+    scheme: 'bearer',
+    description: 'Better Auth session token (bearer plugin). Native clients, such as Flutter.',
+  },
+};
+
+/** A standard `application/problem+json` response entry. */
+export const problemResponse = (description: string) => ({
+  description,
+  content: { 'application/problem+json': { schema: ProblemSchema } },
+});
