@@ -32,7 +32,7 @@ export interface SessionDeps {
   onError?: (e: unknown) => void;
 }
 
-export type SessionKind = 'review' | 'ahead';
+export type SessionKind = 'review' | 'ahead' | 'node';
 
 export interface Previews {
   again: number;
@@ -127,7 +127,7 @@ export class SessionMachine {
   /** Builds the queue and records the start. An empty queue gives the `empty` state. */
   static async start(
     deps: SessionDeps,
-    args: { deck: Deck; kind: SessionKind; settings: Settings },
+    args: { deck: Deck; kind: SessionKind; settings: Settings; nodeIndex?: number },
   ): Promise<SessionMachine> {
     const { deck, kind, settings } = args;
     const now = deps.now();
@@ -135,6 +135,7 @@ export class SessionMachine {
     const { end, day } = studyWindow(now, settings);
     const queue = buildQueue({
       kind,
+      ...(kind === 'node' && args.nodeIndex !== undefined ? { nodeIndex: args.nodeIndex } : {}),
       cards: cards.map((c) => ({
         id: c.id,
         state: c.fsrs.state,
@@ -152,7 +153,7 @@ export class SessionMachine {
       id: deps.newId(),
       deckId: deck.id,
       kind,
-      nodeIndex: null,
+      nodeIndex: kind === 'node' ? (args.nodeIndex ?? null) : null,
       startedAt: now.toISOString(),
       queue,
       position: 0,
@@ -349,7 +350,6 @@ export class SessionMachine {
 
   private summary(): Summary {
     const r = this.p.reviews;
-    const ahead = this.p.kind === 'ahead';
     const reviewXpTotal = r.reduce(
       (n, x) => n + reviewXp({ kind: 'review', studyAhead: x.studyAhead, revokedAt: null }),
       0,
@@ -359,9 +359,7 @@ export class SessionMachine {
       reviews: r.length,
       accuracy: r.length ? r.filter((x) => x.grade >= 2).length / r.length : 0,
       durationMs: r.reduce((n, x) => n + x.durationMs, 0),
-      xp:
-        reviewXpTotal +
-        sessionBonusXp({ completed: true, kind: ahead ? 'ahead' : (this.p.kind as 'review') }),
+      xp: reviewXpTotal + sessionBonusXp({ completed: true, kind: this.p.kind }),
     };
   }
 

@@ -113,7 +113,10 @@ export function DeckListPage() {
                 </p>
               </div>
               <div className="flex flex-wrap justify-end gap-2">
-                <ChunkyButton onClick={() => navigate(`/session/${deck.id}`)}>
+                <ChunkyButton onClick={() => navigate(`/path?deck=${deck.id}`)}>
+                  {t('decks.path')}
+                </ChunkyButton>
+                <ChunkyButton variant="neutral" onClick={() => navigate(`/session/${deck.id}`)}>
                   {t('decks.review')}
                 </ChunkyButton>
                 <ChunkyButton variant="neutral" onClick={() => navigate(`/decks/${deck.id}/cards`)}>

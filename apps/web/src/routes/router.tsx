@@ -1,6 +1,8 @@
+import { lazy, Suspense } from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../client/auth-context';
+import { useSettingsEffects } from '../client/settings-effects';
 import { useSyncRuntime, useToastMessage } from '../client/use-sync';
 import { SyncStatusContext } from '../client/sync-status-context';
 import { Toast } from '../components/ui';
@@ -9,13 +11,25 @@ import { SignInPage } from './auth/SignInPage';
 import { SignUpPage } from './auth/SignUpPage';
 import { VerifyEmailPage } from './auth/VerifyEmailPage';
 import { ResetPasswordPage } from './auth/ResetPasswordPage';
-import { DashboardPage, HomePage, PathPage } from './Placeholders';
+import { HomePage } from './home/HomePage';
+import { DashboardPage } from './dashboard/DashboardPage';
+import { PathPage } from './path/PathPage';
 import { DeckListPage } from './decks/DeckListPage';
-import { CardEditorPage } from './cards/CardEditorPage';
-import { CardListPage } from './cards/CardListPage';
-import { ImportPage } from './import/ImportPage';
 import { SessionPage } from './session/SessionPage';
-import { SettingsPage } from './settings/SettingsPage';
+
+// Heavier screens load on demand so the review session stays light (SC-001).
+const CardEditorPage = lazy(() =>
+  import('./cards/CardEditorPage').then((m) => ({ default: m.CardEditorPage })),
+);
+const CardListPage = lazy(() =>
+  import('./cards/CardListPage').then((m) => ({ default: m.CardListPage })),
+);
+const ImportPage = lazy(() =>
+  import('./import/ImportPage').then((m) => ({ default: m.ImportPage })),
+);
+const SettingsPage = lazy(() =>
+  import('./settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
+);
 
 function Loading() {
   const { t } = useTranslation();
@@ -29,9 +43,12 @@ function Loading() {
 function Runtime({ userId }: { userId: string }) {
   const status = useSyncRuntime(userId);
   const [message, dismiss] = useToastMessage();
+  useSettingsEffects();
   return (
     <SyncStatusContext.Provider value={status}>
-      <Outlet />
+      <Suspense fallback={<Loading />}>
+        <Outlet />
+      </Suspense>
       {message && <Toast message={message} onDismiss={dismiss} />}
     </SyncStatusContext.Provider>
   );

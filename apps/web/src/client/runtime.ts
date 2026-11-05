@@ -5,6 +5,7 @@ import { dexieStore } from './store';
 import { maintainMediaCache, swTransport } from './media-cache';
 import { createContentActions } from './content';
 import { createSyncEngine } from './sync/sync-engine';
+import { reporter } from './report';
 import type { LocalStore } from './local-store';
 
 /** Device id is created on first launch and kept in IndexedDB; userId lets `applyPull` key settings. */
@@ -24,6 +25,12 @@ export const syncEngine = createSyncEngine({
   api,
   connectivity,
   afterPull: () => maintainMediaCache(dexieStore, swTransport()),
+  // Being offline is normal; anything else is worth knowing about.
+  onError: (e) => {
+    if ((e as { code?: string }).code !== 'network_error') {
+      void reporter.report('sync_failure', e instanceof Error ? e.message : String(e));
+    }
+  },
 });
 export const newId = () => uuidv7();
 

@@ -117,7 +117,8 @@
     "restoreDone": "Deck restored",
     "exportFailed": "Could not export the deck.",
     "error": "Something went wrong. Please try again.",
-    "reviewShort": "Review"
+    "reviewShort": "Review",
+    "path": "Path"
   },
   "learning": {
     "title": "Learning",
@@ -246,7 +247,110 @@
       "tag_invalid": "Invalid tag",
       "malformed_row": "Wrong number of columns",
       "duplicate_skipped": "Duplicate",
-      "card_limit_reached": "Card limit reached"
+      "card_limit_reached": "Card limit reached",
+      "import_bad_encoding": "Not UTF-8",
+      "single_column": "Only one column",
+      "import_too_large": "Too large"
     }
+  },
+  "path": {
+    "title": "Learning path",
+    "review": "Review ({n})",
+    "reviewNone": "Review (0)",
+    "node": "Node {n}",
+    "status": {
+      "completed": "completed",
+      "available": "available",
+      "in_progress": "in progress",
+      "locked": "locked"
+    },
+    "mastery": "{pct}% mastered",
+    "lockedMessage": "Finish node {n} first.",
+    "dueFirst": "Review the remaining due cards first.",
+    "pickDeck": "Deck",
+    "empty": "This deck has no cards yet.",
+    "noDecks": "No decks yet.",
+    "unlocked": "Node {n} unlocked!",
+    "cards": "{n, plural, one {# card} other {# cards}}",
+    "studied": "{studied} of {total} studied"
+  },
+  "dashboard": {
+    "title": "Progress",
+    "allDecks": "All decks",
+    "deckFilter": "Deck",
+    "heatmap": "Reviews in the last 12 months",
+    "heatmapCell": "{date}: {n, plural, one {# review} other {# reviews}}",
+    "donut": "Cards by status",
+    "donutLabel": "{n, plural, one {# card} other {# cards}} in total",
+    "centreLabel": "to study today",
+    "new": "New",
+    "learning": "Learning",
+    "due": "Due",
+    "notDue": "Not due",
+    "suspended": "Suspended",
+    "currentStreak": "Current streak",
+    "longestStreak": "Longest streak",
+    "totalXp": "Total XP",
+    "days": "{n, plural, one {# day} other {# days}}",
+    "empty": "No cards yet."
+  },
+  "home": {
+    "title": "Home",
+    "streak": "{n, plural, one {# day streak} other {# day streak}}",
+    "streakAtRisk": "Streak at risk: reach your goal today to keep it",
+    "streakMet": "Goal reached today",
+    "streakBroken": "Start a new streak today",
+    "goalLabel": "Daily goal",
+    "xpToday": "{xp} / {goal} XP",
+    "due": "{n, plural, one {# card due} other {# cards due}}",
+    "nothingDue": "Nothing due right now. Nice work!",
+    "start": "Start",
+    "decks": "Your decks",
+    "noDecks": "Create or import a deck to begin.",
+    "deckDue": "{n, plural, one {# due} other {# due}}"
+  },
+  "celebration": {
+    "goal": "Daily goal reached!",
+    "streak": "{n, plural, one {# day streak} other {# day streak}}"
+  },
+  "gamification": {
+    "title": "Goals and feel",
+    "dailyGoal": "Daily XP goal",
+    "dailyGoalHint": "The XP you aim to earn each day. The default is 20.",
+    "sound": "Sound",
+    "motion": "Motion",
+    "motionSystem": "Follow system",
+    "motionReduced": "Reduced",
+    "motionFull": "Full"
+  },
+  "language": {
+    "title": "Language",
+    "label": "Language",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "account": {
+    "title": "Account",
+    "delete": "Delete account",
+    "deleteIntro": "To delete your account, confirm your password first.",
+    "continue": "Continue",
+    "wrongPassword": "That password is not correct.",
+    "deleteConfirm": "This permanently deletes your account, decks, cards and review history. This cannot be undone.",
+    "deleteEverything": "Delete everything",
+    "deleteFailed": "Could not delete the account. Try again."
+  },
+  "problem": {
+    "validation_failed": "Some values are not valid. Check the form and try again.",
+    "not_found": "That item no longer exists.",
+    "deck_name_taken": "You already have a deck with that name.",
+    "card_limit_reached": "You have reached the limit of 20,000 cards.",
+    "media_quota_exceeded": "You have used all your media storage (500 MB).",
+    "media_too_large": "That file is larger than 5 MB.",
+    "unsupported_media_type": "That file type is not supported.",
+    "import_too_large": "That file is too large. The limit is 10,000 rows or 10 MB.",
+    "import_bad_encoding": "That file is not UTF-8. Save it as UTF-8 and try again.",
+    "export_invalid": "That file is not a valid Anki Duo export.",
+    "rate_limited": "Too many requests. Please wait a moment and try again.",
+    "reauth_required": "Please sign in again to continue."
   }
 }

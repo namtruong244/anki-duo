@@ -1,13 +1,19 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import { reviewXp, sessionBonusXp } from '@anki-duo/domain';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { adjustToday, queueDayFlagIfDone, type TodayResult } from '../../client/gamification';
 import { notify } from '../../client/notify';
+import { sound } from '../../client/sound';
+import { useMotionPreference } from '../../lib/motion';
 import { newId, syncEngine } from '../../client/runtime';
 import { SessionMachine, type SessionKind } from '../../client/session/session-machine';
 import { dexieStore } from '../../client/store';
 import type { Deck, Settings } from '../../client/local-store';
 import { CardContent } from '../../components/session/CardContent';
+import { Celebration } from '../../components/session/Celebration';
 import { GradeBar, useSessionHotkeys } from '../../components/session/GradeBar';
+import { GradeFeedback } from '../../components/session/GradeFeedback';
 import { ChunkyButton, Dialog, ProgressBar } from '../../components/ui';
 import { EmptyQueue } from './EmptyQueue';
 
@@ -21,7 +27,10 @@ export function SessionPage() {
   const { t } = useTranslation();
   const { deckId = '' } = useParams();
   const [params] = useSearchParams();
-  const kind: SessionKind = params.get('kind') === 'ahead' ? 'ahead' : 'review';
+  const nodeParam = params.get('node');
+  const nodeIndex = nodeParam !== null && /^\d+$/.test(nodeParam) ? Number(nodeParam) : undefined;
+  const kind: SessionKind =
+    params.get('kind') === 'ahead' ? 'ahead' : nodeIndex !== undefined ? 'node' : 'review';
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>({ name: 'loading' });
   const started = useRef(false);
@@ -38,10 +47,15 @@ export function SessionPage() {
 
   const begin = useCallback(
     async (deck: Deck, settings: Settings, k: SessionKind) => {
-      const machine = await SessionMachine.start(deps(), { deck, kind: k, settings });
+      const machine = await SessionMachine.start(deps(), {
+        deck,
+        kind: k,
+        settings,
+        ...(nodeIndex !== undefined ? { nodeIndex } : {}),
+      });
       setPhase({ name: 'running', machine });
     },
-    [deps],
+    [deps, nodeIndex],
   );
 
   useEffect(() => {
@@ -104,6 +118,7 @@ export function SessionPage() {
     <Running
       machine={phase.machine}
       deckId={deckId}
+      kind={kind}
       onStudyAhead={() =>
         navigate(`/session/${deckId}?kind=ahead`, { replace: true }) as unknown as void
       }
@@ -114,10 +129,12 @@ export function SessionPage() {
 function Running({
   machine,
   deckId,
+  kind,
   onStudyAhead,
 }: {
   machine: SessionMachine;
   deckId: string;
+  kind: SessionKind;
   onStudyAhead: () => void;
 }) {
   const { t } = useTranslation();
@@ -126,18 +143,59 @@ function Running({
     () => machine.version,
   );
   const s = machine.getState();
+  const [settings, setSettings] = useState<Settings | null>(null);
+  const [feedback, setFeedback] = useState(0);
+  const [celebration, setCelebration] = useState<TodayResult | null>(null);
+  const motion = useMotionPreference(settings?.motion);
+
+  useEffect(() => {
+    void (async () => {
+      const userId = (await dexieStore.getMeta('userId')) ?? '';
+      setSettings((await dexieStore.getSettings(userId)) ?? null);
+    })();
+  }, []);
+
+  /** Optimistic XP and streak, written before the server hears about the review. */
+  const award = useCallback(
+    async (delta: { reviews: number; xp: number }, finished = false) => {
+      if (!settings) return;
+      const userId = (await dexieStore.getMeta('userId')) ?? '';
+      const ctx = { store: dexieStore, userId, settings, now: new Date() };
+      const r = await adjustToday(ctx, delta);
+      if (finished) await queueDayFlagIfDone(ctx, newId);
+      if (r.goalCrossed || r.streakIncreased) {
+        setCelebration(r);
+        void sound.play('streak');
+      }
+    },
+    [settings],
+  );
+  const xpOf = useCallback(
+    () => reviewXp({ kind: 'review', studyAhead: kind === 'ahead', revokedAt: null }),
+    [kind],
+  );
 
   const reveal = useCallback(() => machine.reveal(), [machine]);
   const grade = useCallback(
     (g: 1 | 2 | 3 | 4) => {
       machine.grade(g);
-      if (machine.getState().status === 'done') {
+      void sound.playGrade(g);
+      setFeedback((n) => n + 1);
+      const finished = machine.getState().status === 'done';
+      const bonus = finished ? sessionBonusXp({ completed: true, kind }) : 0;
+      void award({ reviews: 1, xp: xpOf() + bonus }, finished);
+      if (finished) {
+        void sound.play('complete');
         void machine.settled().then(() => syncEngine.syncAfterSession());
       }
     },
-    [machine],
+    [machine, award, xpOf, kind],
   );
-  const undo = useCallback(() => void machine.undo(), [machine]);
+  const undo = useCallback(() => {
+    const wasDone = machine.getState().status === 'done';
+    const bonus = wasDone ? sessionBonusXp({ completed: true, kind }) : 0;
+    void machine.undo().then(() => award({ reviews: -1, xp: -(xpOf() + bonus) }));
+  }, [machine, award, xpOf, kind]);
   useSessionHotkeys({
     revealed: s.status === 'back',
     onReveal: reveal,
@@ -146,12 +204,28 @@ function Running({
     enabled: s.status !== 'done' && s.status !== 'empty',
   });
 
+  const overlays = (
+    <>
+      <GradeFeedback token={feedback} motion={motion} />
+      {celebration && (
+        <Celebration
+          goalMet={celebration.goalCrossed}
+          streak={celebration.streak}
+          streakIncreased={celebration.streakIncreased}
+          motion={motion}
+          onDone={() => setCelebration(null)}
+        />
+      )}
+    </>
+  );
+
   if (s.status === 'empty') return <EmptyQueue deckId={deckId} onStudyAhead={onStudyAhead} />;
 
   if (s.status === 'done' && s.summary) {
     const m = s.summary;
     return (
       <section className="flex flex-col gap-4 py-6">
+        {overlays}
         <h1 className="text-2xl font-bold">{t('session.summaryTitle')}</h1>
         <dl className="grid grid-cols-2 gap-3">
           <Stat label={t('session.reviewed')} value={String(m.cardsReviewed)} />
@@ -174,6 +248,7 @@ function Running({
   const card = s.card;
   return (
     <section className="flex h-[calc(100dvh-8rem)] flex-col gap-3 py-2">
+      {overlays}
       <div className="flex items-center gap-3">
         <ProgressBar
           className="flex-1"

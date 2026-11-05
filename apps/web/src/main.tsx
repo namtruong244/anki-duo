@@ -6,8 +6,10 @@ import './styles/app.css';
 import { initI18n } from './i18n';
 import { AuthProvider } from './client/auth';
 import { AppRoutes } from './routes/router';
+import { installGlobalErrorReporting } from './client/report';
 
 const i18n = initI18n();
+installGlobalErrorReporting();
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

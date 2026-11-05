@@ -707,7 +707,7 @@ card is due, it holds the node's 10 new cards (V7).
   - remaining due cards are not included.
 - [X] T119 [P] [US3] Write the failing test `packages/domain/tests/path-status.test.ts`, which runs
   `path-status.json`, and extend `packages/domain/tests/queue.test.ts` to the `node` kind.
-- [ ] T120 [P] [US3] Write the e2e test `tests/e2e/path.spec.ts` (V7):
+- [X] T120 [P] [US3] Write the e2e test `tests/e2e/path.spec.ts` (V7):
   - node layout and states;
   - a locked tap shows "finish node N first" and starts no session;
   - the Review entry is visible and enabled with due cards;
@@ -722,13 +722,13 @@ card is due, it holds the node's 10 new cards (V7).
   `packages/domain/src/path/status.ts`. `T119` (path part) must pass.
 - [X] T122 [P] [US3] Extend `buildQueue` with the `node` kind in
   `packages/domain/src/queue/build-queue.ts`. `T119` (queue part) must pass.
-- [ ] T123 [US3] Implement the path components:
+- [X] T123 [US3] Implement the path components:
   - `PathMap` in `apps/web/src/components/path/PathMap.tsx`: a winding layout of round nodes that
     works from 320 px to desktop, and auto-scrolls to the current node;
   - `PathNode` in `apps/web/src/components/path/PathNode.tsx`: states with icon, text label and
     colour (not colour alone); a gentle bounce on the current node; a mastery ring; an unlock
     animation via Motion with a reduced-motion fallback.
-- [ ] T124 [US3] Implement `PathPage` in `apps/web/src/routes/path/PathPage.tsx`:
+- [X] T124 [US3] Implement `PathPage` in `apps/web/src/routes/path/PathPage.tsx`:
   - a pinned "Review (N)" entry that is never locked;
   - a locked-node message;
   - tapping an available or in-progress node starts a `node` session;
@@ -769,10 +769,10 @@ longest. Finishing every available card in a 3-card deck meets the goal (V8).
   - a `day_flag` sets `all_available_done`;
   - `learner_stats.total_xp`, `current_streak` and `longest_streak` are correct;
   - a revoke reverses XP (Story 1 #4).
-- [ ] T128 [P] [US4] Write the failing test `apps/web/tests/gamification/day-flag.test.ts`: after
+- [X] T128 [P] [US4] Write the failing test `apps/web/tests/gamification/day-flag.test.ts`: after
   a session, if no due card remains and the new-card allowance is used up for every deck, a
   `DayFlagEvent` is queued once per study day. Optimistic stats update immediately.
-- [ ] T129 [P] [US4] Write the failing test `apps/web/tests/components/home.test.tsx`:
+- [X] T129 [P] [US4] Write the failing test `apps/web/tests/components/home.test.tsx`:
   - the streak flame with its count;
   - the at-risk styling and text;
   - today's XP vs goal progress;
@@ -786,26 +786,26 @@ longest. Finishing every available card in a 3-card deck meets the goal (V8).
 - [X] T131 [US4] Implement the activity recompute in `apps/api/src/services/activity.ts`, called
   in the same transaction from `apps/api/src/sync/push.ts` (reviews, revokes, sessions, day
   flags). `T127` must pass.
-- [ ] T132 [US4] Implement the client gamification in `apps/web/src/client/gamification.ts`:
+- [X] T132 [US4] Implement the client gamification in `apps/web/src/client/gamification.ts`:
   optimistic XP and streak in `LocalStore.stats` and `dailyActivity`, plus the day-flag
   emission. `T128` must pass.
-- [ ] T132a [P] [US4] Write the failing test `apps/web/tests/sound.test.ts` with a fake
+- [X] T132a [P] [US4] Write the failing test `apps/web/tests/sound.test.ts` with a fake
   `AudioContext`: nothing plays before the first user gesture; nothing plays when
   `sound_enabled` is false; all four grades play the same `graded` sound (FR-021, FR-024).
-- [ ] T133 [P] [US4] Implement `apps/web/src/client/sound.ts` (Web Audio, preloaded sprites from
+- [X] T133 [P] [US4] Implement `apps/web/src/client/sound.ts` (Web Audio, preloaded sprites from
   `apps/web/public/sounds/` for graded, complete and streak in OGG + MP3). It only plays
   after the first user gesture and when `sound_enabled` is true (FR-021). `T132a` must pass.
-- [ ] T134 [P] [US4] Implement the in-session feedback:
+- [X] T134 [P] [US4] Implement the in-session feedback:
   - a spring for the progress bar in `ProgressBar`;
   - one grade-neutral micro-animation in `apps/web/src/components/session/GradeFeedback.tsx`
     (after Again it is neutral or encouraging, never a "mistake" cue; FR-021);
   - `Celebration.tsx` (goal met, streak +1) in `apps/web/src/components/session/`;
   - every animation goes through `useMotionPreference()` (FR-022).
-- [ ] T135 [US4] Implement `HomePage` in `apps/web/src/routes/home/HomePage.tsx` and make it the
+- [X] T135 [US4] Implement `HomePage` in `apps/web/src/routes/home/HomePage.tsx` and make it the
   index route. It has the streak flame (met / at risk), today's XP vs goal ring, a cards-due
   count with "Start" (opens the first deck with due cards), and the per-deck list. `T129` must
   pass.
-- [ ] T136 [US4] Add the gamification section to `apps/web/src/routes/settings/SettingsPage.tsx`:
+- [X] T136 [US4] Add the gamification section to `apps/web/src/routes/settings/SettingsPage.tsx`:
   a daily XP goal selector "10 / 20 / 30 / 50 (default 20)", a sound on/off toggle, and motion
   "system / reduced / full".
 
@@ -834,11 +834,11 @@ counts and donut segments match card counts per state. Filtering by deck updates
   - a property-based test (fast-check) that the sum of segments equals the card count for random
     card sets;
   - heatmap bucketing into 5 intensity levels over the last 12 months from `dailyActivity`.
-- [ ] T139 [P] [US5] Write the failing test `apps/web/tests/components/charts.test.tsx`:
+- [X] T139 [P] [US5] Write the failing test `apps/web/tests/components/charts.test.tsx`:
   - `DonutRing` renders 5 labelled segments with numbers, readable without colour;
   - `Heatmap` cells have accessible names ("{date}: {n} reviews") and a tooltip on hover and on
     tap/focus.
-- [ ] T140 [P] [US5] Write the e2e test `tests/e2e/dashboard.spec.ts` (V9): seeded learner values,
+- [X] T140 [P] [US5] Write the e2e test `tests/e2e/dashboard.spec.ts` (V9): seeded learner values,
   deck filter, keyboard navigation of heatmap cells.
 
 ### Implementation for User Story 5
@@ -846,10 +846,10 @@ counts and donut segments match card counts per state. Filtering by deck updates
 - [X] T141 [P] [US5] Implement `classifyCard`, `donutCounts` and `todayWorkload` in
   `packages/domain/src/stats/donut.ts`, and `heatmapBuckets` in
   `packages/domain/src/stats/heatmap.ts`. `T138` must pass.
-- [ ] T142 [P] [US5] Implement `DonutRing` in `apps/web/src/components/charts/DonutRing.tsx` and
+- [X] T142 [P] [US5] Implement `DonutRing` in `apps/web/src/components/charts/DonutRing.tsx` and
   `Heatmap` in `apps/web/src/components/charts/Heatmap.tsx` as hand-built SVG, scrolling
   horizontally inside its own container on narrow screens (research R9). `T139` must pass.
-- [ ] T143 [US5] Implement `DashboardPage` in `apps/web/src/routes/dashboard/DashboardPage.tsx`:
+- [X] T143 [US5] Implement `DashboardPage` in `apps/web/src/routes/dashboard/DashboardPage.tsx`:
   heatmap, donut with centre workload, current and longest streak, total XP, and a deck filter
   (all figures computed from `LocalStore`, so they work offline).
 
@@ -869,19 +869,19 @@ scale, security, deployment and final validation.
 - [X] T145 Implement `DELETE /api/v1/me` in `apps/api/src/services/account.ts` and
   `apps/api/src/routes/me.ts`. Add the "Delete account" danger zone (re-auth, then confirm) and
   "Sign out" to `SettingsPage` (FR-030).
-- [ ] T146 [P] Add the language switch (vi/en) to `SettingsPage`. It saves to the account, takes
+- [X] T146 [P] Add the language switch (vi/en) to `SettingsPage`. It saves to the account, takes
   effect immediately without losing the current screen or an in-progress session (FR-031,
   SC-009), and is covered by a new case in `tests/e2e/session.spec.ts`.
-- [ ] T147 [P] Implement `POST /api/v1/client-events` in `apps/api/src/routes/client-events.ts`
+- [X] T147 [P] Implement `POST /api/v1/client-events` in `apps/api/src/routes/client-events.ts`
   (max message 2000 chars, logged via `log.ts`) and the client reporter
   `apps/web/src/client/report.ts` (uncaught errors plus sync failures, de-duplicated, rate-limited
   on the client).
-- [ ] T148 [P] Write `tests/e2e/responsive.spec.ts` (V10, SC-007): no horizontal scroll on home,
+- [X] T148 [P] Write `tests/e2e/responsive.spec.ts` (V10, SC-007): no horizontal scroll on home,
   path, session, editor, import and dashboard at 320, 768 and 1440 px. Fix any overflow it finds.
-- [ ] T149 [P] Write `tests/e2e/a11y.spec.ts` (V10, FR-033): axe on every primary screen finds
+- [X] T149 [P] Write `tests/e2e/a11y.spec.ts` (V10, FR-033): axe on every primary screen finds
   zero serious or critical violations. Every review action works with the keyboard alone. Fix
   what it finds.
-- [ ] T150 [P] Complete the vi and en translations for every screen, the API `Problem.code`
+- [X] T150 [P] Complete the vi and en translations for every screen, the API `Problem.code`
   values and the import reason codes in `apps/web/src/i18n/messages/`. `pnpm test:i18n` passes.
 - [ ] T151 Write the k6 load script `tests/load/sync-mix.js` (V12, SC-010): 100 VUs doing a
   pull/push mix against the staging app URL. Report p95 and cold-start latency, and Neon
@@ -893,13 +893,13 @@ scale, security, deployment and final validation.
   - IndexedDB queries for 20,000 cards in `apps/web/src/client/dexie-store.ts`;
   - lazy-loaded routes in `apps/web/src/routes/router.tsx`;
   - an initial JS bundle ≤ 200 KB gzip for the session route.
-- [ ] T153 [P] Security hardening:
+- [X] T153 [P] Security hardening:
   - cookie flags (`httpOnly`, `Secure`, `SameSite=Lax`);
   - CSP verification in `apps/web/public/_headers`;
   - SVG media served only via `<img>`;
   - every `/api/v1` route rejects other users' ids (an integration test sweep in
     `apps/api/tests/integration/authorization.test.ts`).
-- [ ] T154 [P] Write `README.md`: an overview, the local setup and deploy steps from
+- [X] T154 [P] Write `README.md`: an overview, the local setup and deploy steps from
   `quickstart.md`, the architecture diagram (edge → Lambda → Neon/R2), and "how to add a domain
   rule" (fixture first).
 - [ ] T155 Deploy the `staging` stage with `pnpm sst deploy --stage staging` and run the

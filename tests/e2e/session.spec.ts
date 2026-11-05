@@ -73,3 +73,24 @@ test('95% of grade → next-card paints take at most 100 ms with the CPU throttl
   info.annotations.push({ type: 'p95-ms', description: p95.toFixed(1) });
   expect(p95).toBeLessThanOrEqual(100);
 });
+
+// FR-031, SC-009: switching language is immediate and does not lose the screen or the session.
+test('language switch keeps the in-progress session (FR-031)', async ({ page }) => {
+  // Grade one card, leave to Settings, switch to Vietnamese, then come back.
+  await showAnswer(page).click();
+  await gradeButton(page, 'Good').click();
+  await expect(showAnswer(page)).toBeVisible();
+  await page.goto('/settings');
+  await page.getByLabel('Language').selectOption('vi');
+  await expect(page.getByRole('heading', { name: 'Cài đặt', level: 1 })).toBeVisible();
+  // Still on the same screen: no reload, no navigation.
+  await expect(page).toHaveURL(/\/settings$/);
+  await page.goto('/decks');
+  await page.getByRole('listitem').first().getByRole('button').first().click();
+  await expect(page.getByRole('dialog', { name: 'Tiếp tục phiên học?' })).toBeVisible();
+  await page.getByRole('button', { name: 'Tiếp tục' }).click();
+  await expect(page.getByRole('button', { name: 'Hiện đáp án' })).toBeVisible();
+  // Put it back so other specs find English.
+  await page.goto('/settings');
+  await page.getByLabel('Ngôn ngữ').selectOption('en');
+});

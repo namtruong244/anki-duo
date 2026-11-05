@@ -117,7 +117,8 @@
     "restoreDone": "Đã khôi phục bộ thẻ",
     "exportFailed": "Không thể xuất bộ thẻ.",
     "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
-    "reviewShort": "Ôn tập"
+    "reviewShort": "Ôn tập",
+    "path": "Lộ trình"
   },
   "learning": {
     "title": "Học tập",
@@ -246,7 +247,110 @@
       "tag_invalid": "Nhãn không hợp lệ",
       "malformed_row": "Sai số cột",
       "duplicate_skipped": "Trùng",
-      "card_limit_reached": "Đạt giới hạn thẻ"
+      "card_limit_reached": "Đạt giới hạn thẻ",
+      "import_bad_encoding": "Không phải UTF-8",
+      "single_column": "Chỉ có một cột",
+      "import_too_large": "Quá lớn"
     }
+  },
+  "path": {
+    "title": "Lộ trình học",
+    "review": "Ôn tập ({n})",
+    "reviewNone": "Ôn tập (0)",
+    "node": "Chặng {n}",
+    "status": {
+      "completed": "đã hoàn thành",
+      "available": "đang mở",
+      "in_progress": "đang học",
+      "locked": "đang khóa"
+    },
+    "mastery": "Thuộc {pct}%",
+    "lockedMessage": "Hãy hoàn thành chặng {n} trước.",
+    "dueFirst": "Hãy ôn các thẻ đến hạn còn lại trước.",
+    "pickDeck": "Bộ thẻ",
+    "empty": "Bộ thẻ này chưa có thẻ nào.",
+    "noDecks": "Chưa có bộ thẻ nào.",
+    "unlocked": "Đã mở chặng {n}!",
+    "cards": "{n, plural, other {# thẻ}}",
+    "studied": "Đã học {studied}/{total}"
+  },
+  "dashboard": {
+    "title": "Tiến độ",
+    "allDecks": "Tất cả bộ thẻ",
+    "deckFilter": "Bộ thẻ",
+    "heatmap": "Số lượt ôn trong 12 tháng qua",
+    "heatmapCell": "{date}: {n, plural, other {# lượt ôn}}",
+    "donut": "Thẻ theo trạng thái",
+    "donutLabel": "Tổng cộng {n, plural, other {# thẻ}}",
+    "centreLabel": "cần học hôm nay",
+    "new": "Mới",
+    "learning": "Đang học",
+    "due": "Đến hạn",
+    "notDue": "Chưa đến hạn",
+    "suspended": "Tạm dừng",
+    "currentStreak": "Chuỗi hiện tại",
+    "longestStreak": "Chuỗi dài nhất",
+    "totalXp": "Tổng XP",
+    "days": "{n, plural, other {# ngày}}",
+    "empty": "Chưa có thẻ nào."
+  },
+  "home": {
+    "title": "Trang chủ",
+    "streak": "{n, plural, other {# ngày liên tiếp}}",
+    "streakAtRisk": "Chuỗi sắp mất: hãy đạt mục tiêu hôm nay để giữ chuỗi",
+    "streakMet": "Đã đạt mục tiêu hôm nay",
+    "streakBroken": "Bắt đầu chuỗi mới hôm nay",
+    "goalLabel": "Mục tiêu hằng ngày",
+    "xpToday": "{xp} / {goal} XP",
+    "due": "{n, plural, other {# thẻ cần ôn}}",
+    "nothingDue": "Hiện chưa có thẻ nào cần ôn. Làm tốt lắm!",
+    "start": "Bắt đầu",
+    "decks": "Bộ thẻ của bạn",
+    "noDecks": "Hãy tạo hoặc nhập một bộ thẻ để bắt đầu.",
+    "deckDue": "{n, plural, other {# cần ôn}}"
+  },
+  "celebration": {
+    "goal": "Đã đạt mục tiêu hằng ngày!",
+    "streak": "{n, plural, other {# ngày liên tiếp}}"
+  },
+  "gamification": {
+    "title": "Mục tiêu và trải nghiệm",
+    "dailyGoal": "Mục tiêu XP hằng ngày",
+    "dailyGoalHint": "Số XP bạn muốn đạt mỗi ngày. Mặc định là 20.",
+    "sound": "Âm thanh",
+    "motion": "Chuyển động",
+    "motionSystem": "Theo hệ thống",
+    "motionReduced": "Giảm",
+    "motionFull": "Đầy đủ"
+  },
+  "language": {
+    "title": "Ngôn ngữ",
+    "label": "Ngôn ngữ",
+    "vi": "Tiếng Việt",
+    "en": "English"
+  },
+  "account": {
+    "title": "Tài khoản",
+    "delete": "Xóa tài khoản",
+    "deleteIntro": "Để xóa tài khoản, hãy xác nhận mật khẩu của bạn trước.",
+    "continue": "Tiếp tục",
+    "wrongPassword": "Mật khẩu không đúng.",
+    "deleteConfirm": "Việc này xóa vĩnh viễn tài khoản, bộ thẻ, thẻ và lịch sử ôn tập của bạn. Không thể hoàn tác.",
+    "deleteEverything": "Xóa tất cả",
+    "deleteFailed": "Không thể xóa tài khoản. Vui lòng thử lại."
+  },
+  "problem": {
+    "validation_failed": "Một số giá trị không hợp lệ. Hãy kiểm tra và thử lại.",
+    "not_found": "Mục này không còn tồn tại.",
+    "deck_name_taken": "Bạn đã có một bộ thẻ trùng tên.",
+    "card_limit_reached": "Bạn đã đạt giới hạn 20.000 thẻ.",
+    "media_quota_exceeded": "Bạn đã dùng hết dung lượng đa phương tiện (500 MB).",
+    "media_too_large": "Tệp này lớn hơn 5 MB.",
+    "unsupported_media_type": "Không hỗ trợ loại tệp này.",
+    "import_too_large": "Tệp quá lớn. Giới hạn là 10.000 dòng hoặc 10 MB.",
+    "import_bad_encoding": "Tệp không phải UTF-8. Hãy lưu lại ở dạng UTF-8 rồi thử lại.",
+    "export_invalid": "Đây không phải tệp xuất hợp lệ của Anki Duo.",
+    "rate_limited": "Quá nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.",
+    "reauth_required": "Vui lòng đăng nhập lại để tiếp tục."
   }
 }
