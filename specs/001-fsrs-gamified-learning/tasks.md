@@ -428,7 +428,7 @@ survive offline and tab closes (V3), and appear on a second device (V4).
   - triggers: app start, `online` event, every 30 s while visible and online, and after a
     session ends;
   - a pull runs after each push.
-- [ ] T070 [P] [US1] Write the failing test `apps/api/tests/integration/sync-push.test.ts` (V4,
+- [X] T070 [P] [US1] Write the failing test `apps/api/tests/integration/sync-push.test.ts` (V4,
   V14):
   - the same event id pushed twice gives `duplicate` and no second row;
   - `reviewedAt` more than 5 min in the future gives `future_timestamp`;
@@ -463,10 +463,10 @@ survive offline and tab closes (V3), and appear on a second device (V4).
 - [X] T075 [US1] Implement `buildQueue({ kind: 'review' | 'ahead', cards, now, settings,
   studyDayEnd, introducedToday })` and `requeueAfterGrade()` in `packages/domain/src/queue/build-queue.ts`.
   `T067` must pass for these kinds.
-- [ ] T076 [US1] Register the push contract schemas `ReviewEvent`, `RevokeEvent`,
+- [X] T076 [US1] Register the push contract schemas `ReviewEvent`, `RevokeEvent`,
   `SessionEvent`, `DayFlagEvent` (discriminator `type`, `events` maxItems 500) in
   `packages/contract/src/sync.ts`.
-- [ ] T077 [US1] Implement `POST /api/v1/sync/push` in `apps/api/src/sync/push.ts`:
+- [X] T077 [US1] Implement `POST /api/v1/sync/push` in `apps/api/src/sync/push.ts`:
   - insert with `ON CONFLICT (id) DO NOTHING`;
   - derive `was_new`, `was_due`, `study_ahead` and `xp` (`reviewXp`) on the server;
   - store the compact state via `encodeState`;

@@ -53,6 +53,13 @@ export function shape(schema: unknown): unknown {
   ]) {
     if (s[key] !== undefined) out[key] = s[key];
   }
+  // A one-value enum and `const` mean the same thing.
+  if (Array.isArray(out.enum) && out.enum.length === 1) {
+    out.const = out.enum[0];
+    delete out.enum;
+  }
+  // `const` already fixes the type, so documents may or may not repeat it.
+  if (out.const !== undefined) delete out.type;
   if (Array.isArray(out.type)) out.type = [...(out.type as string[])].sort();
   if (Array.isArray(s.required)) out.required = [...(s.required as string[])].sort();
   if (s.properties) {

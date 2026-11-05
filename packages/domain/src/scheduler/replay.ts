@@ -22,7 +22,7 @@ export function replay(
       card = newCard(log.reviewedAt);
     } else {
       if (log.grade === null) throw new Error(`review log ${log.id} has no grade`);
-      card = schedule(card, log.grade, log.reviewedAt, params).card;
+      card = schedule(card, log.grade, log.reviewedAt, log.params ?? params).card;
     }
   }
   return card;

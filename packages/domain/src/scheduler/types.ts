@@ -35,4 +35,6 @@ export interface ReplayLog {
   grade: Grade | null;
   reviewedAt: Date;
   revokedAt: Date | null;
+  /** The parameters this review was made with; falls back to the replay default. */
+  params?: SchedulerParams;
 }

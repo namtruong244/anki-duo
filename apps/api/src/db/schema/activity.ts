@@ -8,6 +8,7 @@ import {
   index,
   integer,
   jsonb,
+  numeric,
   pgTable,
   primaryKey,
   smallint,
@@ -72,6 +73,12 @@ export const reviewLog = pgTable(
     stateBefore: doublePrecision('state_before').array().notNull(),
     stateAfter: doublePrecision('state_after').array().notNull(),
     schedulerVersion: text('scheduler_version').notNull(),
+    // The parameters this review was scheduled with, so a replay never rewrites history when the
+    // learner later changes their settings (FR-004).
+    desiredRetention: numeric('desired_retention', { precision: 3, scale: 2 })
+      .notNull()
+      .default('0.90'),
+    maximumIntervalDays: integer('maximum_interval_days').notNull().default(36500),
     deviceId: uuid('device_id'),
     revokedAt: timestamp('revoked_at', { withTimezone: true }),
     receivedAt: timestamp('received_at', { withTimezone: true }).notNull().defaultNow(),

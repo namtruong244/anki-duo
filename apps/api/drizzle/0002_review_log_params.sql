@@ -1,0 +1,2 @@
+ALTER TABLE "review_log" ADD COLUMN "desired_retention" numeric(3, 2) DEFAULT '0.90' NOT NULL;--> statement-breakpoint
+ALTER TABLE "review_log" ADD COLUMN "maximum_interval_days" integer DEFAULT 36500 NOT NULL;

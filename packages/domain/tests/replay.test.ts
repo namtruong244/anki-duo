@@ -59,6 +59,28 @@ describe('replay', () => {
     );
   });
 
+  it("uses each log's own parameters when it has them (FR-004)", () => {
+    const strict = { desiredRetention: 0.7, maximumIntervalDays: 3 };
+    const mixed = [
+      { ...review('a', '2026-01-01T00:00:00Z', 4), params: params },
+      { ...review('b', '2026-01-10T00:00:00Z', 3), params: strict },
+    ];
+    const expected = schedule(
+      schedule(created, 4, mixed[0]!.reviewedAt, params).card,
+      3,
+      mixed[1]!.reviewedAt,
+      strict,
+    ).card;
+    expect(replay(created, mixed, params)).toEqual(expected);
+    expect(replay(created, mixed, params)).not.toEqual(
+      replay(
+        created,
+        [review('a', '2026-01-01T00:00:00Z', 4), review('b', '2026-01-10T00:00:00Z', 3)],
+        params,
+      ),
+    );
+  });
+
   it('returns the initial card with no logs', () => {
     expect(replay(created, [], params)).toEqual(created);
   });
