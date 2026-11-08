@@ -1,4 +1,7 @@
-export * from './ChunkyButton';
-export * from './ProgressBar';
-export * from './Dialog';
-export * from './Toast';
+export { ChunkyButton, type ChunkyButtonProps, type ButtonVariant } from './ChunkyButton';
+export { Dialog, type DialogProps } from './Dialog';
+export { Icon, type IconName, type IconProps } from './Icon';
+export { ProgressBar, type ProgressBarProps } from './ProgressBar';
+export { SpeakerBtn, type SpeakerBtnProps } from './SpeakerBtn';
+export { TagChip, type TagChipProps } from './TagChip';
+export { Toast, type ToastProps } from './Toast';

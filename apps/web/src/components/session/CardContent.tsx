@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import Markdown, { defaultUrlTransform } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import { Icon } from '../ui';
 
 // Strict schema (research R11): no raw HTML is parsed at all, and the sanitiser additionally
 // limits link and image protocols. Images must be https (or one of our own media: assets).
@@ -53,7 +54,7 @@ function urlTransform(url: string) {
   return defaultUrlTransform(url);
 }
 
-/** An audio clip with an explicit replay button (Story 2 #3). */
+/** An audio clip with an explicit replay button (Story 2 #3, .pen 3D blue speaker pill). */
 function AudioClip({ src }: { src: string }) {
   const { t } = useTranslation();
   const ref = useRef<HTMLAudioElement>(null);
@@ -69,7 +70,7 @@ function AudioClip({ src }: { src: string }) {
       />
       <button
         type="button"
-        className="min-h-11 rounded-full border border-border px-3"
+        className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl bg-secondary px-4 py-2 font-extrabold text-on-secondary shadow-[0_3px_0_var(--color-secondary-depth)] hover:brightness-[1.03] active:translate-y-[2px] active:shadow-none transition-transform"
         onClick={() => {
           const el = ref.current;
           if (!el) return;
@@ -77,7 +78,8 @@ function AudioClip({ src }: { src: string }) {
           void el.play().catch(() => setFailed(true));
         }}
       >
-        {t('media.replay')}
+        <Icon name="volume-2" size={18} />
+        <span>{t('media.replay')}</span>
       </button>
     </span>
   );
@@ -93,22 +95,36 @@ function MediaImage({ src, alt }: { src: string; alt: string }) {
       src={src}
       alt={alt}
       loading="lazy"
-      className="max-w-full"
+      className="my-3 max-h-80 max-w-full rounded-2xl"
       onError={() => setFailed(true)}
     />
   );
 }
 
+const VARIANTS = {
+  default: 'overflow-y-auto',
+  word: 'text-text [&>:first-child]:text-4xl [&>:first-child]:font-black [&>:first-child]:leading-tight [&>:first-child]:tracking-tight sm:[&>:first-child]:text-5xl [&>p:not(:first-child)]:text-base [&>p:not(:first-child)]:font-semibold [&>p:not(:first-child)]:text-text-muted',
+  meaning:
+    'text-text [&>p:first-child]:text-2xl [&>p:first-child]:font-black [&>p:first-child]:leading-snug [&>p:first-child]:text-primary-accent [&>p:not(:first-child)]:text-base',
+} as const;
+
 /** Renders card Markdown safely (FR-010, FR-034). Long content scrolls inside this box. */
 export function CardContent({
   markdown,
   className = '',
+  variant = 'default',
 }: {
   markdown: string;
   className?: string;
+  /**
+   * `word`: the first block is the headword, later paragraphs are the quiet pronunciation line.
+   * `meaning`: the first paragraph is the green meaning, block quotes are examples. Arbitrary
+   * Markdown still renders normally in every variant.
+   */
+  variant?: 'default' | 'word' | 'meaning';
 }) {
   return (
-    <div className={`max-h-full overflow-y-auto break-words ${className}`}>
+    <div className={`max-h-full break-words leading-relaxed ${VARIANTS[variant]} ${className}`}>
       <Markdown
         remarkPlugins={[remarkGfm, htmlAsText]}
         rehypePlugins={[[rehypeSanitize, schema]]}
@@ -118,7 +134,12 @@ export function CardContent({
             typeof props.href === 'string' && props.href.endsWith('#audio') ? (
               <AudioClip src={props.href} />
             ) : (
-              <a {...omitNode(props)} target="_blank" rel="noopener noreferrer nofollow" />
+              <a
+                {...omitNode(props)}
+                target="_blank"
+                rel="noopener noreferrer nofollow"
+                className="font-bold text-nav-active-text underline hover:brightness-95"
+              />
             ),
           img: ({ src, alt }) =>
             typeof src === 'string' &&
@@ -127,6 +148,48 @@ export function CardContent({
             ) : (
               <span>{alt}</span>
             ),
+          pre: (props) => (
+            <pre
+              className="my-2.5 overflow-x-auto rounded-lg border border-border bg-surface-2 p-3 text-sm"
+              {...omitNode(props)}
+            />
+          ),
+          code: (props) => (
+            <code
+              className="rounded bg-surface-2 px-1.5 py-0.5 font-mono text-[0.9em]"
+              {...omitNode(props)}
+            />
+          ),
+          table: (props) => (
+            <div className="my-3 overflow-x-auto">
+              <table
+                className="w-full border-collapse rounded-lg border border-border text-sm"
+                {...omitNode(props)}
+              />
+            </div>
+          ),
+          th: (props) => (
+            <th
+              className="border border-border bg-surface-2 p-2.5 text-left font-bold text-text"
+              {...omitNode(props)}
+            />
+          ),
+          td: (props) => (
+            <td className="border border-border p-2.5 text-text" {...omitNode(props)} />
+          ),
+          p: (props) => <p className="my-2.5 first:mt-0 last:mb-0" {...omitNode(props)} />,
+          ul: (props) => (
+            <ul className="my-2 list-inside list-disc space-y-1" {...omitNode(props)} />
+          ),
+          ol: (props) => (
+            <ol className="my-2 list-inside list-decimal space-y-1" {...omitNode(props)} />
+          ),
+          blockquote: (props) => (
+            <blockquote
+              className="my-3 border-l-4 border-secondary py-1 pl-4 text-text [&>p:first-child]:font-bold [&>p:not(:first-child)]:text-sm [&>p:not(:first-child)]:text-text-muted"
+              {...omitNode(props)}
+            />
+          ),
         }}
       >
         {withAudioLinks(markdown)}

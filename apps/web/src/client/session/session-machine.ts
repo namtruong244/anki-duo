@@ -50,6 +50,12 @@ export interface Summary {
   xp: number;
 }
 
+export interface ReviewedCard {
+  card: Card;
+  lastGrade: Grade;
+  reviews: number;
+}
+
 export interface SessionState {
   status: 'front' | 'back' | 'done' | 'empty';
   card: Card | null;
@@ -116,7 +122,6 @@ export class SessionMachine {
 
   private constructor(
     private deps: SessionDeps,
-    private deck: Deck,
     private settings: Settings,
     private p: Persisted,
     cards: Card[],
@@ -124,34 +129,63 @@ export class SessionMachine {
     for (const c of cards) this.cards.set(c.id, c);
   }
 
-  /** Builds the queue and records the start. An empty queue gives the `empty` state. */
+  /**
+   * Builds the queue and records the start. An empty queue gives the `empty` state. Pass `decks`
+   * (review/ahead only) for a combined session over several decks; the session event then uses
+   * the deck of the first queued card as its anchor (the server needs an existing deck).
+   */
   static async start(
     deps: SessionDeps,
-    args: { deck: Deck; kind: SessionKind; settings: Settings; nodeIndex?: number },
+    args: {
+      deck?: Deck;
+      decks?: Deck[];
+      kind: SessionKind;
+      settings: Settings;
+      nodeIndex?: number;
+    },
   ): Promise<SessionMachine> {
-    const { deck, kind, settings } = args;
+    const { kind, settings } = args;
+    const multi = args.decks !== undefined;
+    const decks = args.decks ?? (args.deck ? [args.deck] : []);
     const now = deps.now();
-    const cards = (await deps.store.listCards(deck.id)).filter((c) => !c.deletedAt);
     const { end, day } = studyWindow(now, settings);
-    const queue = buildQueue({
-      kind,
-      ...(kind === 'node' && args.nodeIndex !== undefined ? { nodeIndex: args.nodeIndex } : {}),
-      cards: cards.map((c) => ({
-        id: c.id,
-        state: c.fsrs.state,
-        due: new Date(c.fsrs.due),
-        position: c.position,
-        suspended: c.suspended,
-        nodeIndex: c.nodeIndex,
-      })),
-      now,
-      settings: { sessionSize: settings.sessionSize, newCardsPerDay: deck.newCardsPerDay },
-      studyDayEnd: end,
-      introducedToday: introducedToday(cards, day, settings),
-    });
+    const cards: Card[] = [];
+    const rest: string[] = [];
+    const fresh: string[] = [];
+    for (const deck of decks) {
+      const own = (await deps.store.listCards(deck.id)).filter((c) => !c.deletedAt);
+      cards.push(...own);
+      const ids = buildQueue({
+        kind,
+        ...(kind === 'node' && args.nodeIndex !== undefined ? { nodeIndex: args.nodeIndex } : {}),
+        cards: own.map((c) => ({
+          id: c.id,
+          state: c.fsrs.state,
+          due: new Date(c.fsrs.due),
+          position: c.position,
+          suspended: c.suspended,
+          nodeIndex: c.nodeIndex,
+        })),
+        now,
+        settings: { sessionSize: settings.sessionSize, newCardsPerDay: deck.newCardsPerDay },
+        studyDayEnd: end,
+        introducedToday: introducedToday(own, day, settings),
+      });
+      const byId = new Map(own.map((c) => [c.id, c]));
+      for (const id of ids) (byId.get(id)?.fsrs.state === 'new' ? fresh : rest).push(id);
+    }
+    // Learning/due cards of every deck first (most overdue first, so the cap never drops an
+    // overdue card of a later deck), then new cards, capped at the session size.
+    if (multi) {
+      const due = new Map(cards.map((c) => [c.id, c.fsrs.due]));
+      rest.sort((a, b) => (due.get(a) ?? '').localeCompare(due.get(b) ?? ''));
+    }
+    const queue = multi ? [...rest, ...fresh].slice(0, settings.sessionSize) : [...rest, ...fresh];
+    const single = decks[0]!;
+    const anchor = multi ? (cards.find((c) => c.id === queue[0])?.deckId ?? single.id) : single.id;
     const p: Persisted = {
       id: deps.newId(),
-      deckId: deck.id,
+      deckId: anchor,
       kind,
       nodeIndex: kind === 'node' ? (args.nodeIndex ?? null) : null,
       startedAt: now.toISOString(),
@@ -164,8 +198,9 @@ export class SessionMachine {
       startedAtMs: now.getTime(),
       shownAtMs: now.getTime(),
       undoState: null,
+      ...(multi ? { multi: true, deckIds: decks.map((d) => d.id) } : {}),
     };
-    const m = new SessionMachine(deps, deck, settings, p, cards);
+    const m = new SessionMachine(deps, settings, p, cards);
     if (queue.length > 0) {
       await deps.store.putSession(p);
       await deps.store.appendOutbox(m.sessionEvent(false));
@@ -173,15 +208,33 @@ export class SessionMachine {
     return m;
   }
 
-  /** Picks up the session left in `LocalStore.sessions`, or returns null. */
+  /**
+   * Picks up the session left in `LocalStore.sessions`, or returns null. A combined session
+   * (`multi`) is only resumed by a combined route, and a single-deck one only by its own deck.
+   */
   static async resume(
     deps: SessionDeps,
-    args: { deck: Deck; settings: Settings },
+    args: { deck?: Deck; settings: Settings; multi?: boolean },
   ): Promise<SessionMachine | null> {
     const stored = (await deps.store.getActiveSession()) as Persisted | undefined;
-    if (!stored || stored.deckId !== args.deck.id) return null;
-    const cards = await deps.store.listCards(stored.deckId);
-    return new SessionMachine(deps, args.deck, args.settings, stored, cards);
+    if (!stored) return null;
+    const storedMulti = stored['multi'] === true;
+    if (args.multi ? !storedMulti : storedMulti || stored.deckId !== args.deck?.id) return null;
+    const ids = storedMulti ? ((stored['deckIds'] as string[] | undefined) ?? []) : [stored.deckId];
+    const cards = (await Promise.all(ids.map((id) => deps.store.listCards(id)))).flat();
+    return new SessionMachine(deps, args.settings, stored, cards);
+  }
+
+  /** Cards graded so far, each once, with its last grade, review count and post-grade state. */
+  getReviewedCards(): ReviewedCard[] {
+    const out = new Map<string, ReviewedCard>();
+    for (const r of this.p.reviews) {
+      const card = this.cards.get(r.cardId);
+      if (!card) continue;
+      const prev = out.get(r.cardId);
+      out.set(r.cardId, { card, lastGrade: r.grade, reviews: (prev?.reviews ?? 0) + 1 });
+    }
+    return [...out.values()];
   }
 
   // --- reading -----------------------------------------------------------------------------

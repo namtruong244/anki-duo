@@ -1,7 +1,6 @@
-import { cleanup, render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router';
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react';
+import { MemoryRouter, Route, Routes, useParams } from 'react-router';
 import { afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { studyDay } from '@anki-duo/domain';
 import { initI18n } from '../../src/i18n';
 import { dexieStore } from '../../src/client/store';
 import type { Settings } from '../../src/client/local-store';
@@ -19,23 +18,6 @@ const settings: Settings = {
   soundEnabled: true,
   motion: 'system',
 };
-const dayOffset = (n: number) => studyDay(new Date(Date.now() + n * 86_400_000), 'UTC', 4);
-const activity = (offset: number, xp: number, met: boolean) => ({
-  studyDay: dayOffset(offset),
-  reviews: xp / 2,
-  xp,
-  goalXp: 20,
-  allAvailableDone: false,
-  goalMet: met,
-});
-const stats = (currentStreak: number) => ({
-  totalXp: 100,
-  currentStreak,
-  longestStreak: currentStreak,
-  lastGoalDay: null,
-  cardCount: 0,
-  mediaBytes: 0,
-});
 const dueCard = (id: string, deckId: string) => ({
   id,
   deckId,
@@ -67,81 +49,92 @@ beforeEach(async () => {
 });
 afterEach(cleanup);
 
+const deck = (id: string, name: string) => ({
+  id,
+  name,
+  newCardsPerDay: 0,
+  createdAt: 'x',
+  updatedAt: 'x',
+  deletedAt: null,
+});
+
+const SessionProbe = () => <p>session page {useParams().deckId}</p>;
+
 const renderHome = () =>
   render(
-    <MemoryRouter>
-      <HomePage />
+    <MemoryRouter initialEntries={['/']}>
+      <Routes>
+        <Route index element={<HomePage />} />
+        <Route path="/session/:deckId" element={<SessionProbe />} />
+        <Route path="/decks/:deckId/import" element={<p>import page</p>} />
+        <Route path="/decks/:deckId/cards" element={<p>cards page</p>} />
+      </Routes>
     </MemoryRouter>,
   );
 
-describe('HomePage (FR-025, FR-026)', () => {
-  it('shows the streak flame with its count when today is met', async () => {
-    await dexieStore.putStats('u', stats(5));
-    await dexieStore.putDailyActivity([activity(-1, 20, true), activity(0, 24, true)]);
-    renderHome();
-    expect(await screen.findByText('5 day streak')).toBeTruthy();
-    expect(screen.getByTestId('streak').dataset.status).toBe('met');
-    expect(screen.queryByText(/at risk/i)).toBeNull();
-  });
-
-  it('marks the streak at risk, with text, when today is not met yet', async () => {
-    await dexieStore.putStats('u', stats(3));
-    await dexieStore.putDailyActivity([activity(-1, 20, true), activity(0, 4, false)]);
-    renderHome();
-    expect(await screen.findByText('3 day streak')).toBeTruthy();
-    expect(screen.getByTestId('streak').dataset.status).toBe('at_risk');
-    expect(screen.getByText(/at risk/i)).toBeTruthy();
-  });
-
-  it('shows 0 and no flame state when the streak is broken', async () => {
-    await dexieStore.putStats('u', stats(0));
-    await dexieStore.putDailyActivity([activity(-3, 20, true)]);
-    renderHome();
-    expect(await screen.findByText('0 day streak')).toBeTruthy();
-    expect(screen.getByTestId('streak').dataset.status).toBe('broken');
-  });
-
-  it("shows today's XP against the goal as a progress bar", async () => {
-    await dexieStore.putStats('u', stats(0));
-    await dexieStore.putDailyActivity([activity(0, 10, false)]);
-    renderHome();
-    const bar = await screen.findByRole('progressbar', { name: /daily goal/i });
-    expect(bar.getAttribute('aria-valuenow')).toBe('10');
-    expect(bar.getAttribute('aria-valuemax')).toBe('20');
-    expect(screen.getByText('10 / 20 XP')).toBeTruthy();
-  });
-
-  it('shows the number of cards due and a Start link to the first deck with due cards', async () => {
-    await dexieStore.putDecks([
-      {
-        id: 'd1',
-        name: 'Empty',
-        newCardsPerDay: 0,
-        createdAt: 'x',
-        updatedAt: 'x',
-        deletedAt: null,
-      },
-      {
-        id: 'd2',
-        name: 'Spanish',
-        newCardsPerDay: 0,
-        createdAt: 'x',
-        updatedAt: 'x',
-        deletedAt: null,
-      },
-    ]);
+describe('Deck hub (HomePage)', () => {
+  it('lists decks with due counts and starts a session from the banner', async () => {
+    await dexieStore.putDecks([deck('d1', 'Empty'), deck('d2', 'Spanish')]);
     await dexieStore.putCards([dueCard('a', 'd2'), dueCard('b', 'd2'), dueCard('c', 'd2')]);
     renderHome();
-    expect(await screen.findByText('3 cards due')).toBeTruthy();
-    const start = screen.getByRole('link', { name: 'Start' });
-    expect(start.getAttribute('href')).toBe('/session/d2');
-    await waitFor(() => expect(screen.getByRole('link', { name: /Spanish/ })).toBeTruthy());
+    const spanish = await screen.findByRole('listitem', { name: 'Spanish' });
+    expect(within(spanish).getByText('3 due · 0 new')).toBeTruthy();
+    expect(screen.getByRole('listitem', { name: 'Empty' })).toBeTruthy();
+    fireEvent.click(within(spanish).getByRole('button', { name: 'Study now' }));
+    expect(await screen.findByText(/session page/)).toBeTruthy();
   });
 
-  it('with nothing due, says so and offers no Start', async () => {
+  it('review-all card shows the total due and opens the combined session over all decks', async () => {
+    await dexieStore.putDecks([deck('d1', 'Empty'), deck('d2', 'Spanish')]);
+    await dexieStore.putCards([dueCard('a', 'd2'), dueCard('b', 'd2')]);
+    renderHome();
+    expect(await screen.findByText(/2 cards due · about 1 min/)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Review now' }));
+    expect(await screen.findByText('session page all')).toBeTruthy();
+  });
+
+  it('with nothing due, says so and offers no review button', async () => {
+    await dexieStore.putDecks([deck('d1', 'Empty')]);
     renderHome();
     expect(await screen.findByText(/nothing due/i)).toBeTruthy();
-    expect(screen.queryByRole('link', { name: 'Start' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review now' })).toBeNull();
+  });
+
+  it('with no decks, offers to create one and sends Import CSV to the create dialog', async () => {
+    renderHome();
+    expect(await screen.findByText(/create or import a deck/i)).toBeTruthy();
+    fireEvent.click(screen.getByRole('button', { name: 'Import CSV' }));
+    expect(await screen.findByRole('dialog')).toBeTruthy();
+  });
+
+  it('Import CSV opens the import page of the first deck', async () => {
+    await dexieStore.putDecks([deck('d1', 'Spanish')]);
+    renderHome();
+    await screen.findByRole('listitem', { name: 'Spanish' });
+    fireEvent.click(screen.getByRole('button', { name: 'Import CSV' }));
+    expect(await screen.findByText('import page')).toBeTruthy();
+  });
+
+  it('keeps deck management: create dialog, per-deck cards, import and settings', async () => {
+    await dexieStore.putDecks([deck('d1', 'Spanish')]);
+    renderHome();
+    const item = await screen.findByRole('listitem', { name: 'Spanish' });
+
+    fireEvent.click(within(item).getByRole('button', { name: 'Deck settings' }));
+    const dialog = await screen.findByRole('dialog');
+    expect((within(dialog).getByLabelText('Name') as HTMLInputElement).value).toBe('Spanish');
+    expect(within(dialog).getByRole('button', { name: 'Delete deck' })).toBeTruthy();
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }));
+
+    fireEvent.click(screen.getByRole('button', { name: /Create deck/ }));
+    const create = await screen.findByRole('dialog');
+    expect((within(create).getByLabelText('Name') as HTMLInputElement).value).toBe('');
+    expect(within(create).queryByRole('button', { name: 'Delete deck' })).toBeNull();
+    fireEvent.click(within(create).getByRole('button', { name: 'Cancel' }));
+
+    expect(screen.getByTestId('restore-input')).toBeTruthy();
+    fireEvent.click(within(item).getByRole('button', { name: 'Cards' }));
+    expect(await screen.findByText('cards page')).toBeTruthy();
   });
 });
 

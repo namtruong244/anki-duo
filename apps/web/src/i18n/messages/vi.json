@@ -3,9 +3,8 @@
     "name": "Anki Duo"
   },
   "nav": {
-    "home": "Trang chủ",
-    "decks": "Bộ thẻ",
-    "path": "Lộ trình",
+    "home": "Học tập",
+    "decks": "Kho thẻ",
     "dashboard": "Thống kê",
     "settings": "Cài đặt"
   },
@@ -41,25 +40,26 @@
     "verifyFailed": "Liên kết xác minh không hợp lệ hoặc đã hết hạn.",
     "resetSent": "Nếu email này có tài khoản, liên kết đặt lại đang được gửi tới bạn.",
     "resetDone": "Đã cập nhật mật khẩu. Bạn có thể đăng nhập.",
-    "noAccount": "Chưa có tài khoản?",
-    "haveAccount": "Đã có tài khoản?",
+    "legalSignIn": "Bằng việc đăng nhập, bạn đồng ý với Điều khoản & Chính sách riêng tư của Anki Duo.",
+    "legalSignUp": "Tôi đồng ý với Điều khoản dịch vụ và Chính sách riêng tư của Anki Duo.",
+    "termsRequired": "Hãy đồng ý với điều khoản để tạo tài khoản.",
     "error": "Đã xảy ra lỗi. Vui lòng thử lại."
   },
   "pwa": {
     "installed": "Đã cài đặt"
   },
   "session": {
-    "reveal": "Hiện đáp án",
+    "reveal": "Xem đáp án",
     "undo": "Hoàn tác",
     "progress": "{done}/{total}",
     "front": "Câu hỏi",
     "back": "Đáp án",
     "title": "Phiên học",
     "summaryTitle": "Hoàn thành phiên học",
-    "reviewed": "Số thẻ đã ôn",
-    "accuracy": "Độ chính xác",
+    "reviewed": "Thẻ đã ôn",
+    "accuracy": "Chính xác",
     "time": "Thời gian",
-    "xp": "XP nhận được",
+    "xp": "Tổng XP",
     "backToDecks": "Về danh sách bộ thẻ",
     "resumeTitle": "Tiếp tục phiên học?",
     "resumeBody": "Bạn có một phiên học chưa hoàn thành.",
@@ -75,10 +75,20 @@
     "saveFailed": "Không lưu được câu trả lời gần nhất. Vui lòng thử lại.",
     "progressLabel": "Tiến độ phiên học",
     "gradeBar": "Chấm điểm thẻ này",
-    "shortcuts": "Phím tắt: Space hiện đáp án, 1–4 chấm điểm, Z hoàn tác."
+    "shortcuts": "Phím tắt: Space hiện đáp án, 1–4 chấm điểm, Z hoàn tác.",
+    "meaning": "Nghĩa",
+    "play": "Phát âm thanh",
+    "reviewList": {
+      "title": "Thẻ đã ôn ({n})",
+      "back": "Về tổng kết",
+      "next": "Lần tới: {when}",
+      "dueNow": "ngay",
+      "times": "{count, plural, other {# lượt ôn}}",
+      "edit": "Sửa thẻ: {front}"
+    }
   },
   "grade": {
-    "again": "Lại",
+    "again": "Học lại",
     "hard": "Khó",
     "good": "Tốt",
     "easy": "Dễ",
@@ -94,11 +104,7 @@
   },
   "decks": {
     "title": "Bộ thẻ",
-    "empty": "Chưa có bộ thẻ nào.",
-    "due": "{n} cần ôn",
     "new": "Bộ thẻ mới",
-    "review": "Ôn tập",
-    "nothingToday": "Hôm nay không có gì để học",
     "create": "Tạo bộ thẻ",
     "name": "Tên",
     "newPerDay": "Thẻ mới mỗi ngày",
@@ -117,21 +123,9 @@
     "restoreDone": "Đã khôi phục bộ thẻ",
     "exportFailed": "Không thể xuất bộ thẻ.",
     "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
-    "reviewShort": "Ôn tập",
-    "path": "Lộ trình"
+    "reviewShort": "Ôn tập"
   },
   "learning": {
-    "title": "Học tập",
-    "retention": "Mức ghi nhớ mong muốn",
-    "retentionHint": "70–97%, mặc định 90%",
-    "maxInterval": "Khoảng cách tối đa (ngày)",
-    "maxIntervalHint": "1–36500",
-    "sessionSize": "Số thẻ mỗi phiên",
-    "sessionSizeHint": "5–50, mặc định 20",
-    "dayStart": "Ngày bắt đầu lúc (giờ)",
-    "dayStartHint": "0–23, mặc định 4",
-    "save": "Lưu",
-    "saved": "Đã lưu cài đặt",
     "saveFailed": "Không lưu được cài đặt",
     "futureOnly": "Thay đổi chỉ áp dụng cho các lần ôn sau."
   },
@@ -156,10 +150,9 @@
     "side": "Đính kèm vào"
   },
   "cards": {
-    "title": "Thẻ",
-    "search": "Tìm thẻ",
-    "tagFilter": "Nhãn",
-    "allTags": "Tất cả nhãn",
+    "title": "Kho thẻ",
+    "search": "Tìm kiếm thẻ, nội dung, tag...",
+    "allTags": "Tất cả",
     "add": "Thêm thẻ",
     "edit": "Sửa",
     "suspend": "Tạm dừng",
@@ -177,11 +170,11 @@
     "back": "Mặt sau",
     "tags": "Nhãn",
     "tagsHint": "Cách nhau bằng dấu cách",
-    "preview": "Xem trước",
     "save": "Lưu thẻ",
     "saved": "Đã lưu thẻ",
-    "newTitle": "Thẻ mới",
+    "newTitle": "Thêm thẻ mới",
     "editTitle": "Sửa thẻ",
+    "close": "Hủy",
     "errors": {
       "frontRequired": "Mặt trước không được để trống.",
       "frontTooLong": "Mặt trước vượt quá 10.000 ký tự.",
@@ -189,37 +182,35 @@
       "tooManyTags": "Tối đa 20 nhãn.",
       "tagInvalid": "Mỗi nhãn dài 1–50 ký tự, không có dấu cách."
     },
-    "limitReached": "Bạn đã đạt giới hạn 20.000 thẻ.",
-    "back_to_list": "Quay lại danh sách thẻ"
+    "limitReached": "Bạn đã đạt giới hạn 20.000 thẻ."
   },
   "import": {
     "title": "Nhập thẻ",
+    "titleFull": "Nhập thẻ từ CSV / TSV",
+    "joinTitle": "Ghép cột trong tệp với trường của thẻ",
+    "back": "Quay lại",
+    "importCount": "Nhập {n} thẻ",
     "choose": "Chọn tệp CSV hoặc TSV",
-    "hint": "UTF-8, tối đa 10 MB và 10.000 dòng.",
-    "delimiter": "Ký tự phân cách",
+    "hint": "Tối đa 10MB · mã hóa UTF-8 · dòng đầu có thể là tiêu đề",
+    "delimiter": "Dấu phân cách",
     "delimiters": {
-      "comma": "Dấu phẩy",
-      "semicolon": "Dấu chấm phẩy",
+      "comma": "Dấu phẩy ,",
+      "semicolon": "Chấm phẩy ;",
       "tab": "Tab",
-      "pipe": "Dấu gạch đứng"
+      "pipe": "Gạch đứng |"
     },
     "headerRow": "Dòng đầu là tiêu đề",
-    "mapping": "Cột",
     "mapFront": "Mặt trước",
     "mapBack": "Mặt sau",
     "mapTags": "Nhãn",
-    "mapNone": "(không)",
-    "previewTitle": "Xem trước",
     "totalRows": "{n, plural, other {# dòng}}",
     "invalidRows": "{n, plural, other {# dòng không hợp lệ}}",
-    "duplicateEstimate": "Khoảng {n, plural, other {# thẻ trùng}}",
     "duplicates": "Thẻ trùng",
     "mode": {
       "skip": "Bỏ qua",
       "update": "Cập nhật Mặt sau và Nhãn",
       "keep_both": "Giữ cả hai"
     },
-    "start": "Nhập",
     "progress": "Đang nhập… {done}/{total}",
     "done": "Đã nhập xong",
     "imported": "Đã nhập",
@@ -253,36 +244,19 @@
       "import_too_large": "Quá lớn"
     }
   },
-  "path": {
-    "title": "Lộ trình học",
-    "review": "Ôn tập ({n})",
-    "reviewNone": "Ôn tập (0)",
-    "node": "Chặng {n}",
-    "status": {
-      "completed": "đã hoàn thành",
-      "available": "đang mở",
-      "in_progress": "đang học",
-      "locked": "đang khóa"
-    },
-    "mastery": "Thuộc {pct}%",
-    "lockedMessage": "Hãy hoàn thành chặng {n} trước.",
-    "dueFirst": "Hãy ôn các thẻ đến hạn còn lại trước.",
-    "pickDeck": "Bộ thẻ",
-    "empty": "Bộ thẻ này chưa có thẻ nào.",
-    "noDecks": "Chưa có bộ thẻ nào.",
-    "unlocked": "Đã mở chặng {n}!",
-    "cards": "{n, plural, other {# thẻ}}",
-    "studied": "Đã học {studied}/{total}"
-  },
   "dashboard": {
-    "title": "Tiến độ",
+    "title": "Thống kê",
     "allDecks": "Tất cả bộ thẻ",
     "deckFilter": "Bộ thẻ",
     "heatmap": "Số lượt ôn trong 12 tháng qua",
+    "heatmapTitle12": "Lịch học 12 tháng",
+    "daysStudied": "{n} ngày học",
     "heatmapCell": "{date}: {n, plural, other {# lượt ôn}}",
     "donut": "Thẻ theo trạng thái",
+    "cardStatus": "Phân bố trạng thái thẻ",
+    "longestHint": "ngày · kỷ lục",
     "donutLabel": "Tổng cộng {n, plural, other {# thẻ}}",
-    "centreLabel": "cần học hôm nay",
+    "centreLabel": "Thẻ hôm nay",
     "new": "Mới",
     "learning": "Đang học",
     "due": "Đến hạn",
@@ -291,32 +265,38 @@
     "currentStreak": "Chuỗi hiện tại",
     "longestStreak": "Chuỗi dài nhất",
     "totalXp": "Tổng XP",
-    "days": "{n, plural, other {# ngày}}",
-    "empty": "Chưa có thẻ nào."
+    "allDecksShort": "Tất cả",
+    "currentStreakShort": "Chuỗi",
+    "longestStreakShort": "Dài nhất",
+    "currentStreakHint": "ngày liên tiếp",
+    "totalXpHint": "XP tích lũy",
+    "swipeHint": "vuốt ngang",
+    "monthShort": "T{n}"
   },
   "home": {
-    "title": "Trang chủ",
+    "title": "Học tập",
+    "studyNow": "Học ngay",
     "streak": "{n, plural, other {# ngày liên tiếp}}",
     "streakAtRisk": "Chuỗi sắp mất: hãy đạt mục tiêu hôm nay để giữ chuỗi",
     "streakMet": "Đã đạt mục tiêu hôm nay",
     "streakBroken": "Bắt đầu chuỗi mới hôm nay",
     "goalLabel": "Mục tiêu hằng ngày",
-    "xpToday": "{xp} / {goal} XP",
-    "due": "{n, plural, other {# thẻ cần ôn}}",
     "nothingDue": "Hiện chưa có thẻ nào cần ôn. Làm tốt lắm!",
-    "start": "Bắt đầu",
     "decks": "Bộ thẻ của bạn",
     "noDecks": "Hãy tạo hoặc nhập một bộ thẻ để bắt đầu.",
-    "deckDue": "{n, plural, other {# cần ôn}}"
+    "mastered": "Thành thạo",
+    "deckMetaShort": "{due} đến hạn · {fresh} thẻ mới",
+    "reviewAllTitle": "Ôn tập tất cả thẻ đến hạn hôm nay",
+    "reviewAllMeta": "{n} thẻ đến hạn · khoảng {minutes} phút",
+    "reviewNow": "Ôn tập ngay",
+    "myDecks": "Bộ thẻ của tôi"
   },
   "celebration": {
     "goal": "Đã đạt mục tiêu hằng ngày!",
     "streak": "{n, plural, other {# ngày liên tiếp}}"
   },
   "gamification": {
-    "title": "Mục tiêu và trải nghiệm",
     "dailyGoal": "Mục tiêu XP hằng ngày",
-    "dailyGoalHint": "Số XP bạn muốn đạt mỗi ngày. Mặc định là 20.",
     "sound": "Âm thanh",
     "motion": "Chuyển động",
     "motionSystem": "Theo hệ thống",
@@ -324,7 +304,6 @@
     "motionFull": "Đầy đủ"
   },
   "language": {
-    "title": "Ngôn ngữ",
     "label": "Ngôn ngữ",
     "vi": "Tiếng Việt",
     "en": "English"
@@ -352,5 +331,133 @@
     "export_invalid": "Đây không phải tệp xuất hợp lệ của Anki Duo.",
     "rate_limited": "Quá nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.",
     "reauth_required": "Vui lòng đăng nhập lại để tiếp tục."
+  },
+  "ui": {
+    "theme": {
+      "title": "Giao diện",
+      "light": "Sáng",
+      "dark": "Tối"
+    },
+    "sidebar": {
+      "study": "Học",
+      "level": "Cấp {level} · {xp} XP",
+      "tagline": "Lặp lại ngắt quãng",
+      "streakWeek": "Tuần này",
+      "learner": "Học viên",
+      "freePlan": "FSRS-5 · Học ngoại tuyến"
+    },
+    "rail": {
+      "studyGoal": "Mục tiêu hằng ngày",
+      "online": "Online",
+      "dueTile": "Thẻ đến hạn",
+      "newTile": "Thẻ mới cần học",
+      "doneTile": "Đã ôn xong",
+      "accuracyTile": "Độ chính xác",
+      "chestOpen": "Mở",
+      "chestProgress": "Còn {n} XP để mở rương hôm nay",
+      "dailyChest": "Rương hằng ngày",
+      "chestReady": "Đã mở khóa! Hôm nay bạn làm rất tốt.",
+      "chestHint": "Đạt {goal} XP hôm nay để mở rương thưởng",
+      "todayOverview": "Tổng quan ôn tập hôm nay",
+      "forecast7d": "Dự báo ôn tập 7 ngày",
+      "achievements": "Cột mốc",
+      "badgeStreak": "Giữ lửa",
+      "badgeCards": "Sưu tầm thẻ",
+      "badgeAccuracy": "Trí nhớ bền",
+      "fsrsTipTitle": "Thuật toán FSRS-5 thông minh",
+      "fsrsTipBody": "Hãy chấm trung thực — chọn Lại hoặc Khó không bị trừ XP và giúp FSRS tính đúng đường cong trí nhớ.",
+      "details": "Chi tiết",
+      "newLabel": "Thẻ mới",
+      "learningLabel": "Đang học",
+      "dueLabel": "Đến hạn",
+      "offline": "Offline",
+      "language": "Ngôn ngữ"
+    },
+    "hub": {
+      "importCsv": "Nhập CSV"
+    },
+    "session": {
+      "summaryHeadline": "Tuyệt vời! Hoàn thành phiên học",
+      "editCard": "Sửa thẻ",
+      "streakGrew": "Chuỗi streak của bạn tăng lên {n} ngày",
+      "streakNow": "Chuỗi streak hiện tại: {n} ngày",
+      "reviewCards": "Xem lại thẻ"
+    },
+    "cards": {
+      "stateNew": "Mới",
+      "stateLearning": "Đang học",
+      "showingCount": "Hiển thị {shown}/{total}",
+      "livePreview": "Xem trước trực tiếp",
+      "due": "Đến hạn",
+      "deckFilter": "Bộ thẻ",
+      "allDecks": "Tất cả bộ thẻ",
+      "noDecks": "Bạn chưa có bộ thẻ nào. Hãy tạo một bộ thẻ trước để thêm thẻ.",
+      "createDeck": "Tạo bộ thẻ",
+      "actions": "Thao tác với thẻ",
+      "showMore": "Hiển thị thêm"
+    },
+    "import": {
+      "stepChoose": "Chọn tệp",
+      "stepMap": "Ghép cột",
+      "stepReview": "Xem trước & nhập",
+      "dropTitle": "Kéo thả tệp CSV / TSV vào đây",
+      "chooseBtn": "Chọn tệp",
+      "targetDeck": "Bộ thẻ đích",
+      "continue": "Tiếp tục",
+      "column": "Cột",
+      "ignore": "Bỏ qua",
+      "tag": "Tag",
+      "summary": {
+        "skip": "{n} thẻ sẽ được nhập · {dup} thẻ trùng lặp sẽ bị bỏ qua",
+        "update": "{n} thẻ sẽ được nhập · {dup} thẻ trùng lặp sẽ được cập nhật",
+        "keep_both": "{n} thẻ sẽ được nhập · {dup} thẻ trùng lặp cũng được giữ lại"
+      }
+    },
+    "settings": {
+      "appearance": "Giao diện",
+      "dailyGoal": "Mục tiêu XP mỗi ngày",
+      "fsrsParams": "Thông số FSRS",
+      "language": "Ngôn ngữ",
+      "retention": "Retention mong muốn",
+      "maxInterval": "Khoảng cách tối đa (Max Interval)",
+      "sessionSize": "Số thẻ mỗi phiên (Session Size)",
+      "dayStart": "Giờ sang ngày mới",
+      "valueDays": "{n, plural, other {# ngày}}",
+      "valueCards": "{n, plural, other {# thẻ}}",
+      "invalidValue": "Nhập số nguyên từ {min} đến {max}.",
+      "otherTitle": "Khác",
+      "themeSystem": "Theo giao diện hệ thống"
+    },
+    "auth": {
+      "orDivider": "HOẶC",
+      "showPassword": "Hiện mật khẩu",
+      "hidePassword": "Ẩn mật khẩu",
+      "strengthWeak": "Yếu",
+      "strengthFair": "Khá",
+      "strengthGood": "Tốt",
+      "strengthStrong": "Mạnh",
+      "topSignUp": "Đăng ký",
+      "topSignIn": "Đăng nhập",
+      "signUpTitle": "Tạo hồ sơ của bạn"
+    },
+    "editor": {
+      "deck": "Bộ thẻ",
+      "deckLocked": "Thẻ giữ nguyên bộ thẻ của nó; hãy tạo thẻ mới để dùng bộ thẻ khác.",
+      "toolbar": "Định dạng Markdown",
+      "tools": {
+        "bold": "In đậm",
+        "italic": "In nghiêng",
+        "code": "Mã",
+        "list": "Danh sách",
+        "link": "Liên kết",
+        "image": "Liên kết ảnh"
+      },
+      "frontMd": "Mặt trước (Markdown)",
+      "backMd": "Mặt sau (Markdown)",
+      "tag": "Tag",
+      "addImage": "+ Ảnh",
+      "addAudio": "+ Âm thanh",
+      "saveFirst": "Hãy lưu thẻ trước để đính kèm ảnh hoặc âm thanh."
+    }
   }
 }

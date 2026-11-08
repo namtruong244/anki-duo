@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18next from 'i18next';
@@ -6,6 +6,7 @@ import { AuthContext } from '../../src/client/auth-context';
 import { dexieStore } from '../../src/client/store';
 import type { Settings } from '../../src/client/local-store';
 import { initI18n } from '../../src/i18n';
+import { getColorScheme, setColorScheme } from '../../src/client/theme';
 
 const mocks = vi.hoisted(() => ({
   patch: vi.fn(),
@@ -108,18 +109,85 @@ describe('gamification settings (FR-021, FR-022, FR-025)', () => {
 describe('language switch (FR-031, SC-009)', () => {
   it('changes the language at once, on the same screen, and saves it to the account', async () => {
     renderSettings();
-    fireEvent.change(await screen.findByLabelText('Language'), { target: { value: 'vi' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Tiếng Việt' }));
     expect(await screen.findByRole('heading', { name: 'Cài đặt' })).toBeTruthy();
     expect(mocks.patch).toHaveBeenCalledWith('/me/settings', { body: { locale: 'vi' } });
     expect(i18next.language).toBe('vi');
     expect((await dexieStore.getSettings('u'))!.locale).toBe('vi');
+    expect(screen.getByRole('button', { name: 'Tiếng Việt' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
   });
 
   it('still switches when the save fails (offline) and says so', async () => {
     mocks.patch.mockRejectedValueOnce(new Error('offline'));
     renderSettings();
-    fireEvent.change(await screen.findByLabelText('Language'), { target: { value: 'vi' } });
+    fireEvent.click(await screen.findByRole('button', { name: 'Tiếng Việt' }));
     expect(await screen.findByRole('heading', { name: 'Cài đặt' })).toBeTruthy();
+    expect(i18next.language).toBe('vi');
+  });
+});
+
+describe('theme', () => {
+  it('offers light and dark, plus a switch to follow the system theme', async () => {
+    renderSettings();
+    const group = await screen.findByRole('group', { name: 'Theme' });
+    fireEvent.click(within(group).getByRole('button', { name: 'Dark' }));
+    expect(getColorScheme()).toBe('dark');
+    expect(within(group).getByRole('button', { name: 'Dark' }).getAttribute('aria-pressed')).toBe(
+      'true',
+    );
+    fireEvent.click(screen.getByRole('switch', { name: 'Follow system theme' }));
+    expect(getColorScheme()).toBe('system');
+    fireEvent.click(screen.getByRole('switch', { name: 'Follow system theme' }));
+    expect(getColorScheme()).not.toBe('system');
+    setColorScheme('system');
+  });
+});
+
+describe('FSRS parameters', () => {
+  async function edit(label: string, value: string) {
+    fireEvent.click(await screen.findByRole('button', { name: new RegExp(`^${label}:`) }));
+    const input = screen.getByRole('spinbutton', { name: label });
+    fireEvent.change(input, { target: { value } });
+    fireEvent.keyDown(input, { key: 'Enter' });
+  }
+
+  it('shows each value in a pill and saves an edited value', async () => {
+    renderSettings();
+    expect(await screen.findByRole('button', { name: 'Desired retention: 90%' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Max Interval.*: 36,500 days/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /Session Size.*: 20 cards/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'New day starts at: 04:00' })).toBeTruthy();
+    await edit('Desired retention', '85');
+    await waitFor(() =>
+      expect(mocks.patch).toHaveBeenCalledWith('/me/settings', {
+        body: { desiredRetention: 0.85 },
+      }),
+    );
+    expect(await screen.findByRole('button', { name: 'Desired retention: 85%' })).toBeTruthy();
+    await edit('New day starts at', '6');
+    await waitFor(() =>
+      expect(mocks.patch).toHaveBeenCalledWith('/me/settings', { body: { dayStartHour: 6 } }),
+    );
+    expect(await screen.findByRole('button', { name: 'New day starts at: 06:00' })).toBeTruthy();
+  });
+
+  it('rejects out-of-range values without saving', async () => {
+    renderSettings();
+    await edit('Desired retention', '99');
+    expect(await screen.findByRole('button', { name: 'Desired retention: 90%' })).toBeTruthy();
+    expect(mocks.patch).not.toHaveBeenCalled();
+  });
+
+  it('Escape cancels the edit', async () => {
+    renderSettings();
+    fireEvent.click(await screen.findByRole('button', { name: /^Desired retention:/ }));
+    const input = screen.getByRole('spinbutton', { name: 'Desired retention' });
+    fireEvent.change(input, { target: { value: '80' } });
+    fireEvent.keyDown(input, { key: 'Escape' });
+    expect(await screen.findByRole('button', { name: 'Desired retention: 90%' })).toBeTruthy();
+    expect(mocks.patch).not.toHaveBeenCalled();
   });
 });
 

@@ -13,8 +13,6 @@ import { VerifyEmailPage } from './auth/VerifyEmailPage';
 import { ResetPasswordPage } from './auth/ResetPasswordPage';
 import { HomePage } from './home/HomePage';
 import { DashboardPage } from './dashboard/DashboardPage';
-import { PathPage } from './path/PathPage';
-import { DeckListPage } from './decks/DeckListPage';
 import { SessionPage } from './session/SessionPage';
 
 // Heavier screens load on demand so the review session stays light (SC-001).
@@ -87,12 +85,12 @@ export function AppRoutes() {
         <Route path="/session/:deckId" element={<SessionPage />} />
         <Route element={<AppLayout />}>
           <Route index element={<HomePage />} />
-          <Route path="/decks" element={<DeckListPage />} />
+          <Route path="/decks" element={<Navigate to="/" replace />} />
+          <Route path="/cards" element={<CardListPage />} />
           <Route path="/decks/:deckId/cards" element={<CardListPage />} />
           <Route path="/decks/:deckId/cards/new" element={<CardEditorPage />} />
           <Route path="/decks/:deckId/cards/:cardId" element={<CardEditorPage />} />
           <Route path="/decks/:deckId/import" element={<ImportPage />} />
-          <Route path="/path" element={<PathPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Route>

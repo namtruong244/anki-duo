@@ -1,14 +1,27 @@
 <!doctype html>
-<html lang="vi">
+<html lang="vi" class="h-full">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#2e7d00" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      try {
+        var m = document.querySelector('meta[name="color-scheme"]');
+        if (m) m.content = localStorage.getItem('color-scheme') || 'light dark';
+      } catch {}
+    </script>
+    <meta name="theme-color" content="#58cc02" />
     <link rel="icon" href="/icons/icon-192.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@500;600;700;800;900&display=swap"
+      rel="stylesheet"
+    />
     <title>Anki Duo</title>
   </head>
-  <body>
-    <div id="root"></div>
+  <body class="h-full">
+    <div id="root" class="min-h-full"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

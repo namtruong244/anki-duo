@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '../../client/auth';
 import { ChunkyButton } from '../../components/ui';
-import { AuthShell, Field } from './Shell';
+import { AuthShell, Field, FormError, SocialSignIn } from './Shell';
 
 export function SignInPage() {
   const { t } = useTranslation();
@@ -26,8 +26,8 @@ export function SignInPage() {
   }
 
   return (
-    <AuthShell title={t('auth.signIn')}>
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+    <AuthShell title={t('auth.signIn')} variant="signin">
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
         <Field label={t('auth.email')} name="email" type="email" autoComplete="email" required />
         <Field
           label={t('auth.password')}
@@ -36,29 +36,21 @@ export function SignInPage() {
           autoComplete="current-password"
           required
         />
-        {error && (
-          <p role="alert" className="text-danger">
-            {error}
-          </p>
-        )}
-        <ChunkyButton type="submit" disabled={busy}>
+        {error && <FormError>{error}</FormError>}
+        <ChunkyButton type="submit" disabled={busy} className="w-full rounded-2xl">
           {t('auth.signIn')}
         </ChunkyButton>
       </form>
-      <ChunkyButton
-        variant="neutral"
-        onClick={() => authClient.signIn.social({ provider: 'google', callbackURL: '/' })}
-      >
-        {t('auth.google')}
-      </ChunkyButton>
-      <Link className="underline" to="/reset-password">
-        {t('auth.forgotPassword')}
-      </Link>
-      <p>
-        {t('auth.noAccount')}{' '}
-        <Link className="underline" to="/sign-up">
-          {t('auth.signUp')}
+
+      <SocialSignIn />
+
+      <p className="text-center text-xs font-bold text-text-muted">
+        <Link className="hover:underline" to="/reset-password">
+          {t('auth.forgotPassword')}
         </Link>
+      </p>
+      <p className="text-center text-[11px] font-semibold leading-relaxed text-text-subtle">
+        {t('auth.legalSignIn')}
       </p>
     </AuthShell>
   );

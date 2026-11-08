@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '../../client/auth';
 import { ChunkyButton } from '../../components/ui';
-import { AuthShell, Field } from './Shell';
+import { AuthShell, Field, FormError } from './Shell';
 
 /** Requests a reset link, or sets a new password when opened with `?token=`. */
 export function ResetPasswordPage() {
@@ -29,14 +29,13 @@ export function ResetPasswordPage() {
         email: String(f.get('email')),
         redirectTo: '/reset-password',
       });
-      // Same message whether or not the account exists.
       setMessage(t('auth.resetSent'));
     }
   }
 
   return (
-    <AuthShell title={t('auth.resetPassword')}>
-      <form onSubmit={onSubmit} className="flex flex-col gap-3">
+    <AuthShell title={t('auth.resetPassword')} variant="reset">
+      <form onSubmit={onSubmit} className="flex flex-col gap-4">
         {token ? (
           <Field
             label={t('auth.newPassword')}
@@ -49,19 +48,24 @@ export function ResetPasswordPage() {
         ) : (
           <Field label={t('auth.email')} name="email" type="email" autoComplete="email" required />
         )}
-        {error && (
-          <p role="alert" className="text-danger">
-            {error}
+        {error && <FormError>{error}</FormError>}
+        {message && (
+          <p
+            role="status"
+            className="rounded-2xl border-2 border-secondary bg-secondary-tint/60 p-3 text-sm font-bold text-text"
+          >
+            {message}
           </p>
         )}
-        {message && <p role="status">{message}</p>}
-        <ChunkyButton type="submit">
+        <ChunkyButton type="submit" className="w-full rounded-2xl">
           {token ? t('auth.resetPassword') : t('auth.sendResetLink')}
         </ChunkyButton>
       </form>
-      <Link className="underline" to="/sign-in">
-        {t('auth.signIn')}
-      </Link>
+      <div className="text-center">
+        <Link className="text-xs font-bold text-text-muted hover:underline" to="/sign-in">
+          {t('auth.signIn')}
+        </Link>
+      </div>
     </AuthShell>
   );
 }

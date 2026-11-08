@@ -1,29 +1,75 @@
 @theme {
-  /* Surfaces and text */
+  /* Surfaces and text (anki-duo.pen Design System, WCAG 2.2 AA verified) */
   --color-bg: #ffffff;
-  --color-surface: #f4f7f2;
-  --color-border: #d7ded3;
-  --color-text: #1f2a1c;
-  --color-text-muted: #4b5a46;
+  --color-card: #ffffff;
+  --color-surface: #f7f7f7;
+  --color-surface-2: #efefef;
+  --color-track: #e5e5e5;
+  --color-border: #e5e5e5;
+  --color-border-strong: #d0d0d0;
+  --color-text: #3c3c3c;
+  --color-text-muted: #595959;
+  --color-text-subtle: #636363;
+  --color-ink: #131f24;
 
   /* Controls: each background has a text colour that meets 4.5:1 (WCAG 2.2 AA) */
-  --color-primary: #2e7d00;
-  --color-primary-depth: #1f5700;
-  --color-on-primary: #ffffff;
-  --color-secondary: #1558b0;
-  --color-secondary-depth: #0e3f80;
-  --color-on-secondary: #ffffff;
-  --color-danger: #b42318;
-  --color-danger-depth: #7a1810;
-  --color-on-danger: #ffffff;
-  --color-neutral: #e5e9e2;
-  --color-neutral-depth: #b8c0b3;
-  --color-on-neutral: #1f2a1c;
+  --color-primary: #58cc02;
+  --color-primary-depth: #58a700;
+  --color-primary-tint: #e8f8d8;
+  --color-primary-accent: #2b7a00;
+  --color-on-primary: #131f24;
+
+  --color-secondary: #1cb0f6;
+  --color-secondary-depth: #1899d6;
+  --color-secondary-tint: #ddf4ff;
+  --color-on-secondary: #131f24;
+
+  --color-danger: #ff4b4b;
+  --color-danger-depth: #ea2b2b;
+  --color-danger-tint: #ffdfe0;
+  --color-on-danger: #131f24;
+
+  --color-gold: #ffc800;
+  --color-gold-depth: #e5b400;
+  --color-gold-tint: #fff4cc;
+  --color-on-gold: #131f24;
+
+  --color-orange: #ff9600;
+  --color-orange-depth: #e58700;
+  --color-orange-tint: #fff0d6;
+  --color-on-orange: #131f24;
+
+  --color-purple: #ce82ff;
+  --color-purple-depth: #a568cc;
+  --color-purple-tint: #f3e4ff;
+  --color-on-purple: #131f24;
+
+  --color-neutral: #e5e5e5;
+  --color-neutral-depth: #bdbdbd;
+  --color-on-neutral: #3c3c3c;
+
+  --color-nav-active-bg: #ddf4ff;
+  --color-nav-active-border: #84d8ff;
+  --color-nav-active-text: #0b6fa8;
+
+  --color-success: #58cc02;
   --color-focus: #0b5fff;
 
-  /* Shape and depth */
-  --radius-card: 1.25rem;
-  --radius-button: 1rem;
+  /* Deck banner gradients (banner-*-a/b in anki-duo.pen) */
+  --color-banner-green-a: #58cc02;
+  --color-banner-green-b: #46a302;
+  --color-banner-blue-a: #1cb0f6;
+  --color-banner-blue-b: #0e8ac2;
+  --color-banner-gold-a: #ffc800;
+  --color-banner-gold-b: #e5a800;
+  --color-banner-purple-a: #ce82ff;
+  --color-banner-purple-b: #a85ce0;
+
+  /* Shape and depth (r-sm=8, r-md=12, r-lg=16, r-xl=24) */
+  --radius-sm: 0.5rem;
+  --radius-button: 0.875rem;
+  --radius-card: 1rem;
+  --radius-banner: 1.5rem;
   --button-depth: 4px;
   --button-press-offset: 3px;
 
@@ -33,9 +79,128 @@
   --duration-slow: 420ms;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root[data-theme='auto'] {
+:root {
+  color-scheme: light dark;
+  accent-color: var(--color-primary-accent);
+
+  &:has(> head > meta[name='color-scheme'][content='light']) {
+    color-scheme: light;
+  }
+
+  &:has(> head > meta[name='color-scheme'][content='dark']) {
     color-scheme: dark;
+    --color-bg: #131f24;
+    --color-card: #1b2b32;
+    --color-surface: #1b2b32;
+    --color-surface-2: #202f36;
+    --color-track: #37464f;
+    --color-border: #37464f;
+    --color-border-strong: #40565f;
+    --color-text: #ffffff;
+    --color-text-muted: #a6bac4;
+    --color-text-subtle: #9cb0ba;
+    --color-primary-tint: #2a3b22;
+    --color-primary-accent: #58cc02;
+    --color-secondary: #49c0f8;
+    --color-secondary-tint: #182b36;
+    --color-danger-tint: #3a1f22;
+    --color-gold-tint: #3a3018;
+    --color-orange-tint: #3b2814;
+    --color-purple-tint: #2e2237;
+    --color-neutral: #37464f;
+    --color-neutral-depth: #232f35;
+    --color-on-neutral: #ffffff;
+    --color-nav-active-bg: #182b36;
+    --color-nav-active-border: #3f85a7;
+    --color-nav-active-text: #49c0f8;
+    --color-focus: #49c0f8;
+  }
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(> head > meta[name='color-scheme'][content='light'])) {
+    --color-bg: #131f24;
+    --color-card: #1b2b32;
+    --color-surface: #1b2b32;
+    --color-surface-2: #202f36;
+    --color-track: #37464f;
+    --color-border: #37464f;
+    --color-border-strong: #40565f;
+    --color-text: #ffffff;
+    --color-text-muted: #a6bac4;
+    --color-text-subtle: #9cb0ba;
+    --color-primary-tint: #2a3b22;
+    --color-primary-accent: #58cc02;
+    --color-secondary: #49c0f8;
+    --color-secondary-tint: #182b36;
+    --color-danger-tint: #3a1f22;
+    --color-gold-tint: #3a3018;
+    --color-orange-tint: #3b2814;
+    --color-purple-tint: #2e2237;
+    --color-neutral: #37464f;
+    --color-neutral-depth: #232f35;
+    --color-on-neutral: #ffffff;
+    --color-nav-active-bg: #182b36;
+    --color-nav-active-border: #3f85a7;
+    --color-nav-active-text: #49c0f8;
+    --color-focus: #49c0f8;
+  }
+}
+
+@layer base {
+  html,
+  body {
+    height: 100%;
+    font-family:
+      'Nunito',
+      ui-rounded,
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      sans-serif;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-weight: 600;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .font-primary {
+    font-family:
+      'Nunito',
+      ui-rounded,
+      system-ui,
+      -apple-system,
+      'Segoe UI',
+      sans-serif;
+  }
+}
+
+dialog:modal {
+  overscroll-behavior: contain;
+}
+
+dialog::backdrop {
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+@supports not (accent-color: #2b7a00) {
+  input[type='range'] {
+    appearance: none;
+    background: var(--color-track);
+    height: 8px;
+    border-radius: 9999px;
+  }
+  input[type='range']::-webkit-slider-thumb {
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 9999px;
+    background: var(--color-primary);
+    cursor: pointer;
   }
 }
 

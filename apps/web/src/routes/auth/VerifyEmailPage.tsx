@@ -24,14 +24,41 @@ export function VerifyEmailPage() {
 
   const email = params.get('email') ?? user?.email ?? '';
   return (
-    <AuthShell title={t('auth.verifyTitle')}>
-      {state === 'idle' && <p>{t('auth.verifySent', { email })}</p>}
-      {state === 'verifying' && <p role="status">{t('auth.verifying')}</p>}
-      {state === 'ok' && <p role="status">{t('auth.verified')}</p>}
-      {state === 'failed' && <p role="alert">{t('auth.verifyFailed')}</p>}
-      <Link className="underline" to="/sign-in">
-        {t('auth.signIn')}
-      </Link>
+    <AuthShell title={t('auth.verifyTitle')} variant="verify">
+      <div className="flex flex-col gap-4 text-center">
+        {state === 'idle' && (
+          <p className="text-base font-medium text-text">{t('auth.verifySent', { email })}</p>
+        )}
+        {state === 'verifying' && (
+          <p
+            role="status"
+            className="rounded-2xl border-2 border-secondary bg-secondary-tint/60 p-4 text-base font-bold text-text"
+          >
+            {t('auth.verifying')}
+          </p>
+        )}
+        {state === 'ok' && (
+          <p
+            role="status"
+            className="rounded-2xl border-2 border-primary bg-primary-tint/70 p-4 text-base font-bold text-primary-accent"
+          >
+            {t('auth.verified')}
+          </p>
+        )}
+        {state === 'failed' && (
+          <p
+            role="alert"
+            className="rounded-2xl border-2 border-danger bg-danger-tint/70 p-4 text-base font-bold text-text"
+          >
+            {t('auth.verifyFailed')}
+          </p>
+        )}
+        <div className="pt-2">
+          <Link className="text-xs font-bold text-text-muted hover:underline" to="/sign-in">
+            {t('auth.signIn')}
+          </Link>
+        </div>
+      </div>
     </AuthShell>
   );
 }

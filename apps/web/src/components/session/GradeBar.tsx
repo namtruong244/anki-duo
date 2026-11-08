@@ -8,15 +8,15 @@ import { ChunkyButton } from '../ui';
 const GRADES: {
   grade: Grade;
   key: 'again' | 'hard' | 'good' | 'easy';
-  variant: 'danger' | 'neutral' | 'primary' | 'secondary';
+  variant: 'danger' | 'gold' | 'primary' | 'secondary';
 }[] = [
   { grade: 1, key: 'again', variant: 'danger' },
-  { grade: 2, key: 'hard', variant: 'neutral' },
+  { grade: 2, key: 'hard', variant: 'gold' },
   { grade: 3, key: 'good', variant: 'primary' },
   { grade: 4, key: 'easy', variant: 'secondary' },
 ];
 
-/** Four grade buttons labelled "Good · 3d". Sticky, so it stays reachable under long content. */
+/** Four chunky grade buttons labelled "Good · 3d". 2x2 grid on mobile, one row on desktop. */
 export function GradeBar({
   previews,
   onGrade,
@@ -29,21 +29,24 @@ export function GradeBar({
     <div
       role="group"
       aria-label={t('session.gradeBar')}
-      className="sticky bottom-0 grid grid-cols-2 gap-2 bg-bg py-3 sm:grid-cols-4"
+      className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4"
     >
-      {GRADES.map(({ grade, key, variant }) => (
-        <ChunkyButton
-          key={grade}
-          variant={variant}
-          aria-keyshortcuts={String(grade)}
-          onClick={() => onGrade(grade)}
-        >
-          {t('grade.label', {
-            grade: t(`grade.${key}`),
-            interval: intervalLabel(previews[key], (k, o) => t(k, { ...o })),
-          })}
-        </ChunkyButton>
-      ))}
+      {GRADES.map(({ grade, key, variant }) => {
+        const interval = intervalLabel(previews[key], (k, o) => t(k, { ...o }));
+        const label = t('grade.label', { grade: t(`grade.${key}`), interval });
+        return (
+          <ChunkyButton
+            key={grade}
+            variant={variant}
+            aria-label={label}
+            aria-keyshortcuts={String(grade)}
+            onClick={() => onGrade(grade)}
+            className="h-14 w-full whitespace-nowrap rounded-2xl px-2 text-sm sm:px-4"
+          >
+            <span aria-hidden="true">{label}</span>
+          </ChunkyButton>
+        );
+      })}
     </div>
   );
 }

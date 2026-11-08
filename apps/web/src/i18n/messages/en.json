@@ -3,10 +3,9 @@
     "name": "Anki Duo"
   },
   "nav": {
-    "home": "Home",
-    "decks": "Decks",
-    "path": "Path",
-    "dashboard": "Dashboard",
+    "home": "Learn",
+    "decks": "Cards",
+    "dashboard": "Stats",
     "settings": "Settings"
   },
   "common": {
@@ -41,8 +40,9 @@
     "verifyFailed": "This verification link is invalid or expired.",
     "resetSent": "If an account exists for that email, a reset link is on its way.",
     "resetDone": "Password updated. You can sign in now.",
-    "noAccount": "No account yet?",
-    "haveAccount": "Already have an account?",
+    "legalSignIn": "By signing in, you agree to Anki Duo's Terms & Privacy Policy.",
+    "legalSignUp": "I agree to Anki Duo's Terms of Service and Privacy Policy.",
+    "termsRequired": "Please accept the terms to create an account.",
     "error": "Something went wrong. Please try again."
   },
   "pwa": {
@@ -59,7 +59,7 @@
     "reviewed": "Cards reviewed",
     "accuracy": "Accuracy",
     "time": "Time",
-    "xp": "XP earned",
+    "xp": "Total XP",
     "backToDecks": "Back to decks",
     "resumeTitle": "Continue your session?",
     "resumeBody": "You have an unfinished session.",
@@ -75,7 +75,17 @@
     "saveFailed": "We couldn't save your last answer. Please try again.",
     "progressLabel": "Session progress",
     "gradeBar": "Grade this card",
-    "shortcuts": "Shortcuts: Space shows the answer, 1–4 grade, Z undoes."
+    "shortcuts": "Shortcuts: Space shows the answer, 1–4 grade, Z undoes.",
+    "meaning": "Meaning",
+    "play": "Play audio",
+    "reviewList": {
+      "title": "Reviewed cards ({n})",
+      "back": "Back to summary",
+      "next": "Next: {when}",
+      "dueNow": "now",
+      "times": "{count, plural, one {# review} other {# reviews}}",
+      "edit": "Edit card: {front}"
+    }
   },
   "grade": {
     "again": "Again",
@@ -94,11 +104,7 @@
   },
   "decks": {
     "title": "Decks",
-    "empty": "No decks yet.",
-    "due": "{n, plural, one {# due} other {# due}}",
     "new": "New deck",
-    "review": "Review",
-    "nothingToday": "Nothing to study today",
     "create": "Create deck",
     "name": "Name",
     "newPerDay": "New cards per day",
@@ -117,21 +123,9 @@
     "restoreDone": "Deck restored",
     "exportFailed": "Could not export the deck.",
     "error": "Something went wrong. Please try again.",
-    "reviewShort": "Review",
-    "path": "Path"
+    "reviewShort": "Review"
   },
   "learning": {
-    "title": "Learning",
-    "retention": "Desired retention",
-    "retentionHint": "70–97%, default 90%",
-    "maxInterval": "Maximum interval (days)",
-    "maxIntervalHint": "1–36500",
-    "sessionSize": "Session size",
-    "sessionSizeHint": "5–50, default 20",
-    "dayStart": "Day starts at (hour)",
-    "dayStartHint": "0–23, default 4",
-    "save": "Save",
-    "saved": "Settings saved",
     "saveFailed": "Could not save settings",
     "futureOnly": "Changes apply to future reviews only."
   },
@@ -156,10 +150,9 @@
     "side": "Attach to"
   },
   "cards": {
-    "title": "Cards",
-    "search": "Search cards",
-    "tagFilter": "Tag",
-    "allTags": "All tags",
+    "title": "Card library",
+    "search": "Search cards, content, tags...",
+    "allTags": "All",
     "add": "Add card",
     "edit": "Edit",
     "suspend": "Suspend",
@@ -177,11 +170,11 @@
     "back": "Back",
     "tags": "Tags",
     "tagsHint": "Separate tags with spaces",
-    "preview": "Preview",
     "save": "Save card",
     "saved": "Card saved",
-    "newTitle": "New card",
+    "newTitle": "Add new card",
     "editTitle": "Edit card",
+    "close": "Cancel",
     "errors": {
       "frontRequired": "The front cannot be empty.",
       "frontTooLong": "The front is over 10,000 characters.",
@@ -189,37 +182,35 @@
       "tooManyTags": "Use at most 20 tags.",
       "tagInvalid": "Each tag is 1–50 characters with no spaces."
     },
-    "limitReached": "You have reached the limit of 20,000 cards.",
-    "back_to_list": "Back to cards"
+    "limitReached": "You have reached the limit of 20,000 cards."
   },
   "import": {
     "title": "Import cards",
+    "titleFull": "Import cards from CSV / TSV",
+    "joinTitle": "Map file columns to card fields",
+    "back": "Back",
+    "importCount": "Import {n} cards",
     "choose": "Choose a CSV or TSV file",
-    "hint": "UTF-8, up to 10 MB and 10,000 rows.",
+    "hint": "Up to 10 MB · UTF-8 · the first row can be a header",
     "delimiter": "Delimiter",
     "delimiters": {
-      "comma": "Comma",
-      "semicolon": "Semicolon",
+      "comma": "Comma ,",
+      "semicolon": "Semicolon ;",
       "tab": "Tab",
-      "pipe": "Pipe"
+      "pipe": "Pipe |"
     },
     "headerRow": "First row is a header",
-    "mapping": "Columns",
     "mapFront": "Front",
     "mapBack": "Back",
     "mapTags": "Tags",
-    "mapNone": "(none)",
-    "previewTitle": "Preview",
     "totalRows": "{n, plural, one {# row} other {# rows}}",
     "invalidRows": "{n, plural, one {# invalid row} other {# invalid rows}}",
-    "duplicateEstimate": "About {n, plural, one {# duplicate} other {# duplicates}}",
     "duplicates": "Duplicates",
     "mode": {
       "skip": "Skip them",
       "update": "Update Back and Tags",
       "keep_both": "Keep both"
     },
-    "start": "Import",
     "progress": "Importing… {done} of {total}",
     "done": "Import finished",
     "imported": "Imported",
@@ -253,36 +244,19 @@
       "import_too_large": "Too large"
     }
   },
-  "path": {
-    "title": "Learning path",
-    "review": "Review ({n})",
-    "reviewNone": "Review (0)",
-    "node": "Node {n}",
-    "status": {
-      "completed": "completed",
-      "available": "available",
-      "in_progress": "in progress",
-      "locked": "locked"
-    },
-    "mastery": "{pct}% mastered",
-    "lockedMessage": "Finish node {n} first.",
-    "dueFirst": "Review the remaining due cards first.",
-    "pickDeck": "Deck",
-    "empty": "This deck has no cards yet.",
-    "noDecks": "No decks yet.",
-    "unlocked": "Node {n} unlocked!",
-    "cards": "{n, plural, one {# card} other {# cards}}",
-    "studied": "{studied} of {total} studied"
-  },
   "dashboard": {
-    "title": "Progress",
+    "title": "Stats",
     "allDecks": "All decks",
     "deckFilter": "Deck",
     "heatmap": "Reviews in the last 12 months",
+    "heatmapTitle12": "12-month study calendar",
+    "daysStudied": "{n} days studied",
     "heatmapCell": "{date}: {n, plural, one {# review} other {# reviews}}",
     "donut": "Cards by status",
+    "cardStatus": "Card status breakdown",
+    "longestHint": "days · record",
     "donutLabel": "{n, plural, one {# card} other {# cards}} in total",
-    "centreLabel": "to study today",
+    "centreLabel": "Cards today",
     "new": "New",
     "learning": "Learning",
     "due": "Due",
@@ -291,32 +265,38 @@
     "currentStreak": "Current streak",
     "longestStreak": "Longest streak",
     "totalXp": "Total XP",
-    "days": "{n, plural, one {# day} other {# days}}",
-    "empty": "No cards yet."
+    "allDecksShort": "All",
+    "currentStreakShort": "Streak",
+    "longestStreakShort": "Longest",
+    "currentStreakHint": "days in a row",
+    "totalXpHint": "XP earned",
+    "swipeHint": "swipe sideways",
+    "monthShort": "M{n}"
   },
   "home": {
-    "title": "Home",
+    "title": "Learn",
+    "studyNow": "Study now",
     "streak": "{n, plural, one {# day streak} other {# day streak}}",
     "streakAtRisk": "Streak at risk: reach your goal today to keep it",
     "streakMet": "Goal reached today",
     "streakBroken": "Start a new streak today",
     "goalLabel": "Daily goal",
-    "xpToday": "{xp} / {goal} XP",
-    "due": "{n, plural, one {# card due} other {# cards due}}",
     "nothingDue": "Nothing due right now. Nice work!",
-    "start": "Start",
     "decks": "Your decks",
     "noDecks": "Create or import a deck to begin.",
-    "deckDue": "{n, plural, one {# due} other {# due}}"
+    "mastered": "Mastered",
+    "deckMetaShort": "{due} due · {fresh} new",
+    "reviewAllTitle": "Review all cards due today",
+    "reviewAllMeta": "{n, plural, one {# card due} other {# cards due}} · about {minutes} min",
+    "reviewNow": "Review now",
+    "myDecks": "My decks"
   },
   "celebration": {
     "goal": "Daily goal reached!",
     "streak": "{n, plural, one {# day streak} other {# day streak}}"
   },
   "gamification": {
-    "title": "Goals and feel",
     "dailyGoal": "Daily XP goal",
-    "dailyGoalHint": "The XP you aim to earn each day. The default is 20.",
     "sound": "Sound",
     "motion": "Motion",
     "motionSystem": "Follow system",
@@ -324,7 +304,6 @@
     "motionFull": "Full"
   },
   "language": {
-    "title": "Language",
     "label": "Language",
     "vi": "Tiếng Việt",
     "en": "English"
@@ -352,5 +331,133 @@
     "export_invalid": "That file is not a valid Anki Duo export.",
     "rate_limited": "Too many requests. Please wait a moment and try again.",
     "reauth_required": "Please sign in again to continue."
+  },
+  "ui": {
+    "theme": {
+      "title": "Theme",
+      "light": "Light",
+      "dark": "Dark"
+    },
+    "sidebar": {
+      "study": "Learn",
+      "level": "Level {level} · {xp} XP",
+      "tagline": "Spaced repetition",
+      "streakWeek": "This week",
+      "learner": "Learner",
+      "freePlan": "FSRS-5 · Offline-first"
+    },
+    "rail": {
+      "studyGoal": "Daily goal",
+      "online": "Online",
+      "dueTile": "Due cards",
+      "newTile": "New cards to learn",
+      "doneTile": "Reviewed",
+      "accuracyTile": "Accuracy",
+      "chestOpen": "Open",
+      "chestProgress": "{n} XP left to open today's chest",
+      "dailyChest": "Daily chest",
+      "chestReady": "Unlocked! Great work today.",
+      "chestHint": "Reach {goal} XP today to open your chest",
+      "todayOverview": "Today's review overview",
+      "forecast7d": "7-day due forecast",
+      "achievements": "Milestones",
+      "badgeStreak": "Streak keeper",
+      "badgeCards": "Card collector",
+      "badgeAccuracy": "Sharp memory",
+      "fsrsTipTitle": "FSRS-5 smart scheduling",
+      "fsrsTipBody": "Grade honestly — Again & Hard help FSRS pinpoint your exact memory curve with zero XP penalty.",
+      "details": "Details",
+      "newLabel": "New",
+      "learningLabel": "Learning",
+      "dueLabel": "Due",
+      "offline": "Offline",
+      "language": "Language"
+    },
+    "hub": {
+      "importCsv": "Import CSV"
+    },
+    "session": {
+      "summaryHeadline": "Great job! Session complete",
+      "editCard": "Edit card",
+      "streakGrew": "Your streak grew to {n} days",
+      "streakNow": "Current streak: {n} days",
+      "reviewCards": "Review cards"
+    },
+    "cards": {
+      "stateNew": "New",
+      "stateLearning": "Learning",
+      "showingCount": "Showing {shown} of {total}",
+      "livePreview": "Live preview",
+      "due": "Due",
+      "deckFilter": "Deck",
+      "allDecks": "All decks",
+      "noDecks": "You have no decks yet. Create one first to add cards.",
+      "createDeck": "Create a deck",
+      "actions": "Card actions",
+      "showMore": "Show more"
+    },
+    "import": {
+      "stepChoose": "Choose file",
+      "stepMap": "Map columns",
+      "stepReview": "Preview & import",
+      "dropTitle": "Drop a CSV / TSV file here",
+      "chooseBtn": "Choose file",
+      "targetDeck": "Target deck",
+      "continue": "Continue",
+      "column": "Column",
+      "ignore": "Ignore",
+      "tag": "Tags",
+      "summary": {
+        "skip": "{n} cards will be imported · {dup} duplicates will be skipped",
+        "update": "{n} cards will be imported · {dup} duplicates will be updated",
+        "keep_both": "{n} cards will be imported · {dup} duplicates will be kept as well"
+      }
+    },
+    "settings": {
+      "appearance": "Appearance",
+      "dailyGoal": "Daily XP goal",
+      "fsrsParams": "FSRS parameters",
+      "language": "Language",
+      "retention": "Desired retention",
+      "maxInterval": "Maximum interval (Max Interval)",
+      "sessionSize": "Cards per session (Session Size)",
+      "dayStart": "New day starts at",
+      "valueDays": "{n, plural, one {# day} other {# days}}",
+      "valueCards": "{n, plural, one {# card} other {# cards}}",
+      "invalidValue": "Enter a whole number from {min} to {max}.",
+      "otherTitle": "Other",
+      "themeSystem": "Follow system theme"
+    },
+    "auth": {
+      "orDivider": "OR",
+      "showPassword": "Show password",
+      "hidePassword": "Hide password",
+      "strengthWeak": "Weak",
+      "strengthFair": "Fair",
+      "strengthGood": "Good",
+      "strengthStrong": "Strong",
+      "topSignUp": "Sign up",
+      "topSignIn": "Sign in",
+      "signUpTitle": "Create your profile"
+    },
+    "editor": {
+      "deck": "Deck",
+      "deckLocked": "A card stays in its deck; create a new card to use another deck.",
+      "toolbar": "Markdown formatting",
+      "tools": {
+        "bold": "Bold",
+        "italic": "Italic",
+        "code": "Code",
+        "list": "List",
+        "link": "Link",
+        "image": "Image link"
+      },
+      "frontMd": "Front (Markdown)",
+      "backMd": "Back (Markdown)",
+      "tag": "Tags",
+      "addImage": "+ Image",
+      "addAudio": "+ Audio",
+      "saveFirst": "Save the card first to attach images or audio."
+    }
   }
 }

@@ -11,5 +11,4 @@ function Page({ titleKey }: { titleKey: string }) {
 }
 
 export const HomePage = () => <Page titleKey="nav.home" />;
-export const PathPage = () => <Page titleKey="nav.path" />;
 export const DashboardPage = () => <Page titleKey="nav.dashboard" />;

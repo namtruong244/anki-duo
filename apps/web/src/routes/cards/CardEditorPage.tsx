@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useNavigate, useParams } from 'react-router';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { content } from '../../client/runtime';
 import { dexieStore } from '../../client/store';
@@ -7,13 +8,69 @@ import { validateCard } from '../../client/card-validation';
 import { useOnlineOnly } from '../../client/online-only';
 import { CardContent } from '../../components/session/CardContent';
 import { MediaPicker } from '../../components/editor/MediaPicker';
-import { ChunkyButton } from '../../components/ui';
+import { ChunkyButton, Icon, type IconName } from '../../components/ui';
 import { notify } from '../../client/notify';
 import { describeApiError } from '../../lib/api-error';
 
+const FORM_ID = 'card-editor-form';
+type Side = 'front' | 'back';
+
+const fieldClass =
+  'min-w-0 w-full rounded-2xl border-2 border-border bg-surface px-4 text-sm font-semibold text-text transition-colors placeholder:text-text-subtle focus:border-secondary focus:bg-[var(--color-card)] disabled:opacity-60';
+const labelClass = 'text-[11px] font-extrabold uppercase tracking-[0.1em] text-text-muted';
+
+interface Edit {
+  /** Markdown to put around the selection (or `before` only for line prefixes). */
+  before: string;
+  after: string;
+  placeholder: string;
+  /** Prefix every selected line instead of wrapping. */
+  linePrefix?: boolean;
+}
+
+const TOOLS: { key: string; icon: IconName; edit: Edit }[] = [
+  { key: 'bold', icon: 'bold', edit: { before: '**', after: '**', placeholder: 'bold' } },
+  { key: 'italic', icon: 'italic', edit: { before: '*', after: '*', placeholder: 'italic' } },
+  { key: 'code', icon: 'code', edit: { before: '`', after: '`', placeholder: 'code' } },
+  {
+    key: 'list',
+    icon: 'list',
+    edit: { before: '- ', after: '', placeholder: 'item', linePrefix: true },
+  },
+  { key: 'link', icon: 'link', edit: { before: '[', after: '](https://)', placeholder: 'link' } },
+  { key: 'image', icon: 'image', edit: { before: '![', after: '](https://)', placeholder: 'alt' } },
+];
+
+/** Pure text transform used by the toolbar: returns new value and selection range. */
+function applyEdit(value: string, start: number, end: number, e: Edit) {
+  const selected = value.slice(start, end);
+  if (e.linePrefix) {
+    const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+    const block = value.slice(lineStart, end) || e.placeholder;
+    const next = block
+      .split('\n')
+      .map((l) => `${e.before}${l}`)
+      .join('\n');
+    return {
+      value: value.slice(0, lineStart) + next + value.slice(end),
+      from: lineStart,
+      to: lineStart + next.length,
+    };
+  }
+  const text = selected || e.placeholder;
+  const next = `${e.before}${text}${e.after}`;
+  return {
+    value: value.slice(0, start) + next + value.slice(end),
+    from: start + e.before.length,
+    to: start + e.before.length + text.length,
+  };
+}
+
 /**
- * Create or edit a card: Markdown on both sides with a live preview. Media can be attached once the
- * card exists (the upload is tied to a card id), so a new card is saved first.
+ * Create or edit a card (frame "Card Editor"): form on the left, live preview on the right.
+ * Media can be attached once the card exists (the upload is tied to a card id), so a new card is
+ * saved first. A card cannot move between decks (the API has no such operation), so the deck
+ * select is only active for new cards.
  */
 export function CardEditorPage() {
   const { t } = useTranslation();
@@ -23,8 +80,23 @@ export function CardEditorPage() {
   const [front, setFront] = useState('');
   const [back, setBack] = useState('');
   const [tags, setTags] = useState('');
+  const [targetDeck, setTargetDeck] = useState(deckId);
   const [error, setError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(!cardId);
+  const [active, setActive] = useState<Side>('front');
+  const areas = {
+    front: useRef<HTMLTextAreaElement>(null),
+    back: useRef<HTMLTextAreaElement>(null),
+  };
+
+  const decks = useLiveQuery(
+    async () => (await dexieStore.listDecks()).sort((a, b) => a.name.localeCompare(b.name)),
+    [],
+  );
+
+  useEffect(() => {
+    setTargetDeck(deckId);
+  }, [deckId]);
 
   useEffect(() => {
     if (!cardId) return;
@@ -32,100 +104,240 @@ export function CardEditorPage() {
       if (c) {
         setFront(c.front);
         setBack(c.back);
-        setTags(c.tags.join(' '));
+        setTags(c.tags.map((x) => `#${x}`).join(' '));
       }
       setLoaded(true);
     });
   }, [cardId]);
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault();
-    const v = validateCard(front, back, tags);
+  const close = () => navigate(`/decks/${deckId}/cards`);
+
+  const submit = async (e?: FormEvent) => {
+    e?.preventDefault();
+    const v = validateCard(front, back, tags.replace(/#/g, ''));
     if (!v.ok) return setError(t(`cards.errors.${v.error}`));
     setError(null);
     try {
       if (cardId) {
         await content.updateCard(cardId, { front: v.front, back: v.back, tags: v.tags });
         notify.show(t('cards.saved'));
-        navigate(`/decks/${deckId}/cards`);
+        close();
       } else {
-        const created = await content.createCard(deckId, {
+        const created = await content.createCard(targetDeck, {
           front: v.front,
           back: v.back,
           tags: v.tags,
         });
         notify.show(t('cards.saved'));
-        // Go to the edit view so media can be attached to the saved card.
-        navigate(`/decks/${deckId}/cards/${created.id}`, { replace: true });
+        // Stay in the editor so media can be attached to the saved card.
+        navigate(`/decks/${targetDeck}/cards/${created.id}`, { replace: true });
       }
     } catch (err) {
       setError(describeApiError(t, err));
     }
   };
 
-  if (!loaded) return <p role="status">{t('common.loading')}</p>;
+  const setters = { front: setFront, back: setBack };
+  const values = { front, back };
+
+  const insertAt = (
+    side: Side,
+    make: (v: string, s: number, e: number) => ReturnType<typeof applyEdit>,
+  ) => {
+    const ta = areas[side].current;
+    const value = values[side];
+    const start = ta?.selectionStart ?? value.length;
+    const end = ta?.selectionEnd ?? value.length;
+    const r = make(value, start, end);
+    setters[side](r.value);
+    requestAnimationFrame(() => {
+      ta?.focus();
+      ta?.setSelectionRange(r.from, r.to);
+    });
+  };
+
+  const runTool = (edit: Edit) => insertAt(active, (v, s, e) => applyEdit(v, s, e, edit));
+
+  const insertToken = (side: Side) => (token: string) =>
+    setters[side]((v) => `${v}${v ? '\n\n' : ''}${token}`);
+
+  const tagList = tags
+    .split(/\s+/)
+    .map((x) => x.replace(/^#+/, ''))
+    .filter(Boolean);
+
+  const onKeyDown = (e: React.KeyboardEvent) => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+      e.preventDefault();
+      void submit();
+    }
+  };
+
+  const textarea = (side: Side) => (
+    <textarea
+      ref={areas[side]}
+      id={`card-${side}`}
+      className={`${fieldClass} min-h-24 resize-y py-3 font-mono leading-relaxed`}
+      value={values[side]}
+      onChange={(e) => setters[side](e.target.value)}
+      onFocus={() => setActive(side)}
+      onKeyDown={onKeyDown}
+      disabled={!net.online}
+    />
+  );
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4 py-4">
-      <h1 className="text-2xl font-bold">{cardId ? t('cards.editTitle') : t('cards.newTitle')}</h1>
+    <section className="flex min-w-0 flex-col gap-5">
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="min-w-0 truncate text-[32px] font-extrabold leading-tight text-text">
+          {cardId ? t('cards.editTitle') : t('cards.newTitle')}
+        </h1>
+        <div className="flex shrink-0 items-center gap-3">
+          <ChunkyButton variant="outline" onClick={close}>
+            {t('cards.close')}
+          </ChunkyButton>
+          <ChunkyButton type="submit" form={FORM_ID} variant="primary" {...net.buttonProps}>
+            {t('cards.save')}
+          </ChunkyButton>
+        </div>
+      </div>
+
       {net.message && (
-        <p role="status" className="text-text-muted">
+        <div
+          role="status"
+          className="rounded-xl border-2 border-border bg-surface p-3.5 text-sm font-bold text-text-muted"
+        >
           {net.message}
-        </p>
+        </div>
       )}
-      {(['front', 'back'] as const).map((side) => {
-        const value = side === 'front' ? front : back;
-        const set = side === 'front' ? setFront : setBack;
-        return (
-          <fieldset key={side} className="flex flex-col gap-2">
-            <label className="flex flex-col gap-1 font-bold">
-              {side === 'front' ? t('cards.front') : t('cards.back')}
-              <textarea
-                className="min-h-28 rounded-lg border border-border p-3 font-normal"
-                value={value}
-                onChange={(e) => set(e.target.value)}
+
+      {!loaded ? (
+        <p role="status" className="p-8 text-center font-bold text-text-muted">
+          {t('common.loading')}
+        </p>
+      ) : (
+        <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+          <form id={FORM_ID} onSubmit={submit} className="flex min-w-0 flex-col gap-3">
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="card-deck" className={labelClass}>
+                {t('ui.editor.deck')}
+              </label>
+              <select
+                id="card-deck"
+                className={`${fieldClass} min-h-12`}
+                value={targetDeck}
+                disabled={!!cardId || !net.online}
+                onChange={(e) => setTargetDeck(e.target.value)}
+              >
+                {(decks ?? []).map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </select>
+              {cardId && (
+                <p className="text-xs font-semibold text-text-muted">{t('ui.editor.deckLocked')}</p>
+              )}
+            </div>
+
+            <div
+              role="toolbar"
+              aria-label={t('ui.editor.toolbar')}
+              className="flex flex-wrap gap-2"
+            >
+              {TOOLS.map((tool) => (
+                <button
+                  key={tool.key}
+                  type="button"
+                  aria-label={t(`ui.editor.tools.${tool.key}`)}
+                  title={t(`ui.editor.tools.${tool.key}`)}
+                  disabled={!net.online}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => runTool(tool.edit)}
+                  className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-xl border-2 border-border bg-[var(--color-card)] text-text-muted hover:bg-surface hover:text-text focus-visible:outline-3 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Icon name={tool.icon} size={18} />
+                </button>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="card-front" className={labelClass}>
+                {t('ui.editor.frontMd')}
+              </label>
+              {textarea('front')}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="card-back" className={labelClass}>
+                {t('ui.editor.backMd')}
+              </label>
+              {textarea('back')}
+            </div>
+
+            <MediaPicker
+              cardId={cardId}
+              side={active}
+              onInsert={(tok) => insertToken(active)(tok)}
+            />
+
+            <div className="flex flex-col gap-1.5">
+              <label htmlFor="card-tags" className={labelClass}>
+                {t('ui.editor.tag')}
+              </label>
+              <input
+                id="card-tags"
+                className={`${fieldClass} min-h-12`}
+                value={tags}
+                placeholder={t('cards.tagsHint')}
+                onChange={(e) => setTags(e.target.value)}
+                onKeyDown={onKeyDown}
                 disabled={!net.online}
               />
-            </label>
-            <div
-              className="rounded-lg border border-dashed border-border p-3"
-              aria-label={t('cards.preview')}
-            >
-              <CardContent markdown={value} />
             </div>
-            {cardId && (
-              <MediaPicker
-                cardId={cardId}
-                side={side}
-                onInsert={(token) => set((v) => `${v}${v ? '\n\n' : ''}${token}`)}
-              />
+
+            {error && (
+              <p
+                role="alert"
+                className="rounded-xl border-2 border-danger bg-danger-tint p-3 text-sm font-bold text-text"
+              >
+                {error}
+              </p>
             )}
-          </fieldset>
-        );
-      })}
-      <label className="flex flex-col gap-1 font-bold">
-        {t('cards.tags')}
-        <input
-          className="min-h-11 rounded-lg border border-border px-3 font-normal"
-          value={tags}
-          onChange={(e) => setTags(e.target.value)}
-          disabled={!net.online}
-        />
-        <span className="text-sm font-normal text-text-muted">{t('cards.tagsHint')}</span>
-      </label>
-      {error && (
-        <p role="alert" className="text-danger">
-          {error}
-        </p>
+          </form>
+
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <h2 className={labelClass}>{t('ui.cards.livePreview')}</h2>
+            <div
+              aria-label={t('ui.cards.livePreview')}
+              className="flex min-w-0 flex-col gap-4 rounded-3xl border-2 border-border bg-[var(--color-card)] p-6"
+            >
+              {tagList.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tagList.map((tg, i) => (
+                    <span
+                      key={i}
+                      className="inline-flex items-center rounded-lg border-2 border-border px-2.5 py-0.5 text-xs font-extrabold text-nav-active-text"
+                    >
+                      #{tg}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {front ? (
+                <CardContent markdown={front} className="text-2xl font-extrabold text-text" />
+              ) : (
+                <p className="text-sm italic text-text-subtle">—</p>
+              )}
+              <hr className="border-t-2 border-border" />
+              {back ? (
+                <CardContent markdown={back} className="text-text" />
+              ) : (
+                <p className="text-sm italic text-text-subtle">—</p>
+              )}
+            </div>
+          </div>
+        </div>
       )}
-      <div className="flex gap-2">
-        <ChunkyButton variant="neutral" onClick={() => navigate(`/decks/${deckId}/cards`)}>
-          {t('common.cancel')}
-        </ChunkyButton>
-        <ChunkyButton type="submit" {...net.buttonProps}>
-          {t('cards.save')}
-        </ChunkyButton>
-      </div>
-    </form>
+    </section>
   );
 }

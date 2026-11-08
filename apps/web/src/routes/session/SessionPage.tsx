@@ -1,7 +1,15 @@
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+} from 'react';
 import { reviewXp, sessionBonusXp } from '@anki-duo/domain';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
+import { useLiveQuery } from 'dexie-react-hooks';
 import { adjustToday, queueDayFlagIfDone, type TodayResult } from '../../client/gamification';
 import { notify } from '../../client/notify';
 import { sound } from '../../client/sound';
@@ -14,14 +22,20 @@ import { CardContent } from '../../components/session/CardContent';
 import { Celebration } from '../../components/session/Celebration';
 import { GradeBar, useSessionHotkeys } from '../../components/session/GradeBar';
 import { GradeFeedback } from '../../components/session/GradeFeedback';
-import { ChunkyButton, Dialog, ProgressBar } from '../../components/ui';
+import { ChunkyButton, Dialog, Icon, ProgressBar, SpeakerBtn, TagChip } from '../../components/ui';
+import { ReviewedCardsList } from '../../components/session/ReviewedCardsList';
 import { EmptyQueue } from './EmptyQueue';
 
 type Phase =
   | { name: 'loading' }
   | { name: 'missing' }
-  | { name: 'resume'; deck: Deck; settings: Settings; machine: SessionMachine }
+  | { name: 'resume'; target: Target; settings: Settings; machine: SessionMachine }
   | { name: 'running'; machine: SessionMachine };
+
+/** Reserved route value for the combined session over every deck (never a UUID). */
+export const ALL_DECKS = 'all';
+
+type Target = { kind: 'deck'; deck: Deck } | { kind: 'all'; decks: Deck[] };
 
 export function SessionPage() {
   const { t } = useTranslation();
@@ -46,9 +60,9 @@ export function SessionPage() {
   );
 
   const begin = useCallback(
-    async (deck: Deck, settings: Settings, k: SessionKind) => {
+    async (target: Target, settings: Settings, k: SessionKind) => {
       const machine = await SessionMachine.start(deps(), {
-        deck,
+        ...(target.kind === 'all' ? { decks: target.decks } : { deck: target.deck }),
         kind: k,
         settings,
         ...(nodeIndex !== undefined ? { nodeIndex } : {}),
@@ -63,40 +77,59 @@ export function SessionPage() {
     started.current = true;
     void (async () => {
       const userId = (await dexieStore.getMeta('userId')) ?? '';
-      const [deck, settings] = await Promise.all([
-        dexieStore.getDeck(deckId),
-        dexieStore.getSettings(userId),
-      ]);
-      if (!deck || deck.deletedAt || !settings) return setPhase({ name: 'missing' });
-      const machine = await SessionMachine.resume(deps(), { deck, settings });
-      if (machine) setPhase({ name: 'resume', deck, settings, machine });
-      else await begin(deck, settings, kind);
+      const settings = await dexieStore.getSettings(userId);
+      let target: Target | null = null;
+      if (deckId === ALL_DECKS) {
+        const decks = (await dexieStore.listDecks()).filter((d) => !d.deletedAt);
+        if (decks.length > 0) target = { kind: 'all', decks };
+      } else {
+        const deck = await dexieStore.getDeck(deckId);
+        if (deck && !deck.deletedAt) target = { kind: 'deck', deck };
+      }
+      if (!target || !settings) return setPhase({ name: 'missing' });
+      const machine = await SessionMachine.resume(deps(), {
+        ...(target.kind === 'all' ? { multi: true } : { deck: target.deck }),
+        settings,
+      });
+      if (machine) setPhase({ name: 'resume', target, settings, machine });
+      else await begin(target, settings, kind);
     })();
   }, [deckId, kind, deps, begin]);
 
   if (phase.name === 'loading') {
     return (
-      <p role="status" className="p-6">
-        {t('session.loading')}
-      </p>
+      <div className="flex min-h-[50vh] items-center justify-center p-6">
+        <div className="flex items-center gap-3 rounded-2xl border-2 border-border bg-[var(--color-card)] px-5 py-4 shadow-[0_4px_0_var(--color-border)]">
+          <Icon name="sparkles" size={20} className="animate-spin text-primary" />
+          <p role="status" className="font-bold text-text">
+            {t('session.loading')}
+          </p>
+        </div>
+      </div>
     );
   }
   if (phase.name === 'missing') {
     return (
-      <section className="p-6">
-        <p>{t('session.missingDeck')}</p>
-        <Link className="underline" to="/decks">
+      <section className="mx-auto flex max-w-md flex-col items-center gap-4 p-8 text-center">
+        <div className="flex h-16 w-16 items-center justify-center rounded-full border-2 border-border bg-surface text-text-muted">
+          <Icon name="layers" size={32} />
+        </div>
+        <p className="text-lg font-bold text-text">{t('session.missingDeck')}</p>
+        <Link
+          className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-button)] bg-primary px-5 py-2 font-extrabold text-on-primary shadow-[0_var(--button-depth)_0_var(--color-primary-depth)]"
+          to="/"
+        >
           {t('session.backToDecks')}
         </Link>
       </section>
     );
   }
   if (phase.name === 'resume') {
-    const { deck, settings, machine } = phase;
+    const { target, settings, machine } = phase;
     return (
-      <Dialog open title={t('session.resumeTitle')} onClose={() => navigate('/decks')}>
-        <p className="mb-4">{t('session.resumeBody')}</p>
-        <div className="flex gap-2">
+      <Dialog open title={t('session.resumeTitle')} onClose={() => navigate('/')}>
+        <p className="mb-4 font-medium text-text-muted">{t('session.resumeBody')}</p>
+        <div className="flex flex-wrap gap-2.5">
           <ChunkyButton onClick={() => setPhase({ name: 'running', machine })}>
             {t('session.resume')}
           </ChunkyButton>
@@ -105,7 +138,7 @@ export function SessionPage() {
             onClick={async () => {
               const id = (await dexieStore.getActiveSession())?.id;
               if (id) await dexieStore.deleteSession(id);
-              await begin(deck, settings, kind);
+              await begin(target, settings, kind);
             }}
           >
             {t('session.discard')}
@@ -147,6 +180,9 @@ function Running({
   const [feedback, setFeedback] = useState(0);
   const [celebration, setCelebration] = useState<TodayResult | null>(null);
   const motion = useMotionPreference(settings?.motion);
+  const navigate = useNavigate();
+  const startStreak = useRef<number | null>(null);
+  const [reviewing, setReviewing] = useState(false);
 
   useEffect(() => {
     void (async () => {
@@ -154,6 +190,16 @@ function Running({
       setSettings((await dexieStore.getSettings(userId)) ?? null);
     })();
   }, []);
+
+  const extras = useLiveQuery(async () => {
+    const userId = (await dexieStore.getMeta('userId')) ?? '';
+    const stats = await dexieStore.getStats(userId);
+    return { currentStreak: stats?.currentStreak ?? 0 };
+  }, []);
+
+  useEffect(() => {
+    if (extras && startStreak.current === null) startStreak.current = extras.currentStreak;
+  }, [extras]);
 
   /** Optimistic XP and streak, written before the server hears about the review. */
   const award = useCallback(
@@ -196,6 +242,7 @@ function Running({
     const bonus = wasDone ? sessionBonusXp({ completed: true, kind }) : 0;
     void machine.undo().then(() => award({ reviews: -1, xp: -(xpOf() + bonus) }));
   }, [machine, award, xpOf, kind]);
+
   useSessionHotkeys({
     revealed: s.status === 'back',
     onReveal: reveal,
@@ -221,87 +268,285 @@ function Running({
 
   if (s.status === 'empty') return <EmptyQueue deckId={deckId} onStudyAhead={onStudyAhead} />;
 
+  if (s.status === 'done' && s.summary && reviewing) {
+    return (
+      <ReviewedCardsList
+        items={machine.getReviewedCards()}
+        now={new Date()}
+        onBack={() => setReviewing(false)}
+      />
+    );
+  }
+
   if (s.status === 'done' && s.summary) {
     const m = s.summary;
+    const streak = extras?.currentStreak ?? 0;
+    const grew = startStreak.current !== null && streak > startStreak.current;
+    const stats = [
+      {
+        key: 'xp',
+        label: t('session.xp'),
+        value: `+${m.xp}`,
+        icon: 'zap' as const,
+        box: 'border-gold',
+        head: 'bg-gold text-[var(--color-ink)]',
+        fg: 'text-gold',
+      },
+      {
+        key: 'accuracy',
+        label: t('session.accuracy'),
+        value: `${Math.round(m.accuracy * 100)}%`,
+        icon: 'target' as const,
+        box: 'border-primary',
+        head: 'bg-primary text-white',
+        fg: 'text-primary',
+      },
+      {
+        key: 'time',
+        label: t('session.time'),
+        value: formatDuration(m.durationMs),
+        icon: 'timer' as const,
+        box: 'border-secondary',
+        head: 'bg-secondary text-white',
+        fg: 'text-secondary',
+      },
+      {
+        key: 'reviewed',
+        label: t('session.reviewed'),
+        value: String(m.cardsReviewed),
+        icon: 'layers' as const,
+        box: 'border-purple',
+        head: 'bg-purple text-white',
+        fg: 'text-purple',
+      },
+    ];
     return (
-      <section className="flex flex-col gap-4 py-6">
+      <div className="relative flex min-h-dvh flex-col overflow-hidden bg-bg">
         {overlays}
-        <h1 className="text-2xl font-bold">{t('session.summaryTitle')}</h1>
-        <dl className="grid grid-cols-2 gap-3">
-          <Stat label={t('session.reviewed')} value={String(m.cardsReviewed)} />
-          <Stat label={t('session.accuracy')} value={`${Math.round(m.accuracy * 100)}%`} />
-          <Stat label={t('session.time')} value={formatDuration(m.durationMs)} />
-          <Stat label={t('session.xp')} value={`+${m.xp}`} />
-        </dl>
-        <div className="flex flex-wrap gap-2">
-          <ChunkyButton variant="neutral" onClick={undo} aria-keyshortcuts="Z">
-            {t('session.undo')}
-          </ChunkyButton>
-          <Link className="inline-flex min-h-11 items-center underline" to="/decks">
-            {t('session.backToDecks')}
-          </Link>
-        </div>
-      </section>
+        <Confetti />
+        <section className="relative z-10 mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center gap-6 px-4 py-10 text-center">
+          <div className="flex h-32 w-32 items-center justify-center rounded-full bg-orange text-white shadow-[0_6px_0_var(--color-orange-depth)]">
+            <Icon name="flame" size={72} />
+          </div>
+          <h1 className="text-3xl font-black uppercase leading-tight tracking-tight text-gold sm:text-4xl">
+            {t('ui.session.summaryHeadline')}
+          </h1>
+          {streak > 0 && (
+            <p className="text-base font-bold text-orange">
+              {grew
+                ? t('ui.session.streakGrew', { n: streak })
+                : t('ui.session.streakNow', { n: streak })}
+            </p>
+          )}
+          <dl className="grid w-full grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
+            {stats.map((x) => (
+              <div
+                key={x.key}
+                className={`overflow-hidden rounded-2xl border-2 bg-[var(--color-card)] ${x.box}`}
+              >
+                <dt
+                  className={`px-2 py-2 text-xs font-extrabold uppercase tracking-[0.08em] ${x.head}`}
+                >
+                  {x.label}
+                </dt>
+                <dd
+                  className={`flex items-center justify-center gap-2 px-2 py-5 text-2xl font-black ${x.fg}`}
+                >
+                  <Icon name={x.icon} size={28} />
+                  <span>{x.value}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+        <Dock>
+          <div className="flex flex-col-reverse justify-end gap-3 sm:flex-row">
+            <ChunkyButton
+              size="lg"
+              variant="outline"
+              className="rounded-2xl"
+              onClick={() => setReviewing(true)}
+            >
+              {t('ui.session.reviewCards')}
+            </ChunkyButton>
+            <ChunkyButton size="lg" className="min-w-48 rounded-2xl" onClick={() => navigate('/')}>
+              {t('session.continue')}
+            </ChunkyButton>
+          </div>
+        </Dock>
+      </div>
     );
   }
 
   const card = s.card;
+  const { text: frontText, audioId } = splitAudio(card?.front ?? '');
+  const tags = card?.tags ?? [];
+
   return (
-    <section className="flex h-[calc(100dvh-8rem)] flex-col gap-3 py-2">
+    <div className="flex min-h-dvh flex-col bg-bg">
       {overlays}
-      <div className="flex items-center gap-3">
+
+      <header className="mx-auto flex w-full max-w-[1100px] items-center gap-3 px-4 pb-3 pt-4 sm:gap-4">
+        <Link
+          to="/"
+          aria-label={t('common.close')}
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface focus-visible:outline-3 focus-visible:outline-focus"
+        >
+          <Icon name="x" size={30} />
+        </Link>
+        <button
+          type="button"
+          onClick={undo}
+          disabled={!machine.canUndo()}
+          aria-keyshortcuts="Z"
+          aria-label={t('session.undo')}
+          className="inline-flex h-11 shrink-0 cursor-pointer items-center gap-1.5 rounded-xl border-2 border-border bg-[var(--color-card)] px-2.5 text-xs font-extrabold uppercase tracking-[0.06em] text-text-muted shadow-[0_3px_0_var(--color-border)] transition-transform enabled:active:translate-y-[2px] enabled:active:shadow-none disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-3 focus-visible:outline-focus"
+        >
+          <Icon name="undo-2" size={18} />
+          <span aria-hidden="true" className="hidden sm:inline">
+            {t('session.undo')} · Z
+          </span>
+        </button>
         <ProgressBar
-          className="flex-1"
+          className="min-w-0 flex-1"
           value={s.progress.done}
           max={s.progress.total}
           label={t('session.progressLabel')}
         />
-        <span className="text-sm tabular-nums">{t('session.progress', s.progress)}</span>
-        <ChunkyButton
-          variant="neutral"
-          onClick={undo}
-          disabled={!machine.canUndo()}
-          aria-keyshortcuts="Z"
-        >
-          {t('session.undo')}
-        </ChunkyButton>
-      </div>
-      <article
-        aria-live="polite"
-        className="flex min-h-0 flex-1 flex-col gap-3 overflow-hidden rounded-[var(--radius-card)] border border-border bg-surface p-4"
-      >
-        {card && (
-          <>
-            <h2 className="sr-only">
-              {s.status === 'back' ? t('session.back') : t('session.front')}
-            </h2>
-            <CardContent markdown={card.front} className="min-h-0 text-xl" />
-            {s.status === 'back' && (
-              <>
-                <hr className="border-border" />
-                <CardContent markdown={card.back} className="min-h-0 text-lg" />
-              </>
+        <span className="shrink-0 text-sm font-extrabold tabular-nums text-text-muted">
+          {t('session.progress', s.progress)}
+        </span>
+      </header>
+
+      <main className="mx-auto w-full max-w-[720px] flex-1 px-4 pb-8 pt-3">
+        <article aria-live="polite" className="flex flex-col gap-5">
+          <h2 className="sr-only">
+            {s.status === 'back' ? t('session.back') : t('session.front')}
+          </h2>
+          {card && (
+            <>
+              {tags.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {tags.map((tag) => (
+                    <TagChip key={tag} label={tag} tabIndex={-1} />
+                  ))}
+                </div>
+              )}
+
+              <div className="flex items-start gap-4">
+                {audioId && (
+                  <SpeakerBtn
+                    label={t('session.play')}
+                    onClick={() => {
+                      void new Audio(`/api/v1/media/${audioId}`)
+                        .play()
+                        .catch(() => notify.show(t('media.unavailable')));
+                    }}
+                  />
+                )}
+                <CardContent
+                  variant="word"
+                  markdown={frontText}
+                  className="min-w-0 flex-1 self-center"
+                />
+              </div>
+
+              {s.status === 'back' && (
+                <>
+                  <hr className="border-t-2 border-border" />
+                  <div className="flex flex-col gap-2">
+                    <p className="text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
+                      {t('session.meaning')}
+                    </p>
+                    <CardContent variant="meaning" markdown={card.back} />
+                  </div>
+                </>
+              )}
+            </>
+          )}
+        </article>
+      </main>
+
+      <Dock>
+        {s.status === 'front' ? (
+          <div className="flex items-center justify-between gap-3">
+            {card && (
+              <ChunkyButton
+                variant="outline"
+                size="lg"
+                className="rounded-2xl"
+                onClick={() => navigate(`/decks/${card.deckId}/cards/${card.id}`)}
+              >
+                {t('ui.session.editCard')}
+              </ChunkyButton>
             )}
-          </>
+            <ChunkyButton
+              size="lg"
+              onClick={reveal}
+              aria-keyshortcuts="Space"
+              className="min-w-0 flex-1 rounded-2xl sm:max-w-72 sm:flex-none"
+            >
+              {t('session.reveal')}
+            </ChunkyButton>
+          </div>
+        ) : (
+          s.previews && (
+            <>
+              <GradeBar previews={s.previews} onGrade={grade} />
+              <p className="sr-only">{t('session.shortcuts')}</p>
+            </>
+          )
         )}
-      </article>
-      {s.status === 'front' ? (
-        <ChunkyButton onClick={reveal} aria-keyshortcuts="Space" className="w-full">
-          {t('session.reveal')}
-        </ChunkyButton>
-      ) : (
-        s.previews && <GradeBar previews={s.previews} onGrade={grade} />
-      )}
-    </section>
+      </Dock>
+    </div>
   );
 }
 
-const Stat = ({ label, value }: { label: string; value: string }) => (
-  <div className="rounded-[var(--radius-card)] bg-surface p-3">
-    <dt className="text-sm text-text-muted">{label}</dt>
-    <dd className="text-xl font-bold">{value}</dd>
-  </div>
-);
+/** Bottom action dock with a top border, shared by the card and summary screens. */
+function Dock({ children }: { children: ReactNode }) {
+  return (
+    <div className="sticky bottom-0 z-10 border-t-2 border-border bg-bg">
+      <div className="mx-auto w-full max-w-[1100px] px-4 py-4">{children}</div>
+    </div>
+  );
+}
+
+const AUDIO_TOKEN = /\[\[audio:([0-9a-f-]{36})\]\]/i;
+
+/** The first `[[audio:id]]` on the front drives the speaker button; it is removed from the text. */
+function splitAudio(markdown: string): { text: string; audioId: string | null } {
+  const m = AUDIO_TOKEN.exec(markdown);
+  if (!m) return { text: markdown, audioId: null };
+  return { text: markdown.replace(m[0], '').trim(), audioId: m[1]! };
+}
+
+const CONFETTI: { x: string; y: string; rot: number; color: string }[] = [
+  { x: '11%', y: '11%', rot: 15, color: 'bg-gold' },
+  { x: '21%', y: '20%', rot: 30, color: 'bg-secondary' },
+  { x: '16%', y: '46%', rot: -40, color: 'bg-danger' },
+  { x: '8%', y: '68%', rot: -20, color: 'bg-purple' },
+  { x: '30%', y: '78%', rot: 10, color: 'bg-orange' },
+  { x: '83%', y: '13%', rot: -35, color: 'bg-purple' },
+  { x: '88%', y: '30%', rot: 15, color: 'bg-primary' },
+  { x: '79%', y: '44%', rot: 35, color: 'bg-gold' },
+  { x: '90%', y: '71%', rot: 10, color: 'bg-danger' },
+  { x: '69%', y: '82%', rot: 40, color: 'bg-secondary' },
+];
+
+/** Decorative static confetti pieces behind the summary. */
+function Confetti() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-0">
+      {CONFETTI.map((c, i) => (
+        <span
+          key={i}
+          className={`absolute block h-6 w-3 rounded-sm ${c.color}`}
+          style={{ left: c.x, top: c.y, transform: `rotate(${c.rot}deg)` }}
+        />
+      ))}
+    </div>
+  );
+}
 
 function formatDuration(ms: number) {
   const s = Math.round(ms / 1000);

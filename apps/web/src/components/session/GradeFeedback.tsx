@@ -18,9 +18,9 @@ export function GradeFeedback({
     <motion.span
       key={token}
       aria-hidden="true"
-      className="pointer-events-none fixed bottom-28 left-1/2 -ml-3 size-6 rounded-full bg-primary"
-      initial={{ opacity: 0.8, scale: 0.4, y: 0 }}
-      animate={{ opacity: 0, scale: 1.6, y: -40 }}
+      className="pointer-events-none fixed bottom-28 left-1/2 -ml-4 size-8 rounded-full border-2 border-primary bg-primary/25 backdrop-blur-[2px]"
+      initial={{ opacity: 0.9, scale: 0.4, y: 0 }}
+      animate={{ opacity: 0, scale: 2.2, y: -48 }}
       transition={{ duration: 0.45, ease: 'easeOut' }}
     />
   );

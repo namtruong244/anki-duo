@@ -263,3 +263,87 @@ describe('session machine', () => {
     expect(onError).toHaveBeenCalledOnce();
   });
 });
+
+describe('combined session over several decks', () => {
+  const deck2: Deck = { ...deck, id: 'd2', name: 'Deck 2', newCardsPerDay: 1 };
+  const newCard = (id: string, deckId: string, n: number): Card => ({
+    ...dueCard(1),
+    id,
+    deckId,
+    position: n,
+    fsrs: {
+      state: 'new',
+      due: '2026-01-01T00:00:00.000Z',
+      stability: 0,
+      difficulty: 0,
+      learningSteps: 0,
+      reps: 0,
+      lapses: 0,
+      lastReview: null,
+    },
+  });
+  const inD2 = (c: Card, id: string): Card => ({ ...c, id, deckId: 'd2' });
+  const startAll = async (cards: Card[], size = 20) => {
+    await store.putCards(cards);
+    return SessionMachine.start(deps, {
+      decks: [deck, deck2],
+      kind: 'review',
+      settings: { ...settings, sessionSize: size },
+    });
+  };
+
+  it('puts due cards of every deck before new cards and respects each deck new-card limit', async () => {
+    const m = await startAll([
+      newCard('n1', 'd1', 1),
+      newCard('n2', 'd1', 2),
+      newCard('m1', 'd2', 1),
+      newCard('m2', 'd2', 2),
+      inD2(dueCard(2), 'x2'),
+      dueCard(1),
+    ]);
+    const order: string[] = [];
+    while (m.getState().status !== 'done') {
+      const id = m.getState().card!.id;
+      if (!order.includes(id)) order.push(id);
+      m.grade(3);
+    }
+    // d2 allows one new card per day; d1 allows both of its own
+    expect(order.slice(0, 2).sort()).toEqual(['c1', 'x2']);
+    expect(order.slice(2).sort()).toEqual(['m1', 'n1', 'n2']);
+  });
+
+  it('caps the total at the session size', async () => {
+    const m = await startAll([dueCard(1), dueCard(2), inD2(dueCard(3), 'x3')], 2);
+    expect(m.getState().progress.total).toBe(2);
+  });
+
+  it('anchors the session event on the first queued card deck and keeps review deckIds', async () => {
+    const m = await startAll([inD2(dueCard(1), 'x1'), newCard('n1', 'd1', 1)]);
+    const ev = (await outbox()).find((e) => e.type === 'session') as SessionEvent;
+    expect(ev.deckId).toBe('d2');
+    while (m.getState().status !== 'done') m.grade(3);
+    await m.settled();
+    const events = await outbox();
+    const sessions = events.filter((e) => e.type === 'session') as SessionEvent[];
+    expect(sessions.every((e) => e.deckId === 'd2')).toBe(true);
+    expect(sessions.at(-1)!.completed).toBe(true);
+    expect(m.getReviewedCards().map((r) => [r.card.id, r.lastGrade])).toEqual([
+      ['x1', 3],
+      ['n1', 3],
+    ]);
+  });
+
+  it('resumes only from the matching kind of route', async () => {
+    await startAll([dueCard(1), inD2(dueCard(2), 'x2')]);
+    expect(await SessionMachine.resume(deps, { deck, settings })).toBeNull();
+    const m = await SessionMachine.resume(deps, { multi: true, settings });
+    expect(m?.getState().progress.total).toBe(2);
+    expect(m?.getState().card?.id).toBe('c1');
+  });
+
+  it('a single-deck session is not resumed by the combined route', async () => {
+    await start([dueCard(1)]);
+    expect(await SessionMachine.resume(deps, { multi: true, settings })).toBeNull();
+    expect(await SessionMachine.resume(deps, { deck, settings })).not.toBeNull();
+  });
+});
