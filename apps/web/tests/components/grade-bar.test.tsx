@@ -39,6 +39,24 @@ describe('GradeBar', () => {
   });
 });
 
+describe('GradeBar suggested', () => {
+  it('rings the suggested grade and shows a Suggested text badge', () => {
+    render(<GradeBar previews={previews} onGrade={() => {}} suggested={2} />);
+    expect(screen.getByText('Suggested')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hard · 6m' }).getAttribute('data-suggested')).toBe(
+      'true',
+    );
+    expect(
+      screen.getByRole('button', { name: 'Good · 3d' }).getAttribute('data-suggested'),
+    ).toBeNull();
+  });
+
+  it('shows no badge without a suggestion', () => {
+    render(<GradeBar previews={previews} onGrade={() => {}} />);
+    expect(screen.queryByText('Suggested')).toBeNull();
+  });
+});
+
 describe('useSessionHotkeys', () => {
   function Harness(p: {
     revealed: boolean;

@@ -52,9 +52,12 @@ export function registerNotes(app: OpenAPIHono<AppEnv>) {
     return c.json(await getNote(db, c.get('userId')!, c.req.valid('param').noteId), 200);
   });
   app.openapi(v1(patchNoteRoute), async (c) => {
-    const { db, now } = c.get('deps');
+    const deps = c.get('deps');
     const { noteId } = c.req.valid('param');
-    return c.json(await updateNote(db, c.get('userId')!, noteId, c.req.valid('json'), now()), 200);
+    return c.json(
+      await updateNote(deps, c.get('userId')!, noteId, c.req.valid('json'), deps.now()),
+      200,
+    );
   });
   app.openapi(v1(deleteNoteRoute), async (c) => {
     await deleteNote(c.get('deps'), c.get('userId')!, c.req.valid('param').noteId);

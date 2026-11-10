@@ -36,6 +36,13 @@
       "when": 1794282656365,
       "tag": "0004_note_types",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1794299491547,
+      "tag": "0005_interactive_cards",
+      "breakpoints": true
     }
   ]
 }

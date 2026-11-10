@@ -121,6 +121,7 @@ paths:
                 id: { type: string, format: uuid, description: Optional client id }
                 name: { type: string, minLength: 1, maxLength: 100 }
                 newCardsPerDay: { type: integer, minimum: 0, maximum: 999, default: 20 }
+                mcPractice: { type: boolean, default: false }
       responses:
         '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Deck' } } } }
         '409': { $ref: '#/components/responses/Problem' }
@@ -128,7 +129,7 @@ paths:
   /decks/{deckId}:
     parameters: [{ $ref: '#/components/parameters/DeckId' }]
     patch:
-      summary: Rename a deck or change its new-card limit
+      summary: Rename a deck or change its new-card limit or multiple-choice practice
       requestBody:
         required: true
         content:
@@ -139,6 +140,7 @@ paths:
               properties:
                 name: { type: string, minLength: 1, maxLength: 100 }
                 newCardsPerDay: { type: integer, minimum: 0, maximum: 999 }
+                mcPractice: { type: boolean }
       responses:
         '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Deck' } } } }
         '404': { $ref: '#/components/responses/Problem' }
@@ -223,6 +225,8 @@ paths:
                 fields: { $ref: '#/components/schemas/NoteFieldsInput' }
                 templates: { $ref: '#/components/schemas/NoteTemplatesInput' }
                 css: { type: string, maxLength: 50000 }
+                kind: { type: string, enum: [standard, cloze, image_occlusion, multiple_choice], default: standard }
+                options: { $ref: '#/components/schemas/NoteTypeOptions' }
       responses:
         '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/NoteType' } } } }
         '409': { $ref: '#/components/responses/Problem' }
@@ -232,7 +236,7 @@ paths:
     parameters: [{ $ref: '#/components/parameters/NoteTypeId' }]
     patch:
       summary: Edit a note type
-      description: A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates delete their cards. Every card of the type is re-rendered.
+      description: A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates soft-delete their cards (409 cards_would_be_removed when a reviewed card vanishes without confirmRemoval). Every card of the type is re-rendered.
       requestBody:
         required: true
         content:
@@ -245,6 +249,9 @@ paths:
                 fields: { $ref: '#/components/schemas/NoteFieldsInput' }
                 templates: { $ref: '#/components/schemas/NoteTemplatesInput' }
                 css: { type: string, maxLength: 50000 }
+                kind: { type: string, enum: [standard, cloze, image_occlusion, multiple_choice] }
+                options: { $ref: '#/components/schemas/NoteTypeOptions' }
+                confirmRemoval: { type: boolean, description: 'Set after the learner confirmed that reviewed cards will be removed (409 cards_would_be_removed)' }
       responses:
         '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/NoteType' } } } }
         '404': { $ref: '#/components/responses/Problem' }
@@ -262,7 +269,7 @@ paths:
     parameters: [{ $ref: '#/components/parameters/DeckId' }]
     post:
       summary: Create a note and its cards
-      description: One card per template whose rendered front is not empty. Idempotent on id.
+      description: One card per slot (template and ordinal) whose rendered front is not empty. Idempotent on id.
       requestBody:
         required: true
         content:
@@ -275,7 +282,8 @@ paths:
                 noteTypeId: { type: string, format: uuid }
                 fields: { type: object, additionalProperties: { type: string, maxLength: 100000 } }
                 tags: { type: array, maxItems: 20, items: { type: string, minLength: 1, maxLength: 50, pattern: '^\S+$' } }
-                cardIds: { type: object, additionalProperties: { type: string, format: uuid }, description: Optional client card ids by template id }
+                cardIds: { type: object, additionalProperties: { type: string, format: uuid }, description: 'Optional client card ids keyed by templateId for ordinal 0, and "templateId:ordinal" otherwise' }
+                extra: { $ref: '#/components/schemas/NoteExtra' }
       responses:
         '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Note' } } } }
         '404': { $ref: '#/components/responses/Problem' }
@@ -290,7 +298,7 @@ paths:
         '404': { $ref: '#/components/responses/Problem' }
     patch:
       summary: Edit a note
-      description: Re-renders its cards and creates cards for templates that became non-empty.
+      description: Re-renders its cards, creates cards for slots that appeared and soft-deletes cards for slots that vanished (409 cards_would_be_removed when a reviewed card vanishes without confirmRemoval).
       requestBody:
         required: true
         content:
@@ -302,9 +310,12 @@ paths:
                 fields: { type: object, additionalProperties: { type: string, maxLength: 100000 } }
                 tags: { type: array, maxItems: 20, items: { type: string, minLength: 1, maxLength: 50, pattern: '^\S+$' } }
                 deckId: { type: string, format: uuid }
+                extra: { $ref: '#/components/schemas/NoteExtra' }
+                confirmRemoval: { type: boolean, description: 'Set after the learner confirmed that reviewed cards will be removed (409 cards_would_be_removed)' }
       responses:
         '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Note' } } } }
         '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
         '422': { $ref: '#/components/responses/Problem' }
     delete:
       summary: Delete a note with its cards, media and history
@@ -530,6 +541,11 @@ components:
             - edit_via_note
             - rate_limited
             - reauth_required
+            - cards_would_be_removed
+            - too_many_cards
+            - cloze_required
+            - wrong_answers_required
+            - occlusion_masks_required
         detail: { type: string }
         errors:
           type: array
@@ -538,6 +554,18 @@ components:
             properties:
               path: { type: string }
               message: { type: string }
+        count: { type: integer, description: 'cards_would_be_removed: number of reviewed cards that vanish' }
+        cards:
+          type: array
+          description: 'cards_would_be_removed: only the reviewed vanished cards'
+          items:
+            type: object
+            required: [id, templateId, ordinal, reps]
+            properties:
+              id: { type: string, format: uuid }
+              templateId: { type: string }
+              ordinal: { type: integer, minimum: 0 }
+              reps: { type: integer, minimum: 0 }
 
     FsrsState:
       type: object
@@ -552,13 +580,120 @@ components:
         lapses: { type: integer, minimum: 0 }
         lastReview: { type: ['string', 'null'], format: date-time }
 
+    Mask:
+      type: object
+      required: [n, shape, x, y, w, h]
+      properties:
+        n: { type: integer, minimum: 1 }
+        shape: { type: string, enum: [rect, ellipse] }
+        x: { type: number, minimum: 0, maximum: 1 }
+        y: { type: number, minimum: 0, maximum: 1 }
+        w: { type: number, exclusiveMinimum: 0, maximum: 1 }
+        h: { type: number, exclusiveMinimum: 0, maximum: 1 }
+        label: { type: string }
+
+    NoteExtra:
+      type: object
+      properties:
+        occlusion:
+          type: object
+          required: [mode, masks]
+          properties:
+            mode: { type: string, enum: [hide_all, hide_one] }
+            masks: { type: array, items: { $ref: '#/components/schemas/Mask' } }
+
+    Slot:
+      oneOf:
+        - type: object
+          required: [kind]
+          properties:
+            kind: { type: string, const: type }
+        - type: object
+          required: [kind]
+          properties:
+            kind: { type: string, const: choice }
+        - type: object
+          required: [kind]
+          properties:
+            kind: { type: string, const: occlusion }
+        - type: object
+          required: [kind, lang, text]
+          properties:
+            kind: { type: string, const: tts }
+            lang: { type: string }
+            text: { type: string }
+
+    AnswerType:
+      type: object
+      required: [kind, expected, ignoreCase, ignoreDiacritics]
+      properties:
+        kind: { type: string, const: type }
+        expected: { type: string }
+        ignoreCase: { type: boolean }
+        ignoreDiacritics: { type: boolean }
+
+    AnswerChoice:
+      type: object
+      required: [kind, correct, wrong, explanationHtml]
+      properties:
+        kind: { type: string, const: choice }
+        correct: { type: string }
+        wrong: { type: array, items: { type: string } }
+        explanationHtml: { type: string }
+
+    AnswerOcclusion:
+      type: object
+      required: [kind, image, mode, masks, target]
+      properties:
+        kind: { type: string, const: occlusion }
+        image: { type: string }
+        mode: { type: string, enum: [hide_all, hide_one] }
+        masks: { type: array, items: { $ref: '#/components/schemas/Mask' } }
+        target: { type: integer, minimum: 1 }
+
+    Answer:
+      oneOf:
+        - $ref: '#/components/schemas/AnswerType'
+        - $ref: '#/components/schemas/AnswerChoice'
+        - $ref: '#/components/schemas/AnswerOcclusion'
+
+    Interaction:
+      type: object
+      description: 'Output only: produced by the server (renderCard), never accepted from clients.'
+      required: [v, slots, answer]
+      properties:
+        v: { type: integer, const: 1 }
+        slots: { type: array, items: { $ref: '#/components/schemas/Slot' } }
+        answer:
+          description: Answer union or null
+          oneOf:
+            - $ref: '#/components/schemas/AnswerType'
+            - $ref: '#/components/schemas/AnswerChoice'
+            - $ref: '#/components/schemas/AnswerOcclusion'
+            - { type: 'null' }
+
+    NoteTypeOptions:
+      type: object
+      properties:
+        typeIgnoreCase: { type: boolean }
+        typeIgnoreDiacritics: { type: boolean }
+        roles:
+          type: object
+          description: Field ids; required for multiple_choice
+          required: [correct, wrong, explanation]
+          properties:
+            correct: { type: string }
+            wrong: { type: string }
+            explanation: { type: string }
+
     Deck:
       type: object
-      required: [id, name, newCardsPerDay, createdAt, updatedAt, deletedAt]
+      required: [id, name, newCardsPerDay, mcPractice, createdAt, updatedAt, deletedAt]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         newCardsPerDay: { type: integer }
+        mcPractice: { type: boolean }
         createdAt: { type: string, format: date-time }
         updatedAt: { type: string, format: date-time }
         deletedAt: { type: ['string', 'null'], format: date-time }
@@ -574,7 +709,7 @@ components:
 
     Card:
       type: object
-      required: [id, deckId, position, nodeIndex, front, back, tags, suspended, noteId, noteTypeId, templateId, format, fsrs, updatedAt, deletedAt]
+      required: [id, deckId, position, nodeIndex, front, back, tags, suspended, noteId, noteTypeId, templateId, ordinal, interaction, answerText, format, fsrs, updatedAt, deletedAt]
       properties:
         id: { type: string, format: uuid }
         deckId: { type: string, format: uuid }
@@ -587,6 +722,12 @@ components:
         noteId: { type: ['string', 'null'], format: uuid }
         noteTypeId: { type: ['string', 'null'], format: uuid }
         templateId: { type: ['string', 'null'] }
+        ordinal: { type: integer, minimum: 0 }
+        interaction:
+          oneOf:
+            - $ref: '#/components/schemas/Interaction'
+            - { type: 'null' }
+        answerText: { type: string }
         format: { type: string, enum: [markdown, html], description: 'markdown for legacy cards, html for note cards (sanitized, rendered)' }
         fsrs: { $ref: '#/components/schemas/FsrsState' }
         updatedAt: { type: string, format: date-time }
@@ -634,33 +775,41 @@ components:
 
     NoteType:
       type: object
-      required: [id, name, fields, templates, css, updatedAt, deletedAt]
+      required: [id, name, fields, templates, css, kind, options, builtinKey, updatedAt, deletedAt]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         fields: { type: array, items: { $ref: '#/components/schemas/NoteField' } }
         templates: { type: array, items: { $ref: '#/components/schemas/NoteTemplate' } }
         css: { type: string }
+        kind: { type: string, enum: [standard, cloze, image_occlusion, multiple_choice] }
+        options: { $ref: '#/components/schemas/NoteTypeOptions' }
+        builtinKey: { type: ['string', 'null'] }
         updatedAt: { type: string, format: date-time }
         deletedAt: { type: ['string', 'null'], format: date-time }
 
     Note:
       type: object
-      required: [id, deckId, noteTypeId, fields, tags, cards, updatedAt]
+      required: [id, deckId, noteTypeId, fields, tags, extra, cards, updatedAt]
       properties:
         id: { type: string, format: uuid }
         deckId: { type: string, format: uuid }
         noteTypeId: { type: string, format: uuid }
         fields: { type: object, additionalProperties: { type: string } }
         tags: { type: array, items: { type: string } }
+        extra:
+          oneOf:
+            - $ref: '#/components/schemas/NoteExtra'
+            - { type: 'null' }
         cards:
           type: array
           items:
             type: object
-            required: [id, templateId]
+            required: [id, templateId, ordinal]
             properties:
               id: { type: string, format: uuid }
               templateId: { type: string }
+              ordinal: { type: integer, minimum: 0 }
         updatedAt: { type: string, format: date-time }
 
     Media:
@@ -678,7 +827,7 @@ components:
 
     Settings:
       type: object
-      required: [locale, timeZone, dayStartHour, desiredRetention, maximumIntervalDays, dailyXpGoal, sessionSize, soundEnabled, motion]
+      required: [locale, timeZone, dayStartHour, desiredRetention, maximumIntervalDays, dailyXpGoal, sessionSize, soundEnabled, motion, autoGrade]
       properties:
         locale: { type: string, enum: [vi, en] }
         timeZone: { type: string, description: IANA time zone }
@@ -689,6 +838,7 @@ components:
         sessionSize: { type: integer, minimum: 5, maximum: 50 }
         soundEnabled: { type: boolean }
         motion: { type: string, enum: [system, reduced, full] }
+        autoGrade: { type: boolean }
 
     SettingsPatch:
       type: object
@@ -703,6 +853,7 @@ components:
         sessionSize: { type: integer, minimum: 5, maximum: 50 }
         soundEnabled: { type: boolean }
         motion: { type: string, enum: [system, reduced, full] }
+        autoGrade: { type: boolean }
 
     Stats:
       type: object

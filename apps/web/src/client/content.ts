@@ -8,6 +8,8 @@ export interface NoteTypeBody {
   fields: NoteType['fields'];
   templates: NoteType['templates'];
   css: string;
+  kind?: NoteType['kind'];
+  options?: NoteType['options'];
 }
 
 export interface ExportedFile {
@@ -109,7 +111,10 @@ export function createContentActions(
       return data!;
     },
 
-    async updateNoteType(noteTypeId: string, body: Partial<NoteTypeBody>) {
+    async updateNoteType(
+      noteTypeId: string,
+      body: Partial<NoteTypeBody> & { confirmRemoval?: boolean },
+    ) {
       const { data } = await api.PATCH('/note-types/{noteTypeId}', {
         params: { path: { noteTypeId } },
         body,
@@ -138,6 +143,7 @@ export function createContentActions(
         fields: Record<string, string>;
         tags?: string[];
         cardIds?: Record<string, string>;
+        extra?: NonNullable<Note['extra']>;
       },
     ) {
       const { data } = await api.POST('/decks/{deckId}/notes', {
@@ -150,7 +156,13 @@ export function createContentActions(
 
     async updateNote(
       noteId: string,
-      body: { fields?: Record<string, string>; tags?: string[]; deckId?: string },
+      body: {
+        fields?: Record<string, string>;
+        tags?: string[];
+        deckId?: string;
+        extra?: NonNullable<Note['extra']>;
+        confirmRemoval?: boolean;
+      },
     ) {
       const { data } = await api.PATCH('/notes/{noteId}', {
         params: { path: { noteId } },

@@ -19,6 +19,14 @@ export type SessionEvent = Wire<S['SessionEvent'], 'session'>;
 export type DayFlagEvent = Wire<S['DayFlagEvent'], 'day_flag'>;
 export type OutboxEvent = ReviewEvent | RevokeEvent | SessionEvent | DayFlagEvent;
 
+/** A checked answer kept with the session so a reload resumes on the feedback screen (R7). UI state only; never pushed. */
+export interface StoredAnswer {
+  verdict: 'correct' | 'almost' | 'wrong' | null;
+  given?: string;
+  choiceIndex?: number;
+  suggested: 1 | 2 | 3 | null;
+}
+
 /** An in-progress study session with its queue and undo snapshot (FR-019). */
 export interface StoredSession {
   id: string;
@@ -30,6 +38,8 @@ export interface StoredSession {
   position: number;
   graded: Record<string, number>;
   undo?: { card: Card; eventId: string } | null;
+  /** Set between `submitAnswer` and the grade (feature 002). */
+  answer?: StoredAnswer | null;
   [key: string]: unknown;
 }
 

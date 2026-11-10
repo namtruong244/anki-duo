@@ -17,6 +17,9 @@ const card = (
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state: over.state ?? 'new',
@@ -34,7 +37,7 @@ const card = (
 const deck = (id: string): Deck => ({
   id,
   name: id,
-  newCardsPerDay: 20,
+  newCardsPerDay: 20, mcPractice: false,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   deletedAt: null,
@@ -77,6 +80,7 @@ describe('DexieStore', () => {
       sessionSize: 20,
       soundEnabled: true,
       motion: 'system',
+      autoGrade: false,
     } as const;
     await store.putSettings('u', settings);
     expect(await store.getSettings('u')).toEqual(settings);

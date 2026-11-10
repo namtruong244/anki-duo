@@ -8,6 +8,7 @@ import {
   sanitizeCss,
   sanitizeHtml,
   validateNoteType,
+  type NoteTemplate,
   type NoteTypeDef,
 } from '../src/index.js';
 
@@ -15,34 +16,45 @@ const basic = DEFAULT_NOTE_TYPES[0]!.def;
 const reversed = DEFAULT_NOTE_TYPES[1]!.def;
 const optional = DEFAULT_NOTE_TYPES[2]!.def;
 
+/** Renders one template of `def` with the 002 signature (standard kind, ordinal 0). */
+const render = (
+  def: NoteTypeDef,
+  tpl: NoteTemplate,
+  fields: Record<string, string>,
+  opts: { tags?: string[]; deckName?: string } = {},
+) =>
+  renderCard({ ...def, templates: [tpl] }, fields, null, {
+    templateId: tpl.id,
+    ordinal: 0,
+    ...opts,
+  });
+
 describe('renderCard', () => {
   it('renders basic front/back with FrontSide', () => {
-    const r = renderCard(basic, basic.templates[0]!, { f_front: 'Hi', f_back: '<b>Yo</b>' });
+    const r = render(basic, basic.templates[0]!, { f_front: 'Hi', f_back: '<b>Yo</b>' });
     expect(r.front).toBe('Hi');
     expect(r.back).toBe('Hi<hr id="answer">' + '<b>Yo</b>');
     expect(r.frontEmpty).toBe(false);
   });
   it('reverse template swaps fields', () => {
-    const r = renderCard(reversed, reversed.templates[1]!, { f_front: 'Q', f_back: 'A' });
+    const r = render(reversed, reversed.templates[1]!, { f_front: 'Q', f_back: 'A' });
     expect(r.front).toBe('A');
     expect(r.back).toContain('Q');
   });
   it('optional reverse is empty unless field is set', () => {
     const t = optional.templates[1]!;
-    expect(renderCard(optional, t, { f_front: 'Q', f_back: 'A', f_addrev: '' }).frontEmpty).toBe(
-      true,
-    );
-    const r = renderCard(optional, t, { f_front: 'Q', f_back: 'A', f_addrev: 'y' });
+    expect(render(optional, t, { f_front: 'Q', f_back: 'A', f_addrev: '' }).frontEmpty).toBe(true);
+    const r = render(optional, t, { f_front: 'Q', f_back: 'A', f_addrev: 'y' });
     expect(r.frontEmpty).toBe(false);
     expect(r.front).toBe('A');
   });
   it('frontEmpty ignores whitespace/empty html but counts img and sound', () => {
     const t = basic.templates[0]!;
-    expect(renderCard(basic, t, { f_front: '<div><br></div> &nbsp;' }).frontEmpty).toBe(true);
-    expect(renderCard(basic, t, { f_front: '<img src="https://x.test/a.png">' }).frontEmpty).toBe(
+    expect(render(basic, t, { f_front: '<div><br></div> &nbsp;' }).frontEmpty).toBe(true);
+    expect(render(basic, t, { f_front: '<img src="https://x.test/a.png">' }).frontEmpty).toBe(
       false,
     );
-    expect(renderCard(basic, t, { f_front: '[sound:abc]' }).frontEmpty).toBe(false);
+    expect(render(basic, t, { f_front: '[sound:abc]' }).frontEmpty).toBe(false);
   });
   it('supports sections, inverse sections, nesting, text:, Tags, Deck', () => {
     const def: NoteTypeDef = {
@@ -59,20 +71,20 @@ describe('renderCard', () => {
       front: '{{#A}}[{{#B}}both{{/B}}{{^B}}onlyA{{/B}}]{{/A}}{{^A}}noA{{/A}}',
       back: '{{text:A}}|{{Tags}}|{{Deck}}| {{ A }}',
     };
-    expect(renderCard(def, t, { a: 'x', b: '' }).front).toBe('[onlyA]');
-    expect(renderCard(def, t, { a: 'x', b: 'y' }).front).toBe('[both]');
-    expect(renderCard(def, t, { a: '', b: 'y' }).front).toBe('noA');
-    const r = renderCard(def, t, { a: '<b>x&y</b>' }, { tags: ['t1', 't2'], deckName: 'D<1>' });
+    expect(render(def, t, { a: 'x', b: '' }).front).toBe('[onlyA]');
+    expect(render(def, t, { a: 'x', b: 'y' }).front).toBe('[both]');
+    expect(render(def, t, { a: '', b: 'y' }).front).toBe('noA');
+    const r = render(def, t, { a: '<b>x&y</b>' }, { tags: ['t1', 't2'], deckName: 'D<1>' });
     expect(r.back).toBe('x&amp;y|t1 t2|D&lt;1&gt;| <b>x&amp;y</b>');
   });
   it('unknown field yields error span', () => {
     const t = { id: 't', name: 'T', front: '{{Nope}}', back: '' };
-    const r = renderCard(basic, t, {});
+    const r = render(basic, t, {});
     expect(r.front).toBe('<span class="tpl-error">Unknown field: Nope</span>');
     expect(r.frontEmpty).toBe(false);
   });
   it('sanitizes injected field html', () => {
-    const r = renderCard(basic, basic.templates[0]!, {
+    const r = render(basic, basic.templates[0]!, {
       f_front: '<script>alert(1)</script>ok<img src=x onerror=alert(1)>',
     });
     expect(r.front).toBe('ok');

@@ -41,6 +41,7 @@ describe('PATCH /api/v1/me/settings', () => {
       sessionSize: 30,
       soundEnabled: true,
       motion: 'reduced',
+      autoGrade: false,
     });
     const [row] = await t.db
       .select()
@@ -111,5 +112,19 @@ describe('PATCH /api/v1/me/settings', () => {
     await patch({ desiredRetention: 0.8, maximumIntervalDays: 30 });
     const [after] = await t.db.select().from(schema.card).where(eq(schema.card.id, card.id));
     expect(after).toMatchObject({ stability: 12, difficulty: 5, state: 'review' });
+  });
+});
+
+describe('autoGrade', () => {
+  it('defaults to false and can be set', async () => {
+    expect(((await (await patch({ sessionSize: 10 })).json()) as any).autoGrade).toBe(false);
+    const res = await patch({ autoGrade: true });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as any).autoGrade).toBe(true);
+    const [row] = await t.db
+      .select()
+      .from(schema.learnerSettings)
+      .where(eq(schema.learnerSettings.userId, userId));
+    expect(row!.autoGrade).toBe(true);
   });
 });

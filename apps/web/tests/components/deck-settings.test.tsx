@@ -16,6 +16,7 @@ const deck = {
   id: 'd1',
   name: 'Spanish',
   newCardsPerDay: 20,
+  mcPractice: false,
   createdAt: '',
   updatedAt: '',
   deletedAt: null,

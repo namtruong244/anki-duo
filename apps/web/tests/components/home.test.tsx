@@ -17,6 +17,7 @@ const settings: Settings = {
   sessionSize: 20,
   soundEnabled: true,
   motion: 'system',
+  autoGrade: false,
 };
 const dueCard = (id: string, deckId: string) => ({
   id,
@@ -30,6 +31,9 @@ const dueCard = (id: string, deckId: string) => ({
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state: 'review' as const,
@@ -57,6 +61,7 @@ const deck = (id: string, name: string) => ({
   id,
   name,
   newCardsPerDay: 0,
+  mcPractice: false,
   createdAt: 'x',
   updatedAt: 'x',
   deletedAt: null,

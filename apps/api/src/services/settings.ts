@@ -17,6 +17,7 @@ export const toSettings = (r: typeof schema.learnerSettings.$inferSelect): Setti
   sessionSize: r.sessionSize,
   soundEnabled: r.soundEnabled,
   motion: r.motion as Settings['motion'],
+  autoGrade: r.autoGrade,
 });
 
 export async function getSettings(db: Db, userId: string): Promise<Settings> {

@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DexieStore } from '../../src/client/dexie-store';
 import type { Card, Deck, ReviewEvent, SessionEvent, Settings } from '../../src/client/local-store';
-import { SessionMachine, type SessionDeps } from '../../src/client/session/session-machine';
+import {
+  SessionMachine,
+  effectiveAnswer,
+  type SessionDeps,
+} from '../../src/client/session/session-machine';
 
 const settings: Settings = {
   locale: 'en',
@@ -13,11 +17,13 @@ const settings: Settings = {
   sessionSize: 20,
   soundEnabled: true,
   motion: 'system',
+  autoGrade: false,
 };
 const deck: Deck = {
   id: 'd1',
   name: 'Deck',
   newCardsPerDay: 20,
+  mcPractice: false,
   createdAt: '2026-01-01T00:00:00.000Z',
   updatedAt: '2026-01-01T00:00:00.000Z',
   deletedAt: null,
@@ -36,6 +42,9 @@ const dueCard = (n: number): Card => ({
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state: 'review',
@@ -370,5 +379,196 @@ describe('combined session over several decks', () => {
     await start([dueCard(1)]);
     expect(await SessionMachine.resume(deps, { multi: true, settings })).toBeNull();
     expect(await SessionMachine.resume(deps, { deck, settings })).not.toBeNull();
+  });
+});
+
+describe('session machine: answering (interactive cards)', () => {
+  const typeAnswer = {
+    kind: 'type',
+    expected: 'cat',
+    ignoreCase: true,
+    ignoreDiacritics: true,
+  } as const;
+  const interactive = (n: number, answer: Card['interaction'] = null): Card => ({
+    ...dueCard(n),
+    interaction: answer,
+  });
+  const typeCard = (n: number) =>
+    interactive(n, { v: 1, slots: [{ kind: 'type' }], answer: typeAnswer });
+  const choiceCard = (n: number) =>
+    interactive(n, {
+      v: 1,
+      slots: [{ kind: 'choice' }],
+      answer: { kind: 'choice', correct: 'a', wrong: ['b'], explanationHtml: '' },
+    });
+  const occlusionCard = (n: number) =>
+    interactive(n, {
+      v: 1,
+      slots: [{ kind: 'occlusion' }],
+      answer: { kind: 'occlusion', image: 'i', mode: 'hide_all', masks: [], target: 1 },
+    });
+
+  it('type and choice cards start in answering with no suggestion', async () => {
+    for (const make of [typeCard, choiceCard]) {
+      const m = await start([make(1)]);
+      const s = m.getState();
+      expect(s.status).toBe('answering');
+      expect(s.suggested).toBeNull();
+      expect(s.answer).toBeNull();
+    }
+  });
+
+  it.each([
+    ['occlusion', () => occlusionCard(1)],
+    ['null-answer', () => interactive(1, { v: 1, slots: [], answer: null })],
+    ['basic', () => dueCard(1)],
+  ])('%s cards use reveal() with suggested = null', async (_name, make) => {
+    const m = await start([make()]);
+    expect(m.getState().status).toBe('front');
+    m.reveal();
+    expect(m.getState()).toMatchObject({ status: 'back', suggested: null });
+  });
+
+  it('reveal() does nothing while answering', async () => {
+    const m = await start([typeCard(1)]);
+    m.reveal();
+    expect(m.getState().status).toBe('answering');
+  });
+
+  it('submitAnswer moves to back and exposes the suggested grade', async () => {
+    const m = await start([typeCard(1)]);
+    m.submitAnswer({ verdict: 'almost', given: 'cot' });
+    const s = m.getState();
+    expect(s.status).toBe('back');
+    expect(s.suggested).toBe(2);
+    expect(s.answer).toEqual({ verdict: 'almost', given: 'cot', suggested: 2 });
+    expect(s.previews).not.toBeNull();
+    m.submitAnswer({ verdict: 'correct', given: 'cat' });
+    expect(m.getState().suggested).toBe(2);
+  });
+
+  it('a null verdict suggests nothing', async () => {
+    const m = await start([choiceCard(1)]);
+    m.submitAnswer({ verdict: null });
+    expect(m.getState()).toMatchObject({ status: 'back', suggested: null });
+  });
+
+  it('grade() submits only the chosen grade; the review event shape is unchanged (FR-010)', async () => {
+    const m = await start([typeCard(1), dueCard(2)]);
+    m.submitAnswer({ verdict: 'wrong', given: 'dog' });
+    m.grade(4);
+    await m.settled();
+    const review = (await outbox()).find((e) => e.type === 'review') as ReviewEvent;
+    expect(review.grade).toBe(4);
+    expect(Object.keys(review).sort()).toEqual(
+      [
+        'type',
+        'id',
+        'cardId',
+        'sessionId',
+        'grade',
+        'reviewedAt',
+        'durationMs',
+        'studyAhead',
+        'schedulerVersion',
+        'stateBefore',
+        'stateAfter',
+      ].sort(),
+    );
+    expect(m.getState()).toMatchObject({ status: 'front', answer: null, suggested: null });
+  });
+
+  it('the next interactive card is in answering after a grade', async () => {
+    const m = await start([typeCard(1), typeCard(2)]);
+    m.submitAnswer({ verdict: 'correct' });
+    m.grade(3);
+    expect(m.getState()).toMatchObject({ status: 'answering', card: { id: 'c2' } });
+  });
+
+  it('autoGrade grades the suggestion at once and holds the back until continue()', async () => {
+    await store.putCards([typeCard(1), dueCard(2)]);
+    const m = await SessionMachine.start(deps, {
+      deck,
+      kind: 'review',
+      settings: { ...settings, autoGrade: true },
+    });
+    m.submitAnswer({ verdict: 'correct', given: 'cat' });
+    await m.settled();
+    const s = m.getState();
+    expect(s).toMatchObject({ status: 'back', continuing: true, card: { id: 'c1' }, suggested: 3 });
+    expect(s.progress.done).toBe(1);
+    const reviews = (await outbox()).filter((e) => e.type === 'review') as ReviewEvent[];
+    expect(reviews.map((r) => r.grade)).toEqual([3]);
+    m.continue();
+    expect(m.getState()).toMatchObject({ status: 'front', continuing: false, card: { id: 'c2' } });
+  });
+
+  it('autoGrade holds the back of the last card, then finishes on continue()', async () => {
+    await store.putCards([typeCard(1)]);
+    const m = await SessionMachine.start(deps, {
+      deck,
+      kind: 'review',
+      settings: { ...settings, autoGrade: true },
+    });
+    m.submitAnswer({ verdict: 'correct' });
+    expect(m.getState()).toMatchObject({ status: 'back', continuing: true });
+    m.continue();
+    expect(m.getState().status).toBe('done');
+  });
+
+  it('autoGrade does not grade when there is no suggestion', async () => {
+    await store.putCards([choiceCard(1)]);
+    const m = await SessionMachine.start(deps, {
+      deck,
+      kind: 'review',
+      settings: { ...settings, autoGrade: true },
+    });
+    m.submitAnswer({ verdict: null });
+    expect(m.getState()).toMatchObject({ status: 'back', continuing: false });
+    expect((await outbox()).some((e) => e.type === 'review')).toBe(false);
+  });
+
+  it('undo() returns the card to answering with the answer cleared (FR-012)', async () => {
+    const m = await start([typeCard(1), dueCard(2)]);
+    m.submitAnswer({ verdict: 'correct', given: 'cat' });
+    m.grade(3);
+    await m.undo();
+    expect(m.getState()).toMatchObject({
+      status: 'answering',
+      card: { id: 'c1' },
+      answer: null,
+      suggested: null,
+    });
+  });
+
+  it('undo() after an auto-grade drops the held back and re-asks', async () => {
+    await store.putCards([typeCard(1)]);
+    const m = await SessionMachine.start(deps, {
+      deck,
+      kind: 'review',
+      settings: { ...settings, autoGrade: true },
+    });
+    m.submitAnswer({ verdict: 'correct' });
+    await m.undo();
+    expect(m.getState()).toMatchObject({ status: 'answering', continuing: false, answer: null });
+  });
+
+  it('a reload restores the persisted answer on the feedback screen (R7)', async () => {
+    const m = await start([typeCard(1)]);
+    m.submitAnswer({ verdict: 'almost', given: 'cot' });
+    await m.settled();
+    const resumed = await SessionMachine.resume(deps, { deck, settings });
+    const s = resumed!.getState();
+    expect(s.status).toBe('back');
+    expect(s.answer).toEqual({ verdict: 'almost', given: 'cot', suggested: 2 });
+    expect(s.suggested).toBe(2);
+    expect(s.previews).not.toBeNull();
+    resumed!.grade(2);
+    expect(resumed!.getState().answer).toBeNull();
+  });
+
+  it('effectiveAnswer defaults to the interaction answer', () => {
+    expect(effectiveAnswer(typeCard(1), { settings })).toEqual(typeAnswer);
+    expect(effectiveAnswer(dueCard(1), { settings })).toBeNull();
   });
 });

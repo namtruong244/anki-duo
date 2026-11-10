@@ -11,6 +11,8 @@ export class ApiError extends Error {
     message: string,
     public readonly retryAfter?: number,
     public readonly errors?: { path?: string; message?: string }[],
+    /** `cards_would_be_removed`: how many reviewed cards would vanish. */
+    public readonly count?: number,
   ) {
     super(message);
     this.name = 'ApiError';
@@ -28,6 +30,7 @@ export async function toApiError(res: Response): Promise<ApiError> {
       body.detail ?? body.title ?? res.statusText,
       retryAfter,
       body.errors,
+      body.count,
     );
   } catch {
     return new ApiError(res.status, 'unknown', res.statusText, retryAfter);

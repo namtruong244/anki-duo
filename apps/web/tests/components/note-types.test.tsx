@@ -1,8 +1,9 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { initI18n } from '../../src/i18n';
 import { ApiError } from '../../src/client/api';
+import { dexieStore } from '../../src/client/store';
 
 const mocks = vi.hoisted(() => ({
   listNoteTypes: vi.fn(),
@@ -31,8 +32,9 @@ const basic = {
 beforeAll(async () => {
   await initI18n('en');
 });
-beforeEach(() => {
+beforeEach(async () => {
   vi.clearAllMocks();
+  await dexieStore.clearAll();
   mocks.listNoteTypes.mockResolvedValue([basic]);
 });
 afterEach(cleanup);
@@ -133,5 +135,92 @@ describe('NoteTypeEditorPage', () => {
     await screen.findByLabelText('Front template');
     fireEvent.click(screen.getByRole('button', { name: 'Delete template' }));
     expect((await screen.findByRole('dialog')).textContent).toMatch(/will be deleted/);
+  });
+});
+
+describe('NoteTypeEditorPage removal confirmation (FR-003)', () => {
+  const twoTpl = {
+    ...basic,
+    templates: [
+      ...basic.templates,
+      { id: 't2', name: 'Card 2', front: '{{Back}}', back: '{{Front}}' },
+    ],
+  };
+  const stored = (id: string, reps: number) =>
+    ({
+      id,
+      deckId: 'd1',
+      position: 0,
+      nodeIndex: 0,
+      front: '',
+      back: '',
+      tags: [],
+      suspended: false,
+      noteId: 'n1',
+      noteTypeId: 'nt-basic',
+      templateId: 't2',
+      ordinal: 0,
+      format: 'html',
+      fsrs: {
+        state: 'review',
+        due: 'x',
+        stability: 1,
+        difficulty: 1,
+        learningSteps: 0,
+        reps,
+        lapses: 0,
+        lastReview: null,
+      },
+      updatedAt: 'x',
+      deletedAt: null,
+    }) as never;
+
+  const dropCard2AndSave = async () => {
+    mocks.listNoteTypes.mockResolvedValue([twoTpl]);
+    app('/note-types/nt-basic');
+    await screen.findByLabelText('Front template');
+    fireEvent.click(screen.getByRole('tab', { name: 'Card 2' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Delete template' }));
+    fireEvent.click(
+      within(await screen.findByRole('dialog')).getByRole('button', { name: 'Delete' }),
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    fireEvent.click(screen.getByRole('button', { name: 'Save card' }));
+  };
+
+  it('asks first when a reviewed card would vanish, then resends with confirmRemoval', async () => {
+    await dexieStore.putDecks([{ id: 'd1', name: 'D', updatedAt: 'x', deletedAt: null } as never]);
+    await dexieStore.putCards([stored('c2', 5)]);
+    mocks.updateNoteType.mockResolvedValue(basic);
+    await dropCard2AndSave();
+    expect((await screen.findByRole('dialog')).textContent).toMatch(/1 card and its review/);
+    expect(mocks.updateNoteType).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(mocks.updateNoteType).toHaveBeenCalledTimes(1));
+    expect(mocks.updateNoteType.mock.calls[0]![1].confirmRemoval).toBe(true);
+  });
+
+  it('saves without a dialog when only unreviewed cards vanish', async () => {
+    await dexieStore.putDecks([{ id: 'd1', name: 'D', updatedAt: 'x', deletedAt: null } as never]);
+    await dexieStore.putCards([stored('c2', 0)]);
+    mocks.updateNoteType.mockResolvedValue(basic);
+    await dropCard2AndSave();
+    await waitFor(() => expect(mocks.updateNoteType).toHaveBeenCalledTimes(1));
+    expect(mocks.updateNoteType.mock.calls[0]![1].confirmRemoval).toBeUndefined();
+  });
+
+  it('opens the dialog on a server 409 and resends on confirm', async () => {
+    mocks.updateNoteType
+      .mockRejectedValueOnce(
+        new ApiError(409, 'cards_would_be_removed', 'x', undefined, undefined, 3),
+      )
+      .mockResolvedValueOnce(basic);
+    app('/note-types/nt-basic');
+    await screen.findByLabelText('Front template');
+    fireEvent.click(screen.getByRole('button', { name: 'Save card' }));
+    expect((await screen.findByRole('dialog')).textContent).toMatch(/3 cards and their review/);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(mocks.updateNoteType).toHaveBeenCalledTimes(2));
+    expect(mocks.updateNoteType.mock.calls[1]![1].confirmRemoval).toBe(true);
   });
 });

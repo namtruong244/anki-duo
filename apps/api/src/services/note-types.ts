@@ -1,18 +1,29 @@
-import { and, eq, isNull, ne, notInArray, sql } from 'drizzle-orm';
+import { and, eq, isNull, ne, sql } from 'drizzle-orm';
 import {
   DEFAULT_NOTE_TYPES,
   renameFieldInTemplates,
   sanitizeCss,
   validateNoteType,
   type NoteTypeDef,
+  type NoteTypeKind,
+  type NoteTypeOptions,
 } from '@anki-duo/domain';
 import { schema, type Db } from '../db/client.js';
 import type { AppDeps } from '../app.js';
 import { ApiProblem } from '../problem.js';
-import { deleteNoteIfOrphan, deleteStorageKeys, tombstoneCardTx } from './cards.js';
+import { deleteNoteIfOrphan, deleteStorageKeys } from './cards.js';
 import { toNoteType } from './mappers.js';
-import { findNoteType, lockDecks, newSyncCtx, syncNoteCards } from './notes.js';
+import {
+  assertRemovalConfirmed,
+  findNoteType,
+  lockDecks,
+  newSyncCtx,
+  syncNoteCards,
+} from './notes.js';
 import { refreshCounts } from './stats.js';
+
+/** Request-body shape of `options` (optional members may be explicit undefined). */
+type NoteTypeOptionsInput = { [K in keyof NoteTypeOptions]?: NoteTypeOptions[K] | undefined };
 
 const nameTaken = () =>
   new ApiProblem(409, 'note_type_name_taken', 'A note type with this name already exists');
@@ -47,41 +58,52 @@ function assertValid(def: NoteTypeDef) {
     );
 }
 
-/** The default note types are created the first time a learner has none (live or deleted). */
-export async function listNoteTypes(db: Db, userId: string, now: Date) {
-  const query = () =>
-    db
-      .select()
-      .from(schema.noteType)
-      .where(and(eq(schema.noteType.userId, userId), isNull(schema.noteType.deletedAt)))
-      .orderBy(schema.noteType.createdAt, schema.noteType.name);
-  let rows = await query();
-  if (!rows.length) {
-    const [any] = await db
-      .select({ id: schema.noteType.id })
-      .from(schema.noteType)
-      .where(eq(schema.noteType.userId, userId))
-      .limit(1);
-    if (!any) {
+/**
+ * Built-in note types are a top-up (R14): every call inserts each built-in the learner has no
+ * row for, live or deleted (a deleted built-in stays deleted). `on conflict do nothing` makes
+ * concurrent calls and a clashing custom name harmless.
+ */
+async function topUpBuiltins(db: Db, userId: string, now: Date) {
+  const have = new Set(
+    (
       await db
-        .insert(schema.noteType)
-        .values(
-          DEFAULT_NOTE_TYPES.map((d, i) => ({
-            id: crypto.randomUUID(),
-            userId,
-            name: d.name,
-            fields: d.def.fields,
-            templates: d.def.templates,
-            css: d.def.css,
-            // A stable order: createdAt is the listing order.
-            createdAt: new Date(now.getTime() + i),
-            updatedAt: now,
-          })),
-        )
-        .onConflictDoNothing();
-      rows = await query();
-    }
-  }
+        .select({ key: schema.noteType.builtinKey })
+        .from(schema.noteType)
+        .where(eq(schema.noteType.userId, userId))
+    ).map((r) => r.key),
+  );
+  const missing = DEFAULT_NOTE_TYPES.filter((d) => !have.has(d.builtinKey));
+  if (!missing.length) return;
+  await db
+    .insert(schema.noteType)
+    .values(
+      missing.map((d, i) => ({
+        id: crypto.randomUUID(),
+        userId,
+        name: d.name,
+        fields: d.def.fields,
+        templates: d.def.templates,
+        css: d.def.css,
+        kind: d.def.kind ?? 'standard',
+        options: d.def.options ?? {},
+        builtinKey: d.builtinKey,
+        // A stable order: createdAt is the listing order.
+        createdAt: new Date(now.getTime() + i),
+        updatedAt: now,
+      })),
+    )
+    .onConflictDoNothing();
+}
+
+export async function listNoteTypes(db: Db, userId: string, now: Date) {
+  // A learner from before 001's lazy seeding who deleted every type has legacy tombstones with
+  // no key; they are still topped up with the new built-ins, which is the intent of R14.
+  await topUpBuiltins(db, userId, now);
+  const rows = await db
+    .select()
+    .from(schema.noteType)
+    .where(and(eq(schema.noteType.userId, userId), isNull(schema.noteType.deletedAt)))
+    .orderBy(schema.noteType.createdAt, schema.noteType.name);
   return { noteTypes: rows.map(toNoteType) };
 }
 
@@ -94,6 +116,8 @@ export async function createNoteType(
     fields: NoteTypeDef['fields'];
     templates: NoteTypeDef['templates'];
     css?: string | undefined;
+    kind?: NoteTypeKind | undefined;
+    options?: NoteTypeOptionsInput | undefined;
   },
   now: Date,
 ) {
@@ -114,6 +138,8 @@ export async function createNoteType(
     fields: input.fields,
     templates: input.templates,
     css: sanitizeCss(input.css ?? ''),
+    kind: input.kind ?? 'standard',
+    options: (input.options ?? {}) as NoteTypeOptions,
   };
   assertValid(def);
   await assertNameFree(db, userId, input.name);
@@ -127,6 +153,8 @@ export async function createNoteType(
         fields: def.fields,
         templates: def.templates,
         css: def.css,
+        kind: def.kind ?? 'standard',
+        options: def.options ?? {},
         createdAt: now,
         updatedAt: now,
       })
@@ -147,6 +175,9 @@ export async function updateNoteType(
     fields?: NoteTypeDef['fields'] | undefined;
     templates?: NoteTypeDef['templates'] | undefined;
     css?: string | undefined;
+    kind?: NoteTypeKind | undefined;
+    options?: NoteTypeOptionsInput | undefined;
+    confirmRemoval?: boolean | undefined;
   },
   now: Date,
 ) {
@@ -171,6 +202,8 @@ export async function updateNoteType(
         fields,
         templates,
         css: patch.css !== undefined ? sanitizeCss(patch.css) : nt.css,
+        kind: (patch.kind ?? nt.kind) as NoteTypeKind,
+        options: (patch.options as NoteTypeOptions | undefined) ?? nt.options,
       };
       assertValid(def);
       const name = patch.name ?? nt.name;
@@ -183,31 +216,15 @@ export async function updateNoteType(
           fields: def.fields,
           templates: def.templates,
           css: def.css,
+          kind: def.kind ?? 'standard',
+          options: def.options ?? {},
           updatedAt: now,
         })
         .where(eq(schema.noteType.id, noteTypeId))
         .returning();
 
-      // Removed templates: their cards are deleted like any card.
-      const keys: string[] = [];
-      const touched = new Set<string>();
-      const templateIds = def.templates.map((x) => x.id);
-      const gone = await tx
-        .select({ id: schema.card.id, noteId: schema.card.noteId })
-        .from(schema.card)
-        .where(
-          and(
-            eq(schema.card.noteTypeId, noteTypeId),
-            isNull(schema.card.deletedAt),
-            notInArray(schema.card.templateId, templateIds),
-          ),
-        );
-      for (const c of gone) {
-        keys.push(...(await tombstoneCardTx(tx, c.id, now)));
-        if (c.noteId) touched.add(c.noteId);
-      }
-
-      // Re-render every note; removed fields are dropped, added templates get cards.
+      // Re-render every note; removed fields are dropped, added slots get cards, vanished slots
+      // are soft-deleted (reviewed ones need confirmRemoval, checked once for the whole type).
       const notes = await tx
         .select()
         .from(schema.note)
@@ -234,10 +251,11 @@ export async function updateNoteType(
             .returning()) as [typeof n];
         }
         await syncNoteCards(ctx, note, row!, deck.name);
-        if (touched.has(n.id)) await deleteNoteIfOrphan(tx, n.id, now);
+        if (ctx.notesWithRemovals.has(n.id)) await deleteNoteIfOrphan(tx, n.id, now);
       }
+      assertRemovalConfirmed(ctx, patch.confirmRemoval);
       await refreshCounts(tx, userId);
-      return { nt: toNoteType(row!), keys };
+      return { nt: toNoteType(row!), keys: ctx.storageKeys };
     })
     .catch((e) => {
       if (isUniqueViolation(e) && !(e instanceof ApiProblem)) throw nameTaken();

@@ -47,7 +47,12 @@ async function assertNameFree(db: Db, userId: string, name: string, exceptId?: s
 export async function createDeck(
   db: Db,
   userId: string,
-  input: { id?: string | undefined; name: string; newCardsPerDay?: number | undefined },
+  input: {
+    id?: string | undefined;
+    name: string;
+    newCardsPerDay?: number | undefined;
+    mcPractice?: boolean | undefined;
+  },
   now: Date,
 ) {
   if (input.id) {
@@ -72,6 +77,7 @@ export async function createDeck(
         userId,
         name: input.name,
         newCardsPerDay: input.newCardsPerDay ?? 20,
+        mcPractice: input.mcPractice ?? false,
         createdAt: now,
         updatedAt: now,
       })
@@ -87,7 +93,11 @@ export async function updateDeck(
   db: Db,
   userId: string,
   deckId: string,
-  patch: { name?: string | undefined; newCardsPerDay?: number | undefined },
+  patch: {
+    name?: string | undefined;
+    newCardsPerDay?: number | undefined;
+    mcPractice?: boolean | undefined;
+  },
   now: Date,
 ) {
   await findDeck(db, userId, deckId);
@@ -98,6 +108,7 @@ export async function updateDeck(
       .set({
         ...(patch.name !== undefined ? { name: patch.name } : {}),
         ...(patch.newCardsPerDay !== undefined ? { newCardsPerDay: patch.newCardsPerDay } : {}),
+        ...(patch.mcPractice !== undefined ? { mcPractice: patch.mcPractice } : {}),
         updatedAt: now,
       })
       .where(and(eq(schema.deck.id, deckId), eq(schema.deck.userId, userId)))

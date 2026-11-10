@@ -18,6 +18,7 @@ const settings: Settings = {
   sessionSize: 20,
   soundEnabled: true,
   motion: 'system',
+  autoGrade: false,
 };
 
 function card(id: string, deckId: string, state: string, suspended = false) {

@@ -14,6 +14,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import type { Interaction, NoteExtra, NoteTypeOptions } from '@anki-duo/domain';
 import { user } from './learner.js';
 
 export const deck = pgTable(
@@ -26,6 +27,7 @@ export const deck = pgTable(
     name: text('name').notNull(),
     newCardsPerDay: smallint('new_cards_per_day').notNull().default(20),
     nextPosition: integer('next_position').notNull().default(0),
+    mcPractice: boolean('mc_practice').notNull().default(false),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -58,6 +60,12 @@ export const noteType = pgTable(
       .notNull()
       .$type<{ id: string; name: string; front: string; back: string }[]>(),
     css: text('css').notNull().default(''),
+    kind: text('kind').notNull().default('standard'),
+    options: jsonb('options')
+      .notNull()
+      .default(sql`'{}'::jsonb`)
+      .$type<NoteTypeOptions>(),
+    builtinKey: text('builtin_key'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
@@ -72,6 +80,13 @@ export const noteType = pgTable(
       .on(t.userId, sql`lower(${t.name})`)
       .where(sql`${t.deletedAt} is null`),
     index('note_type_user_seq_idx').on(t.userId, t.changeSeq),
+    check(
+      'note_type_kind',
+      sql`${t.kind} in ('standard', 'cloze', 'image_occlusion', 'multiple_choice')`,
+    ),
+    uniqueIndex('note_type_user_builtin_unique')
+      .on(t.userId, t.builtinKey)
+      .where(sql`${t.deletedAt} is null and ${t.builtinKey} is not null`),
   ],
 );
 
@@ -89,6 +104,7 @@ export const note = pgTable(
       .notNull()
       .references(() => noteType.id),
     fields: jsonb('fields').notNull().$type<Record<string, string>>(),
+    extra: jsonb('extra').$type<NoteExtra>(),
     tags: text('tags')
       .array()
       .notNull()
@@ -122,6 +138,9 @@ export const card = pgTable(
     noteId: uuid('note_id').references(() => note.id, { onDelete: 'cascade' }),
     noteTypeId: uuid('note_type_id'),
     templateId: text('template_id'),
+    ordinal: integer('ordinal').notNull().default(0),
+    interaction: jsonb('interaction').$type<Interaction>(),
+    answerText: text('answer_text').notNull().default(''),
     format: text('format').notNull().default('markdown'),
     tags: text('tags')
       .array()
@@ -158,8 +177,8 @@ export const card = pgTable(
     index('card_front_norm_idx').on(t.deckId, t.frontNorm),
     index('card_user_seq_idx').on(t.userId, t.changeSeq),
     index('card_note_idx').on(t.noteId),
-    uniqueIndex('card_note_template_unique')
-      .on(t.noteId, t.templateId)
+    uniqueIndex('card_note_ordinal_unique')
+      .on(t.noteId, t.templateId, t.ordinal)
       .where(sql`${t.deletedAt} is null and ${t.noteId} is not null`),
   ],
 );

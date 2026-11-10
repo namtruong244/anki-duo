@@ -8,7 +8,15 @@ beforeEach(async () => {
   await store.setMeta('deviceId', 'd');
   await store.setMeta('userId', 'u');
   await store.putDecks([
-    { id: 'd1', name: 'n', newCardsPerDay: 20, createdAt: 'x', updatedAt: 'x', deletedAt: null },
+    {
+      id: 'd1',
+      name: 'n',
+      newCardsPerDay: 20,
+      mcPractice: false,
+      createdAt: 'x',
+      updatedAt: 'x',
+      deletedAt: null,
+    },
   ]);
   await store.putCards([
     {
@@ -23,6 +31,9 @@ beforeEach(async () => {
       noteId: null,
       noteTypeId: null,
       templateId: null,
+      ordinal: 0,
+      interaction: null,
+      answerText: '',
       format: 'markdown' as const,
       fsrs: {
         state: 'new',

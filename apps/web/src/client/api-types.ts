@@ -152,6 +152,8 @@ export interface paths {
                         name: string;
                         /** @default 20 */
                         newCardsPerDay?: number;
+                        /** @default false */
+                        mcPractice?: boolean;
                     };
                 };
             };
@@ -213,7 +215,7 @@ export interface paths {
         };
         options?: never;
         head?: never;
-        /** Rename a deck or change its new-card limit */
+        /** Rename a deck or change its new-card limit or multiple-choice practice */
         patch: {
             parameters: {
                 query?: never;
@@ -228,6 +230,7 @@ export interface paths {
                     "application/json": {
                         name?: string;
                         newCardsPerDay?: number;
+                        mcPractice?: boolean;
                     };
                 };
             };
@@ -460,6 +463,12 @@ export interface paths {
                         fields: components["schemas"]["NoteFieldsInput"];
                         templates: components["schemas"]["NoteTemplatesInput"];
                         css?: string;
+                        /**
+                         * @default standard
+                         * @enum {string}
+                         */
+                        kind?: "standard" | "cloze" | "image_occlusion" | "multiple_choice";
+                        options?: components["schemas"]["NoteTypeOptions"];
                     };
                 };
             };
@@ -525,7 +534,7 @@ export interface paths {
         head?: never;
         /**
          * Edit a note type
-         * @description A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates delete their cards. Every card of the type is re-rendered.
+         * @description A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates soft-delete their cards (409 cards_would_be_removed when a reviewed card vanishes without confirmRemoval). Every card of the type is re-rendered.
          */
         patch: {
             parameters: {
@@ -543,6 +552,11 @@ export interface paths {
                         fields?: components["schemas"]["NoteFieldsInput"];
                         templates?: components["schemas"]["NoteTemplatesInput"];
                         css?: string;
+                        /** @enum {string} */
+                        kind?: "standard" | "cloze" | "image_occlusion" | "multiple_choice";
+                        options?: components["schemas"]["NoteTypeOptions"];
+                        /** @description Set after the learner confirmed that reviewed cards will be removed (409 cards_would_be_removed) */
+                        confirmRemoval?: boolean;
                     };
                 };
             };
@@ -576,7 +590,7 @@ export interface paths {
         put?: never;
         /**
          * Create a note and its cards
-         * @description One card per template whose rendered front is not empty. Idempotent on id.
+         * @description One card per slot (template and ordinal) whose rendered front is not empty. Idempotent on id.
          */
         post: {
             parameters: {
@@ -601,10 +615,11 @@ export interface paths {
                             [key: string]: string;
                         };
                         tags?: string[];
-                        /** @description Optional client card ids by template id */
+                        /** @description Optional client card ids keyed by templateId for ordinal 0, and "templateId:ordinal" otherwise */
                         cardIds?: {
                             [key: string]: string;
                         };
+                        extra?: components["schemas"]["NoteExtra"];
                     };
                 };
             };
@@ -689,7 +704,7 @@ export interface paths {
         head?: never;
         /**
          * Edit a note
-         * @description Re-renders its cards and creates cards for templates that became non-empty.
+         * @description Re-renders its cards, creates cards for slots that appeared and soft-deletes cards for slots that vanished (409 cards_would_be_removed when a reviewed card vanishes without confirmRemoval).
          */
         patch: {
             parameters: {
@@ -709,6 +724,9 @@ export interface paths {
                         tags?: string[];
                         /** Format: uuid */
                         deckId?: string;
+                        extra?: components["schemas"]["NoteExtra"];
+                        /** @description Set after the learner confirmed that reviewed cards will be removed (409 cards_would_be_removed) */
+                        confirmRemoval?: boolean;
                     };
                 };
             };
@@ -723,6 +741,7 @@ export interface paths {
                     };
                 };
                 404: components["responses"]["Problem"];
+                409: components["responses"]["Problem"];
                 422: components["responses"]["Problem"];
             };
         };
@@ -1177,11 +1196,21 @@ export interface components {
             title: string;
             status: number;
             /** @enum {string} */
-            code: "validation_failed" | "not_found" | "deck_name_taken" | "card_limit_reached" | "media_quota_exceeded" | "media_too_large" | "unsupported_media_type" | "import_too_large" | "import_bad_encoding" | "export_invalid" | "invalid_note_type" | "note_type_in_use" | "note_type_name_taken" | "empty_front" | "edit_via_note" | "rate_limited" | "reauth_required";
+            code: "validation_failed" | "not_found" | "deck_name_taken" | "card_limit_reached" | "media_quota_exceeded" | "media_too_large" | "unsupported_media_type" | "import_too_large" | "import_bad_encoding" | "export_invalid" | "invalid_note_type" | "note_type_in_use" | "note_type_name_taken" | "empty_front" | "edit_via_note" | "rate_limited" | "reauth_required" | "cards_would_be_removed" | "too_many_cards" | "cloze_required" | "wrong_answers_required" | "occlusion_masks_required";
             detail?: string;
             errors?: {
                 path?: string;
                 message?: string;
+            }[];
+            /** @description cards_would_be_removed: number of reviewed cards that vanish */
+            count?: number;
+            /** @description cards_would_be_removed: only the reviewed vanished cards */
+            cards?: {
+                /** Format: uuid */
+                id: string;
+                templateId: string;
+                ordinal: number;
+                reps: number;
             }[];
         };
         FsrsState: {
@@ -1198,11 +1227,86 @@ export interface components {
             /** Format: date-time */
             lastReview: string | null;
         };
+        Mask: {
+            n: number;
+            /** @enum {string} */
+            shape: "rect" | "ellipse";
+            x: number;
+            y: number;
+            w: number;
+            h: number;
+            label?: string;
+        };
+        NoteExtra: {
+            occlusion?: {
+                /** @enum {string} */
+                mode: "hide_all" | "hide_one";
+                masks: components["schemas"]["Mask"][];
+            };
+        };
+        Slot: {
+            /** @constant */
+            kind: "type";
+        } | {
+            /** @constant */
+            kind: "choice";
+        } | {
+            /** @constant */
+            kind: "occlusion";
+        } | {
+            /** @constant */
+            kind: "tts";
+            lang: string;
+            text: string;
+        };
+        AnswerType: {
+            /** @constant */
+            kind: "type";
+            expected: string;
+            ignoreCase: boolean;
+            ignoreDiacritics: boolean;
+        };
+        AnswerChoice: {
+            /** @constant */
+            kind: "choice";
+            correct: string;
+            wrong: string[];
+            explanationHtml: string;
+        };
+        AnswerOcclusion: {
+            /** @constant */
+            kind: "occlusion";
+            image: string;
+            /** @enum {string} */
+            mode: "hide_all" | "hide_one";
+            masks: components["schemas"]["Mask"][];
+            target: number;
+        };
+        Answer: components["schemas"]["AnswerType"] | components["schemas"]["AnswerChoice"] | components["schemas"]["AnswerOcclusion"];
+        /** @description Output only: produced by the server (renderCard), never accepted from clients. */
+        Interaction: {
+            /** @constant */
+            v: 1;
+            slots: components["schemas"]["Slot"][];
+            /** @description Answer union or null */
+            answer: components["schemas"]["AnswerType"] | components["schemas"]["AnswerChoice"] | components["schemas"]["AnswerOcclusion"] | null;
+        };
+        NoteTypeOptions: {
+            typeIgnoreCase?: boolean;
+            typeIgnoreDiacritics?: boolean;
+            /** @description Field ids; required for multiple_choice */
+            roles?: {
+                correct: string;
+                wrong: string;
+                explanation: string;
+            };
+        };
         Deck: {
             /** Format: uuid */
             id: string;
             name: string;
             newCardsPerDay: number;
+            mcPractice: boolean;
             /** Format: date-time */
             createdAt: string;
             /** Format: date-time */
@@ -1236,6 +1340,9 @@ export interface components {
             /** Format: uuid */
             noteTypeId: string | null;
             templateId: string | null;
+            ordinal: number;
+            interaction: components["schemas"]["Interaction"] | null;
+            answerText: string;
             /**
              * @description markdown for legacy cards, html for note cards (sanitized, rendered)
              * @enum {string}
@@ -1274,6 +1381,10 @@ export interface components {
             fields: components["schemas"]["NoteField"][];
             templates: components["schemas"]["NoteTemplate"][];
             css: string;
+            /** @enum {string} */
+            kind: "standard" | "cloze" | "image_occlusion" | "multiple_choice";
+            options: components["schemas"]["NoteTypeOptions"];
+            builtinKey: string | null;
             /** Format: date-time */
             updatedAt: string;
             /** Format: date-time */
@@ -1290,10 +1401,12 @@ export interface components {
                 [key: string]: string;
             };
             tags: string[];
+            extra: components["schemas"]["NoteExtra"] | null;
             cards: {
                 /** Format: uuid */
                 id: string;
                 templateId: string;
+                ordinal: number;
             }[];
             /** Format: date-time */
             updatedAt: string;
@@ -1327,6 +1440,7 @@ export interface components {
             soundEnabled: boolean;
             /** @enum {string} */
             motion: "system" | "reduced" | "full";
+            autoGrade: boolean;
         };
         SettingsPatch: {
             /** @enum {string} */
@@ -1341,6 +1455,7 @@ export interface components {
             soundEnabled?: boolean;
             /** @enum {string} */
             motion?: "system" | "reduced" | "full";
+            autoGrade?: boolean;
         };
         Stats: {
             totalXp: number;

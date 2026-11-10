@@ -1,3 +1,4 @@
+import type { NoteTypeKind } from '@anki-duo/domain';
 import type { schema } from '../db/client.js';
 
 const iso = (d: Date | null) => (d ? d.toISOString() : null);
@@ -13,6 +14,7 @@ export const toDeck = (r: DeckRow) => ({
   id: r.id,
   name: r.name,
   newCardsPerDay: r.newCardsPerDay,
+  mcPractice: r.mcPractice,
   createdAt: r.createdAt.toISOString(),
   updatedAt: r.updatedAt.toISOString(),
   deletedAt: iso(r.deletedAt),
@@ -30,6 +32,9 @@ export const toCard = (r: CardRow) => ({
   noteId: r.noteId,
   noteTypeId: r.noteTypeId,
   templateId: r.templateId,
+  ordinal: r.ordinal,
+  interaction: r.interaction ?? null,
+  answerText: r.answerText,
   format: r.format as 'markdown' | 'html',
   fsrs: {
     state: r.state as 'new' | 'learning' | 'review' | 'relearning',
@@ -81,6 +86,9 @@ export const toNoteType = (r: NoteTypeRow) => ({
   fields: r.deletedAt ? [] : r.fields,
   templates: r.deletedAt ? [] : r.templates,
   css: r.deletedAt ? '' : r.css,
+  kind: r.kind as NoteTypeKind,
+  options: r.deletedAt ? {} : r.options,
+  builtinKey: r.builtinKey,
   updatedAt: r.updatedAt.toISOString(),
   deletedAt: iso(r.deletedAt),
 });

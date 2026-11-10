@@ -7,6 +7,7 @@ const deck = {
   id: 'd1',
   name: 'Deck',
   newCardsPerDay: 20,
+  mcPractice: false,
   createdAt: 'x',
   updatedAt: 'x',
   deletedAt: null,
@@ -23,6 +24,9 @@ const card = (over = {}) => ({
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state: 'new' as const,

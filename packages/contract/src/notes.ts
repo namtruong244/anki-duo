@@ -1,5 +1,13 @@
 import { createRoute, z } from '@hono/zod-openapi';
-import { NoteSchema, NoteTypeSchema, TagSchema, problemResponse } from './common.js';
+import {
+  NoteExtraSchema,
+  NoteSchema,
+  NoteTypeKindSchema,
+  NoteTypeOptionsSchema,
+  NoteTypeSchema,
+  TagSchema,
+  problemResponse,
+} from './common.js';
 
 const noteTypeId = z.uuid().openapi({ param: { name: 'noteTypeId', in: 'path', required: true } });
 const noteId = z.uuid().openapi({ param: { name: 'noteId', in: 'path', required: true } });
@@ -21,6 +29,10 @@ const fieldsInput = z.array(fieldInput).min(1).max(50);
 const templatesInput = z.array(templateInput).min(1).max(20);
 const css = z.string().max(50_000);
 const noteTypeName = z.string().trim().min(1).max(100);
+const confirmRemoval = z.boolean().openapi({
+  description:
+    'Set after the learner confirmed that reviewed cards will be removed (409 cards_would_be_removed)',
+});
 const fieldValues = z.record(z.string(), z.string().max(100_000));
 
 // --- Note types -------------------------------------------------------------------------------
@@ -55,6 +67,8 @@ export const createNoteTypeRoute = createRoute({
             fields: fieldsInput,
             templates: templatesInput,
             css: css.optional(),
+            kind: NoteTypeKindSchema.default('standard').optional(),
+            options: NoteTypeOptionsSchema.optional(),
           }),
         },
       },
@@ -72,7 +86,7 @@ export const patchNoteTypeRoute = createRoute({
   path: '/note-types/{noteTypeId}',
   summary: 'Edit a note type',
   description:
-    'A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates delete their cards. Every card of the type is re-rendered.',
+    'A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates soft-delete their cards (409 cards_would_be_removed when a reviewed card vanishes without confirmRemoval). Every card of the type is re-rendered.',
   request: {
     params: z.object({ noteTypeId }),
     body: {
@@ -85,6 +99,9 @@ export const patchNoteTypeRoute = createRoute({
               fields: fieldsInput.optional(),
               templates: templatesInput.optional(),
               css: css.optional(),
+              kind: NoteTypeKindSchema.optional(),
+              options: NoteTypeOptionsSchema.optional(),
+              confirmRemoval: confirmRemoval.optional(),
             })
             .refine(atLeastOne, { message: 'at least one field is required' })
             .openapi({ minProperties: 1 }),
@@ -119,7 +136,8 @@ export const createNoteRoute = createRoute({
   method: 'post',
   path: '/decks/{deckId}/notes',
   summary: 'Create a note and its cards',
-  description: 'One card per template whose rendered front is not empty. Idempotent on id.',
+  description:
+    'One card per slot (template and ordinal) whose rendered front is not empty. Idempotent on id.',
   request: {
     params: z.object({ deckId }),
     body: {
@@ -131,10 +149,11 @@ export const createNoteRoute = createRoute({
             noteTypeId: z.uuid(),
             fields: fieldValues,
             tags: z.array(TagSchema).max(20).optional(),
-            cardIds: z
-              .record(z.string(), z.uuid())
-              .optional()
-              .openapi({ description: 'Optional client card ids by template id' }),
+            cardIds: z.record(z.string(), z.uuid()).optional().openapi({
+              description:
+                'Optional client card ids keyed by templateId for ordinal 0, and "templateId:ordinal" otherwise',
+            }),
+            extra: NoteExtraSchema.optional(),
           }),
         },
       },
@@ -162,7 +181,8 @@ export const patchNoteRoute = createRoute({
   method: 'patch',
   path: '/notes/{noteId}',
   summary: 'Edit a note',
-  description: 'Re-renders its cards and creates cards for templates that became non-empty.',
+  description:
+    'Re-renders its cards, creates cards for slots that appeared and soft-deletes cards for slots that vanished (409 cards_would_be_removed when a reviewed card vanishes without confirmRemoval).',
   request: {
     params: z.object({ noteId }),
     body: {
@@ -174,6 +194,8 @@ export const patchNoteRoute = createRoute({
               fields: fieldValues.optional(),
               tags: z.array(TagSchema).max(20).optional(),
               deckId: z.uuid().optional(),
+              extra: NoteExtraSchema.optional(),
+              confirmRemoval: confirmRemoval.optional(),
             })
             .refine(atLeastOne, { message: 'at least one field is required' })
             .openapi({ minProperties: 1 }),
@@ -184,6 +206,7 @@ export const patchNoteRoute = createRoute({
   responses: {
     200: { description: 'Updated', content: { 'application/json': { schema: NoteSchema } } },
     404: problemResponse('Error'),
+    409: problemResponse('Error'),
     422: problemResponse('Error'),
   },
 });

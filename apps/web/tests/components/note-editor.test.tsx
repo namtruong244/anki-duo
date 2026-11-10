@@ -60,7 +60,8 @@ const note = {
   noteTypeId: 'nt-basic',
   fields: { f1: 'Hello', f2: 'World' },
   tags: ['x'],
-  cards: [{ id: 'c1', templateId: 't1' }],
+  extra: null,
+  cards: [{ id: 'c1', templateId: 't1', ordinal: 0 }],
   updatedAt: 'x',
 };
 
@@ -90,7 +91,10 @@ describe('RichFieldEditor', () => {
 
 describe('NoteEditor', () => {
   it('defaults to Basic, lists a field editor per field and saves via createNote', async () => {
-    mocks.createNote.mockResolvedValue({ ...note, cards: [{ id: 'c9', templateId: 't1' }] });
+    mocks.createNote.mockResolvedValue({
+      ...note,
+      cards: [{ id: 'c9', templateId: 't1', ordinal: 0 }],
+    });
     const onCreated = vi.fn();
     renderEditor(<NoteEditor deckId="d1" onClose={() => undefined} onCreated={onCreated} />);
     await screen.findByRole('textbox', { name: 'Front' });
@@ -131,6 +135,87 @@ describe('NoteEditor', () => {
     expect(mocks.updateNote.mock.calls[0]![0]).toBe('n1');
     expect(mocks.updateNote.mock.calls[0]![1].tags).toEqual(['x']);
     await waitFor(() => expect(onClose).toHaveBeenCalled());
+  });
+});
+
+describe('NoteEditor removal confirmation (FR-003)', () => {
+  // The note has two cards but Basic only yields Card 1, so c2 (t2) vanishes on save.
+  const twoCards = {
+    ...note,
+    cards: [
+      { id: 'c1', templateId: 't1', ordinal: 0 },
+      { id: 'c2', templateId: 't2', ordinal: 0 },
+    ],
+  };
+  const stored = (id: string, reps: number) =>
+    ({
+      id,
+      deckId: 'd1',
+      position: 0,
+      nodeIndex: 0,
+      front: '',
+      back: '',
+      tags: [],
+      suspended: false,
+      noteId: 'n1',
+      noteTypeId: 'nt-basic',
+      templateId: 't2',
+      ordinal: 0,
+      format: 'html',
+      fsrs: {
+        state: 'review',
+        due: 'x',
+        stability: 1,
+        difficulty: 1,
+        learningSteps: 0,
+        reps,
+        lapses: 0,
+        lastReview: null,
+      },
+      updatedAt: 'x',
+      deletedAt: null,
+    }) as never;
+
+  const save = async () => {
+    renderEditor(<NoteEditor deckId="d1" note={twoCards} onClose={() => undefined} />);
+    await screen.findByRole('textbox', { name: 'Front' });
+    fireEvent.click(screen.getByRole('button', { name: 'Save card' }));
+  };
+
+  it('asks first when a reviewed card vanishes, then resends with confirmRemoval', async () => {
+    await dexieStore.putCards([stored('c2', 3)]);
+    mocks.updateNote.mockResolvedValue(note);
+    await save();
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog.textContent).toMatch(/1 card and its review history will be removed/);
+    expect(mocks.updateNote).not.toHaveBeenCalled();
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(mocks.updateNote).toHaveBeenCalledTimes(1));
+    expect(mocks.updateNote.mock.calls[0]![1].confirmRemoval).toBe(true);
+  });
+
+  it('does not ask when only unreviewed cards vanish', async () => {
+    await dexieStore.putCards([stored('c2', 0)]);
+    mocks.updateNote.mockResolvedValue(note);
+    await save();
+    await waitFor(() => expect(mocks.updateNote).toHaveBeenCalledTimes(1));
+    expect(mocks.updateNote.mock.calls[0]![1].confirmRemoval).toBeUndefined();
+    expect(screen.queryByRole('dialog')).toBeNull();
+  });
+
+  it('opens the same dialog on a server 409 and resends on confirm', async () => {
+    mocks.updateNote
+      .mockRejectedValueOnce(
+        new ApiError(409, 'cards_would_be_removed', 'x', undefined, undefined, 2),
+      )
+      .mockResolvedValueOnce(note);
+    renderEditor(<NoteEditor deckId="d1" note={note} onClose={() => undefined} />);
+    await screen.findByRole('textbox', { name: 'Front' });
+    fireEvent.click(screen.getByRole('button', { name: 'Save card' }));
+    expect((await screen.findByRole('dialog')).textContent).toMatch(/2 cards and their review/);
+    fireEvent.click(screen.getByRole('button', { name: 'Delete' }));
+    await waitFor(() => expect(mocks.updateNote).toHaveBeenCalledTimes(2));
+    expect(mocks.updateNote.mock.calls[1]![1].confirmRemoval).toBe(true);
   });
 });
 

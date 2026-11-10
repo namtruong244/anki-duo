@@ -19,6 +19,11 @@ const TITLES: Record<ProblemCode, string> = {
   edit_via_note: 'Edit this card through its note',
   rate_limited: 'Too many requests',
   reauth_required: 'Sign in again',
+  cards_would_be_removed: 'Cards would be removed',
+  too_many_cards: 'Too many cards',
+  cloze_required: 'Cloze deletion required',
+  wrong_answers_required: 'Wrong answers required',
+  occlusion_masks_required: 'Image and masks required',
 };
 
 export interface ProblemBody {
@@ -28,6 +33,8 @@ export interface ProblemBody {
   code: ProblemCode;
   detail?: string;
   errors?: { path?: string; message?: string }[];
+  /** Code-specific members, e.g. `count` and `cards` of cards_would_be_removed. */
+  [member: string]: unknown;
 }
 
 /** Thrown anywhere in a handler; the error handler turns it into application/problem+json. */
@@ -38,6 +45,7 @@ export class ApiProblem extends Error {
     detail?: string,
     readonly errors?: ProblemBody['errors'],
     readonly headers?: Record<string, string>,
+    readonly members?: Record<string, unknown>,
   ) {
     super(detail ?? TITLES[code]);
   }
@@ -50,6 +58,7 @@ export class ApiProblem extends Error {
       code: this.code,
       ...(this.message !== TITLES[this.code] ? { detail: this.message } : {}),
       ...(this.errors ? { errors: this.errors } : {}),
+      ...this.members,
     };
   }
 }

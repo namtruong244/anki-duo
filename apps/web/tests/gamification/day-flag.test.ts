@@ -13,6 +13,7 @@ const settings: Settings = {
   sessionSize: 20,
   soundEnabled: true,
   motion: 'system',
+  autoGrade: false,
 };
 const NOW = new Date('2026-03-10T12:00:00Z');
 const TODAY = '2026-03-10';
@@ -34,6 +35,9 @@ const card = (
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state,
@@ -57,7 +61,7 @@ beforeEach(async () => {
   store = new DexieStore(`gam-${Math.random()}`);
   await store.setMeta('userId', 'u');
   await store.putDecks([
-    { id: 'd1', name: 'D', newCardsPerDay: 2, createdAt: 'x', updatedAt: 'x', deletedAt: null },
+    { id: 'd1', name: 'D', newCardsPerDay: 2, mcPractice: false, createdAt: 'x', updatedAt: 'x', deletedAt: null },
   ]);
 });
 

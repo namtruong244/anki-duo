@@ -207,6 +207,12 @@ export function SettingsPage() {
                 checked={settings.soundEnabled}
                 onToggle={() => void save({ soundEnabled: !settings.soundEnabled })}
               />
+              <SwitchRow
+                label={t('settings.autoGrade')}
+                hint={t('settings.autoGradeHint')}
+                checked={settings.autoGrade ?? false}
+                onToggle={() => void save({ autoGrade: !(settings.autoGrade ?? false) })}
+              />
               <Link
                 to="/note-types"
                 className="flex min-h-12 items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 py-1.5 text-sm font-extrabold text-text hover:bg-surface"
@@ -250,10 +256,12 @@ export function SettingsPage() {
 
 function SwitchRow({
   label,
+  hint,
   checked,
   onToggle,
 }: {
   label: string;
+  hint?: string;
   checked: boolean;
   onToggle: () => void;
 }) {
@@ -266,7 +274,10 @@ function SwitchRow({
       onClick={onToggle}
       className="group flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 text-sm font-extrabold text-text transition-[transform,background-color] duration-[var(--duration-fast)] hover:bg-surface active:scale-[0.99]"
     >
-      <span>{label}</span>
+      <span className="flex min-w-0 flex-col items-start text-left">
+        <span>{label}</span>
+        {hint && <span className="text-xs font-semibold text-text-muted">{hint}</span>}
+      </span>
       <span
         className={`h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors duration-200 ${checked ? 'bg-primary' : 'bg-track'}`}
       >

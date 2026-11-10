@@ -1,3 +1,10 @@
+import type {
+  Interaction,
+  NoteExtra,
+  NoteTypeKind,
+  NoteTypeOptions,
+} from '../notes/interaction.js';
+import { NOTE_TYPE_KINDS } from '../notes/interaction.js';
 import {
   newCard,
   replay,
@@ -7,9 +14,10 @@ import {
   type SchedulerParams,
 } from '../scheduler/index.js';
 
-/** `anki-duo-export` v1 (specs/.../contracts/export-format.md). */
+/** `anki-duo-export` v2 (specs/002-.../contracts/export-format-v2.md); v1 files are still read. */
 export const EXPORT_FORMAT = 'anki-duo-export';
-export const EXPORT_VERSION = 1;
+export const EXPORT_VERSION = 2;
+export const SUPPORTED_EXPORT_VERSIONS: readonly number[] = [1, 2];
 
 export interface ExportFsrs {
   state: FsrsState['state'];
@@ -46,6 +54,12 @@ export interface ExportCard {
   noteTypeId?: string | null;
   templateId?: string | null;
   format?: 'markdown' | 'html';
+  /** v2; absent in v1 files (default 0). */
+  ordinal?: number;
+  /** v2; absent in v1 files (default ""). Recomputed on restore. */
+  answerText?: string;
+  /** v2, informational only: restore recomputes it and never trusts this. */
+  interaction?: Interaction | null;
 }
 export interface ExportNoteType {
   id: string;
@@ -53,6 +67,12 @@ export interface ExportNoteType {
   fields: { id: string; name: string }[];
   templates: { id: string; name: string; front: string; back: string }[];
   css: string;
+  /** v2; default 'standard'. */
+  kind?: NoteTypeKind;
+  /** v2; default {}. */
+  options?: NoteTypeOptions;
+  /** v2; default null. */
+  builtinKey?: string | null;
 }
 export interface ExportNote {
   id: string;
@@ -60,6 +80,8 @@ export interface ExportNote {
   fields: Record<string, string>;
   tags: string[];
   createdAt: string;
+  /** v2; default null. */
+  extra?: NoteExtra | null;
 }
 export interface ExportReview {
   id: string;
@@ -79,7 +101,7 @@ export interface ExportReview {
 }
 export interface ExportDoc {
   format: typeof EXPORT_FORMAT;
-  version: 1;
+  version: 1 | 2;
   exportedAt: string;
   scheduler: {
     algorithm: string;
@@ -88,7 +110,14 @@ export interface ExportDoc {
     maximumIntervalDays: number;
     parameters: number[];
   };
-  deck: { id: string; name: string; newCardsPerDay: number; createdAt: string };
+  deck: {
+    id: string;
+    name: string;
+    newCardsPerDay: number;
+    createdAt: string;
+    /** v2; default false. */
+    mcPractice?: boolean;
+  };
   /** Optional extension: note types and notes of the deck's note cards. */
   noteTypes?: ExportNoteType[];
   notes?: ExportNote[];
@@ -113,11 +142,43 @@ const arr = (v: unknown, what: string) =>
   Array.isArray(v) ? (v as unknown[]) : fail(`${what} must be an array`);
 const obj = (v: unknown, what: string) => (isObj(v) ? v : fail(`${what} must be an object`));
 
-/** Checks `format` and `version` first, then the shape. Unknown fields are ignored (v1 readers). */
+const optInt = (v: unknown, what: string): void => {
+  if (v !== undefined && (typeof v !== 'number' || !Number.isInteger(v) || v < 0))
+    fail(`${what} must be an integer >= 0`);
+};
+
+/** `extra` of a note: only the occlusion shape is known; unknown keys are ignored. */
+function checkExtra(v: unknown, what: string): void {
+  if (v === undefined || v === null) return;
+  const e = obj(v, what);
+  if (e.occlusion === undefined || e.occlusion === null) return;
+  const o = obj(e.occlusion, `${what}.occlusion`);
+  if (o.mode !== 'hide_all' && o.mode !== 'hide_one') fail(`${what}.occlusion.mode invalid`);
+  const seen = new Set<number>();
+  for (const [i, m] of arr(o.masks, `${what}.occlusion.masks`).entries()) {
+    const mk = obj(m, `${what}.occlusion.masks[${i}]`);
+    const n = num(mk.n, 'mask.n');
+    if (!Number.isInteger(n) || n < 1) fail('mask.n must be an integer >= 1');
+    if (seen.has(n)) fail('mask.n must be unique');
+    seen.add(n);
+    if (mk.shape !== 'rect' && mk.shape !== 'ellipse') fail('mask.shape invalid');
+    for (const k of ['x', 'y', 'w', 'h']) {
+      const c = num(mk[k], `mask.${k}`);
+      if (c < 0 || c > 1) fail(`mask.${k} must be within 0..1`);
+    }
+    if (mk.label !== undefined) str(mk.label, 'mask.label');
+  }
+}
+
+/**
+ * Checks `format` and `version` first, then the shape. Unknown fields are ignored (v1 readers).
+ * Accepts versions 1 and 2. The returned doc is the input object with the v2 defaults filled in
+ * (`kind` 'standard', `options` {}, `builtinKey` null, `extra` null, `ordinal` 0, `answerText` '',
+ * `mcPractice` false), so callers read v1 and v2 files the same way. */
 export function parseExport(input: unknown): ExportDoc {
   const d = obj(input, 'export');
   if (d.format !== EXPORT_FORMAT) fail('format must be "anki-duo-export"');
-  if (d.version !== EXPORT_VERSION) fail('unsupported version');
+  if (!SUPPORTED_EXPORT_VERSIONS.includes(d.version as number)) fail('unsupported version');
   iso(d.exportedAt, 'exportedAt');
   const s = obj(d.scheduler, 'scheduler');
   num(s.desiredRetention, 'scheduler.desiredRetention');
@@ -126,6 +187,8 @@ export function parseExport(input: unknown): ExportDoc {
   str(deck.id, 'deck.id');
   str(deck.name, 'deck.name');
   num(deck.newCardsPerDay, 'deck.newCardsPerDay');
+  if (deck.mcPractice !== undefined && typeof deck.mcPractice !== 'boolean')
+    fail('deck.mcPractice must be a boolean');
   for (const [i, c] of arr(d.cards, 'cards').entries()) {
     const card = obj(c, `cards[${i}]`);
     str(card.id, 'card.id');
@@ -143,6 +206,8 @@ export function parseExport(input: unknown): ExportDoc {
       num(f[k], `fsrs.${k}`);
     if (f.lastReview !== null) iso(f.lastReview, 'fsrs.lastReview');
     arr(card.media ?? [], 'card.media');
+    optInt(card.ordinal, 'card.ordinal');
+    if (card.answerText !== undefined) str(card.answerText, 'card.answerText');
   }
   const noteTypeIds = new Set<string>();
   for (const [i, n] of arr(d.noteTypes ?? [], 'noteTypes').entries()) {
@@ -150,6 +215,11 @@ export function parseExport(input: unknown): ExportDoc {
     noteTypeIds.add(str(nt.id, 'noteType.id'));
     str(nt.name, 'noteType.name');
     str(nt.css, 'noteType.css');
+    if (nt.kind !== undefined && !NOTE_TYPE_KINDS.includes(nt.kind as NoteTypeKind))
+      fail('noteType.kind invalid');
+    if (nt.options !== undefined) obj(nt.options, 'noteType.options');
+    if (nt.builtinKey !== undefined && nt.builtinKey !== null)
+      str(nt.builtinKey, 'noteType.builtinKey');
     for (const f of arr(nt.fields, 'noteType.fields')) {
       const fo = obj(f, 'noteType.field');
       str(fo.id, 'field.id');
@@ -170,6 +240,7 @@ export function parseExport(input: unknown): ExportDoc {
     for (const v of Object.values(nf)) str(v, 'note field value');
     arr(note.tags, 'note.tags');
     iso(note.createdAt, 'note.createdAt');
+    checkExtra(note.extra, 'note.extra');
   }
   for (const c of d.cards as Record<string, unknown>[]) {
     if (c.noteId !== undefined && c.noteId !== null && !noteIds.has(str(c.noteId, 'card.noteId')))
@@ -188,6 +259,18 @@ export function parseExport(input: unknown): ExportDoc {
       fail('review.grade invalid');
     iso(rv.reviewedAt, 'review.reviewedAt');
     if (rv.revokedAt !== null) iso(rv.revokedAt, 'review.revokedAt');
+  }
+  // Defaults for fields that v1 files lack (written by v2 writers always).
+  deck.mcPractice ??= false;
+  for (const nt of (d.noteTypes ?? []) as Record<string, unknown>[]) {
+    nt.kind ??= 'standard';
+    nt.options ??= {};
+    nt.builtinKey ??= null;
+  }
+  for (const n of (d.notes ?? []) as Record<string, unknown>[]) n.extra ??= null;
+  for (const c of d.cards as Record<string, unknown>[]) {
+    c.ordinal ??= 0;
+    c.answerText ??= '';
   }
   return d as unknown as ExportDoc;
 }

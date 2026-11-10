@@ -11,6 +11,7 @@ const deck = (id: string, name: string) => ({
   id,
   name,
   newCardsPerDay: 20,
+  mcPractice: false,
   createdAt: '2020-01-01T00:00:00.000Z',
   updatedAt: '2020-01-01T00:00:00.000Z',
   deletedAt: null,
@@ -35,6 +36,9 @@ const card = (
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state,

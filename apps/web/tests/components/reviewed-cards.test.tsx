@@ -21,6 +21,9 @@ const card = (id: string, front: string, due: string): Card => ({
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state: 'review',

@@ -14,6 +14,8 @@ import { notify } from '../../client/notify';
 import { describeApiError } from '../../lib/api-error';
 import { CardHtml } from '../../components/card/CardHtml';
 import { ChunkyButton, Dialog, Select } from '../../components/ui';
+import { useRemovalConfirm } from '../../components/editor/RemovalConfirm';
+import { removedTemplateCardIds } from '../../client/removal';
 
 const inputClass =
   'min-h-10 min-w-0 flex-1 rounded-xl border-2 border-border bg-surface px-3 text-sm font-semibold text-text focus:border-secondary focus:outline-none disabled:opacity-60';
@@ -37,6 +39,7 @@ export function NoteTypeEditorPage() {
   const [saving, setSaving] = useState(false);
   const [dropField, setDropField] = useState<string | null>(null);
   const [dropTpl, setDropTpl] = useState<string | null>(null);
+  const removal = useRemovalConfirm((e) => setError(describeError(e)));
   const areas = {
     front: useRef<HTMLTextAreaElement>(null),
     back: useRef<HTMLTextAreaElement>(null),
@@ -51,7 +54,13 @@ export function NoteTypeEditorPage() {
         if (!live) return;
         if (!nt) return setError(t('problem.not_found'));
         setName(nt.name);
-        setDef({ fields: nt.fields, templates: nt.templates, css: nt.css });
+        setDef({
+          fields: nt.fields,
+          templates: nt.templates,
+          css: nt.css,
+          kind: nt.kind,
+          options: nt.options,
+        });
         setTplId(nt.templates[0]?.id ?? '');
       })
       .catch((e) => live && setError(describeApiError(t, e)));
@@ -60,6 +69,13 @@ export function NoteTypeEditorPage() {
     };
   }, [noteTypeId, t]);
 
+  const describeError = (e: unknown) => {
+    const api = e as { code?: string; errors?: { message?: string }[] };
+    return api.code === 'invalid_note_type' && api.errors?.length
+      ? api.errors.map((x) => x.message).join(' ')
+      : describeApiError(t, e);
+  };
+
   const errors = useMemo(() => (def ? validateNoteType(def) : []), [def]);
   const tpl = def?.templates.find((x) => x.id === tplId) ?? def?.templates[0];
 
@@ -67,7 +83,7 @@ export function NoteTypeEditorPage() {
     if (!def || !tpl) return null;
     try {
       const sample = Object.fromEntries(def.fields.map((f) => [f.id, f.name]));
-      return renderCard(def, tpl, sample);
+      return renderCard(def, sample, null, { templateId: tpl.id, ordinal: 0 });
     } catch {
       return null;
     }
@@ -153,21 +169,23 @@ export function NoteTypeEditorPage() {
     setError(null);
     setSaving(true);
     try {
-      await content.updateNoteType(noteTypeId, {
-        name: name.trim(),
-        fields: def.fields,
-        templates: def.templates,
-        css: def.css,
-      });
-      notify.show(t('notes.types.saved'));
-      navigate('/note-types');
-    } catch (e) {
-      const api = e as { code?: string; errors?: { message?: string }[] };
-      setError(
-        api.code === 'invalid_note_type' && api.errors?.length
-          ? api.errors.map((x) => x.message).join(' ')
-          : describeApiError(t, e),
+      const removed = await removedTemplateCardIds(
+        noteTypeId,
+        def.templates.map((x) => x.id),
       );
+      await removal.guard(removed, async (confirmRemoval) => {
+        await content.updateNoteType(noteTypeId, {
+          name: name.trim(),
+          fields: def.fields,
+          templates: def.templates,
+          css: def.css,
+          ...(confirmRemoval ? { confirmRemoval: true } : {}),
+        });
+        notify.show(t('notes.types.saved'));
+        navigate('/note-types');
+      });
+    } catch (e) {
+      setError(describeError(e));
     } finally {
       setSaving(false);
     }
@@ -367,6 +385,7 @@ export function NoteTypeEditorPage() {
         </div>
       </div>
 
+      {removal.dialog}
       <Dialog
         open={!!dropField}
         title={t('notes.types.deleteField')}

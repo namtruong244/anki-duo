@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any -- JSON bodies are untyped in these tests */
 import { and, eq, isNull } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { encodeState, newCard, registerSlotLister } from '@anki-duo/domain';
 import { schema } from '../../src/db/client.js';
 import { createDeck, createTestDb, type TestDb } from '../helpers/db.js';
 import { appAs } from '../helpers/session.js';
@@ -283,5 +284,227 @@ describe('export and restore', () => {
     expect(res.status).toBe(201);
     const rows = await t.db.select().from(schema.card);
     expect(rows.some((r) => /<script|onerror/i.test(r.front))).toBe(false);
+  });
+});
+
+describe('card reconciliation (identity = note, template, ordinal)', () => {
+  // One ordinal per "|"-separated part of the first field, from 1: stands in for the cloze kind
+  // until its lister lands in the domain package.
+  registerSlotLister('cloze', (def, fields) => {
+    const parts = (fields[def.fields[0]!.id] ?? '')
+      .split('|')
+      .map((x) => x.trim())
+      .filter(Boolean);
+    return parts.flatMap((_, i) =>
+      def.templates.map((tpl) => ({ templateId: tpl.id, ordinal: i + 1 })),
+    );
+  });
+
+  const makeFanOutType = async (templates = 1) => {
+    const id = crypto.randomUUID();
+    await t.db.insert(schema.noteType).values({
+      id,
+      userId,
+      name: `Fan ${id.slice(0, 5)}`,
+      kind: 'cloze',
+      fields: [{ id: 'f_text', name: 'Text' }],
+      templates: Array.from({ length: templates }, (_, i) => ({
+        id: `t_${i + 1}`,
+        name: `C${i + 1}`,
+        front: '{{Text}}',
+        back: '{{FrontSide}}',
+      })),
+    });
+    return id;
+  };
+  const allCards = (noteId: string) =>
+    t.db.select().from(schema.card).where(eq(schema.card.noteId, noteId));
+  const logReview = (cardId: string) =>
+    t.db.insert(schema.reviewLog).values({
+      id: crypto.randomUUID(),
+      userId,
+      cardId,
+      deckId,
+      kind: 'review',
+      grade: 3,
+      reviewedAt: new Date('2026-02-01T00:00:00Z'),
+      stateBefore: encodeState(newCard(new Date('2026-01-01T00:00:00Z'))),
+      stateAfter: encodeState(newCard(new Date('2026-01-01T00:00:00Z'))),
+      schedulerVersion: 'test',
+    });
+
+  it('creates one card per slot with ordinals, adjacent positions in ordinal order', async () => {
+    const typeId = await makeFanOutType();
+    const res = await addNote(typeId, { f_text: 'a|b|c' });
+    expect(res.status).toBe(201);
+    const note = (await res.json()) as any;
+    expect(note.cards.map((c: any) => [c.templateId, c.ordinal])).toEqual([
+      ['t_1', 1],
+      ['t_1', 2],
+      ['t_1', 3],
+    ]);
+    const rows = (await liveCards(note.id)).sort((a, b) => a.ordinal - b.ordinal);
+    expect(rows.map((r) => r.position)).toEqual([0, 1, 2]);
+    expect(note.extra).toBeNull();
+  });
+
+  it('keeps existing cards (same id) when a slot is added; the new slot goes at the end', async () => {
+    const typeId = await makeFanOutType();
+    const note = (await (await addNote(typeId, { f_text: 'a|b' })).json()) as any;
+    const before = new Map(note.cards.map((c: any) => [c.ordinal, c.id]));
+    await addNote(typeId, { f_text: 'other' });
+    const upd = (await (
+      await call(`/notes/${note.id}`, 'PATCH', { fields: { f_text: 'a|b|c' } })
+    ).json()) as any;
+    expect(upd.cards).toHaveLength(3);
+    for (const c of upd.cards.filter((x: any) => x.ordinal < 3))
+      expect(c.id).toBe(before.get(c.ordinal));
+    const added = (await allCards(note.id)).find((c) => c.ordinal === 3)!;
+    expect(added.position).toBe(3);
+  });
+
+  it('honours cardIds keyed by templateId:ordinal (and bare templateId for ordinal 0)', async () => {
+    const typeId = await makeFanOutType();
+    const id1 = crypto.randomUUID();
+    const id2 = crypto.randomUUID();
+    const note = (await (
+      await addNote(typeId, { f_text: 'a|b' }, { cardIds: { 't_1:1': id1, 't_1:2': id2 } })
+    ).json()) as any;
+    expect(note.cards.map((c: any) => c.id)).toEqual([id1, id2]);
+    const basic = await typeNamed('Basic');
+    const cid = crypto.randomUUID();
+    const b = (await (
+      await addNote(basic.id, { f_front: 'x' }, { cardIds: { t_card1: cid } })
+    ).json()) as any;
+    expect(b.cards[0]).toEqual({ id: cid, templateId: 't_card1', ordinal: 0 });
+  });
+
+  it('soft-deletes an unreviewed vanished slot silently', async () => {
+    const typeId = await makeFanOutType();
+    const note = (await (await addNote(typeId, { f_text: 'a|b|c' })).json()) as any;
+    const res = await call(`/notes/${note.id}`, 'PATCH', { fields: { f_text: 'a|b' } });
+    expect(res.status).toBe(200);
+    expect(await liveCards(note.id)).toHaveLength(2);
+    const gone = (await allCards(note.id)).filter((c) => c.deletedAt);
+    expect(gone.map((c) => c.ordinal)).toEqual([3]);
+  });
+
+  it('answers 409 for a reviewed vanished card and saves nothing; confirmRemoval soft-deletes and keeps the log', async () => {
+    const typeId = await makeFanOutType();
+    const note = (await (await addNote(typeId, { f_text: 'a|b|c' })).json()) as any;
+    const last = note.cards.find((c: any) => c.ordinal === 3);
+    await t.db.update(schema.card).set({ reps: 4 }).where(eq(schema.card.id, last.id));
+    await logReview(last.id);
+
+    const res = await call(`/notes/${note.id}`, 'PATCH', { fields: { f_text: 'a' } });
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as any;
+    expect(body).toMatchObject({
+      code: 'cards_would_be_removed',
+      count: 1,
+      cards: [{ id: last.id, templateId: 't_1', ordinal: 3, reps: 4 }],
+    });
+    expect(await liveCards(note.id)).toHaveLength(3);
+    const [still] = await t.db.select().from(schema.note).where(eq(schema.note.id, note.id));
+    expect(still!.fields.f_text).toBe('a|b|c');
+
+    const ok = await call(`/notes/${note.id}`, 'PATCH', {
+      fields: { f_text: 'a' },
+      confirmRemoval: true,
+    });
+    expect(ok.status).toBe(200);
+    expect(await liveCards(note.id)).toHaveLength(1);
+    const [row] = await t.db.select().from(schema.card).where(eq(schema.card.id, last.id));
+    expect(row!.deletedAt).not.toBeNull();
+    expect(row!.reps).toBe(4);
+    expect(
+      await t.db.select().from(schema.reviewLog).where(eq(schema.reviewLog.cardId, last.id)),
+    ).toHaveLength(1);
+  });
+
+  it('a card with a review_log row but reps 0 counts as reviewed', async () => {
+    const typeId = await makeFanOutType();
+    const note = (await (await addNote(typeId, { f_text: 'a|b' })).json()) as any;
+    await logReview(note.cards.find((c: any) => c.ordinal === 2).id);
+    const res = await call(`/notes/${note.id}`, 'PATCH', { fields: { f_text: 'a' } });
+    expect(res.status).toBe(409);
+    expect(((await res.json()) as any).cards[0]).toMatchObject({ ordinal: 2, reps: 0 });
+  });
+
+  it('PATCH note-type: 409 lists only reviewed cards and saves nothing; confirmRemoval applies', async () => {
+    const typeId = await makeFanOutType(2);
+    const n1 = (await (await addNote(typeId, { f_text: 'a' })).json()) as any;
+    const n2 = (await (await addNote(typeId, { f_text: 'b' })).json()) as any;
+    const reviewed = n1.cards.find((c: any) => c.templateId === 't_2');
+    await t.db.update(schema.card).set({ reps: 2 }).where(eq(schema.card.id, reviewed.id));
+    const [nt] = await t.db.select().from(schema.noteType).where(eq(schema.noteType.id, typeId));
+    const keep = nt!.templates[0]!;
+
+    const res = await call(`/note-types/${typeId}`, 'PATCH', { templates: [keep] });
+    expect(res.status).toBe(409);
+    const body = (await res.json()) as any;
+    expect(body.code).toBe('cards_would_be_removed');
+    expect(body.count).toBe(1);
+    expect(body.cards).toEqual([{ id: reviewed.id, templateId: 't_2', ordinal: 1, reps: 2 }]);
+    expect(await liveCards(n1.id)).toHaveLength(2);
+    expect(await liveCards(n2.id)).toHaveLength(2);
+    const [after] = await t.db.select().from(schema.noteType).where(eq(schema.noteType.id, typeId));
+    expect(after!.templates).toHaveLength(2);
+
+    const ok = await call(`/note-types/${typeId}`, 'PATCH', {
+      templates: [keep],
+      confirmRemoval: true,
+    });
+    expect(ok.status).toBe(200);
+    expect(await liveCards(n1.id)).toHaveLength(1);
+    expect(await liveCards(n2.id)).toHaveLength(1);
+    const [row] = await t.db.select().from(schema.card).where(eq(schema.card.id, reviewed.id));
+    expect(row!.deletedAt).not.toBeNull();
+  });
+
+  it('PATCH note-type removing a never-reviewed template needs no confirmation', async () => {
+    const typeId = await makeFanOutType(2);
+    const n = (await (await addNote(typeId, { f_text: 'a' })).json()) as any;
+    const [nt] = await t.db.select().from(schema.noteType).where(eq(schema.noteType.id, typeId));
+    const res = await call(`/note-types/${typeId}`, 'PATCH', { templates: [nt!.templates[1]!] });
+    expect(res.status).toBe(200);
+    expect((await liveCards(n.id)).map((c) => c.templateId)).toEqual(['t_2']);
+  });
+
+  it('keeps a slot whose front renders empty (the template still exists)', async () => {
+    const rev = await typeNamed('Basic (optional reversed card)');
+    const note = (await (
+      await addNote(rev.id, { f_front: 'q', f_back: 'a', f_addrev: 'y' })
+    ).json()) as any;
+    expect(note.cards).toHaveLength(2);
+    const res = await call(`/notes/${note.id}`, 'PATCH', { fields: { f_addrev: '' } });
+    expect(res.status).toBe(200);
+    expect(await liveCards(note.id)).toHaveLength(2);
+  });
+
+  it('rejects a note producing more than 100 cards', async () => {
+    const typeId = await makeFanOutType();
+    const res = await addNote(typeId, {
+      f_text: Array.from({ length: 101 }, (_, i) => `c${i}`).join('|'),
+    });
+    expect(res.status).toBe(422);
+    expect(((await res.json()) as any).code).toBe('too_many_cards');
+    const ok = await addNote(typeId, {
+      f_text: Array.from({ length: 100 }, (_, i) => `c${i}`).join('|'),
+    });
+    expect(ok.status).toBe(201);
+  });
+
+  it('never touches FSRS columns when reconciling', async () => {
+    const typeId = await makeFanOutType();
+    const note = (await (await addNote(typeId, { f_text: 'a|b' })).json()) as any;
+    const c1 = note.cards[0].id;
+    await t.db
+      .update(schema.card)
+      .set({ reps: 7, lapses: 2, stability: 12.5, state: 'review' })
+      .where(eq(schema.card.id, c1));
+    await call(`/notes/${note.id}`, 'PATCH', { fields: { f_text: 'a x|b|c' } });
+    const [row] = await t.db.select().from(schema.card).where(eq(schema.card.id, c1));
+    expect(row).toMatchObject({ reps: 7, lapses: 2, stability: 12.5, state: 'review' });
   });
 });

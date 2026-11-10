@@ -16,12 +16,17 @@ import { notify } from '../../client/notify';
 import { sound } from '../../client/sound';
 import { useMotionPreference } from '../../lib/motion';
 import { newId, syncEngine } from '../../client/runtime';
-import { SessionMachine, type SessionKind } from '../../client/session/session-machine';
+import {
+  SessionMachine,
+  type AnswerResult,
+  type SessionKind,
+} from '../../client/session/session-machine';
 import { dexieStore } from '../../client/store';
 import type { Deck, Settings } from '../../client/local-store';
 import { CardEditor } from '../../components/editor/CardEditor';
 import { DEFAULT_CARD_CSS } from '@anki-duo/domain';
 import { CardHtml } from '../../components/card/CardHtml';
+import { AnswerContext, type AnswerContextValue } from '../../components/answer';
 import { CardContent } from '../../components/session/CardContent';
 import { useNoteType } from '../../client/use-note-type';
 import { Celebration } from '../../components/session/Celebration';
@@ -237,12 +242,12 @@ function Running({
   );
 
   const reveal = useCallback(() => machine.reveal(), [machine]);
-  const grade = useCallback(
+  /** Sound, pulse, XP and sync after a grade, whether the learner or auto-grade made it. */
+  const afterGrade = useCallback(
     (g: 1 | 2 | 3 | 4) => {
-      machine.grade(g);
       void sound.playGrade(g);
       setFeedback((n) => n + 1);
-      const finished = machine.getState().status === 'done';
+      const finished = machine.isFinished;
       const bonus = finished ? sessionBonusXp({ completed: true, kind }) : 0;
       void award({ reviews: 1, xp: xpOf() + bonus }, finished);
       if (finished) {
@@ -252,12 +257,28 @@ function Running({
     },
     [machine, award, xpOf, kind],
   );
+  const grade = useCallback(
+    (g: 1 | 2 | 3 | 4) => {
+      machine.grade(g);
+      afterGrade(g);
+    },
+    [machine, afterGrade],
+  );
+  const submitAnswer = useCallback(
+    (r: AnswerResult) => {
+      machine.submitAnswer(r);
+      const after = machine.getState();
+      if (after.continuing && after.suggested) afterGrade(after.suggested);
+    },
+    [machine, afterGrade],
+  );
+  const proceed = useCallback(() => machine.continue(), [machine]);
   const undo = useCallback(() => {
     if (!machine.canUndo()) return;
     setUndoPressed(true);
     if (undoTimer.current) clearTimeout(undoTimer.current);
     undoTimer.current = setTimeout(() => setUndoPressed(false), 140);
-    const wasDone = machine.getState().status === 'done';
+    const wasDone = machine.isFinished;
     const bonus = wasDone ? sessionBonusXp({ completed: true, kind }) : 0;
     void machine.undo().then(() => award({ reviews: -1, xp: -(xpOf() + bonus) }));
   }, [machine, award, xpOf, kind]);
@@ -267,6 +288,9 @@ function Running({
     onReveal: reveal,
     onGrade: grade,
     onUndo: undo,
+    suggested: s.suggested,
+    continuing: s.continuing,
+    onContinue: proceed,
     enabled: s.status !== 'done' && s.status !== 'empty' && !editing,
   });
 
@@ -420,6 +444,13 @@ function Running({
   const cardCss = noteType?.css ?? DEFAULT_CARD_CSS;
   const { text: frontText, audioId } = splitAudio(card?.front ?? '');
   const tags = card?.tags ?? [];
+  const answerCtx: AnswerContextValue = {
+    status: s.status === 'answering' || s.status === 'back' ? s.status : 'front',
+    answer: machine.currentAnswer(),
+    result: s.answer,
+    suggested: s.suggested,
+    submitAnswer,
+  };
 
   return (
     <div className="flex min-h-dvh flex-col bg-bg">
@@ -498,11 +529,15 @@ function Running({
               )}
 
               {isHtml && card ? (
-                <CardHtml
-                  html={s.status === 'back' ? card.back : card.front}
-                  css={cardCss}
-                  className="min-w-0"
-                />
+                <AnswerContext.Provider value={answerCtx}>
+                  <CardHtml
+                    html={s.status === 'back' ? card.back : card.front}
+                    css={cardCss}
+                    className="min-w-0"
+                    interaction={card.interaction ?? null}
+                    side={s.status === 'back' ? 'back' : 'front'}
+                  />
+                </AnswerContext.Provider>
               ) : (
                 <>
                   <div className="flex items-start gap-4">
@@ -547,7 +582,7 @@ function Running({
       </main>
 
       <Dock>
-        {s.status === 'front' ? (
+        {s.status === 'front' || s.status === 'answering' ? (
           <div className="flex items-center justify-between gap-3">
             {card && (
               <ChunkyButton
@@ -559,13 +594,32 @@ function Running({
                 {t('ui.session.editCard')}
               </ChunkyButton>
             )}
+            {s.status === 'front' && (
+              <ChunkyButton
+                size="lg"
+                onClick={reveal}
+                aria-keyshortcuts="Space"
+                className="min-w-0 flex-1 rounded-2xl sm:max-w-72 sm:flex-none"
+              >
+                {t('session.reveal')}
+              </ChunkyButton>
+            )}
+          </div>
+        ) : s.continuing ? (
+          <div className="flex items-center justify-between gap-3">
+            {s.suggested && (
+              <p role="status" className="text-sm font-extrabold text-text-muted">
+                {t('session.suggested')}:{' '}
+                {t(`grade.${(['again', 'hard', 'good'] as const)[s.suggested - 1]}`)}
+              </p>
+            )}
             <ChunkyButton
               size="lg"
-              onClick={reveal}
-              aria-keyshortcuts="Space"
+              onClick={proceed}
+              aria-keyshortcuts="Space Enter"
               className="min-w-0 flex-1 rounded-2xl sm:max-w-72 sm:flex-none"
             >
-              {t('session.reveal')}
+              {t('session.continue')}
             </ChunkyButton>
           </div>
         ) : (
@@ -575,7 +629,7 @@ function Running({
               animate={{ y: 0, scale: 1 }}
               transition={{ duration: 0.14, ease: 'easeOut' }}
             >
-              <GradeBar previews={s.previews} onGrade={grade} />
+              <GradeBar previews={s.previews} onGrade={grade} suggested={s.suggested} />
               <p className="sr-only">{t('session.shortcuts')}</p>
             </motion.div>
           )

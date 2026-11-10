@@ -14,6 +14,9 @@ const card = (id: string, deletedAt: string | null = null) => ({
   noteId: null,
   noteTypeId: null,
   templateId: null,
+  ordinal: 0,
+  interaction: null,
+  answerText: '',
   format: 'markdown' as const,
   fsrs: {
     state: 'new' as const,
@@ -79,6 +82,7 @@ describe('pullAll', () => {
             id: 'd9',
             name: '',
             newCardsPerDay: 20,
+            mcPractice: false,
             createdAt: 'x',
             updatedAt: 'x',
             deletedAt: '2026-01-02T00:00:00.000Z',
@@ -103,6 +107,7 @@ describe('pullAll', () => {
       sessionSize: 20,
       soundEnabled: true,
       motion: 'system',
+      autoGrade: false,
     };
     const get = vi.fn().mockResolvedValue({
       data: page({
@@ -112,6 +117,7 @@ describe('pullAll', () => {
             id: 'd1',
             name: 'D',
             newCardsPerDay: 20,
+            mcPractice: false,
             createdAt: 'x',
             updatedAt: 'x',
             deletedAt: null,
@@ -149,10 +155,26 @@ describe('deck tombstones', () => {
   it("remove the deck's cards and media too (the server sends no card tombstones for a deck delete)", async () => {
     const s = new DexieStore(`tomb-${Math.random()}`);
     await s.putDecks([
-      { id: 'd1', name: 'Gone', newCardsPerDay: 20, createdAt: '', updatedAt: '', deletedAt: null },
+      {
+        id: 'd1',
+        name: 'Gone',
+        newCardsPerDay: 20,
+        mcPractice: false,
+        createdAt: '',
+        updatedAt: '',
+        deletedAt: null,
+      },
     ]);
     await s.putDecks([
-      { id: 'd2', name: 'Kept', newCardsPerDay: 20, createdAt: '', updatedAt: '', deletedAt: null },
+      {
+        id: 'd2',
+        name: 'Kept',
+        newCardsPerDay: 20,
+        mcPractice: false,
+        createdAt: '',
+        updatedAt: '',
+        deletedAt: null,
+      },
     ]);
     await s.putCards([card('c1'), { ...card('c2'), deckId: 'd2' }]);
     await s.putMedia([
@@ -183,6 +205,7 @@ describe('deck tombstones', () => {
           id: 'd1',
           name: '',
           newCardsPerDay: 20,
+          mcPractice: false,
           createdAt: '',
           updatedAt: '',
           deletedAt: '2026-01-02T00:00:00.000Z',

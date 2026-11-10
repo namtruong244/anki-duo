@@ -207,3 +207,29 @@ describe('DELETE /decks/{id}', () => {
     expect((await del(mine.id)).status).toBe(404);
   });
 });
+
+describe('mcPractice (FR-047)', () => {
+  it('defaults to false and can be set on create and patch without touching FSRS', async () => {
+    const d = (await (await create({ name: 'MC' })).json()) as any;
+    expect(d.mcPractice).toBe(false);
+    const on = (await (await create({ name: 'MC2', mcPractice: true })).json()) as any;
+    expect(on.mcPractice).toBe(true);
+
+    const card = await createCard(t.db, userId, d.id, { reps: 3, stability: 4.5, state: 'review' });
+    const res = await patch(d.id, { mcPractice: true });
+    expect(res.status).toBe(200);
+    expect(((await res.json()) as any).mcPractice).toBe(true);
+    const [after] = await t.db.select().from(schema.card).where(eq(schema.card.id, card.id));
+    expect(after).toMatchObject({
+      reps: 3,
+      stability: 4.5,
+      state: 'review',
+      due: card.due,
+      difficulty: card.difficulty,
+      lapses: card.lapses,
+    });
+    expect(((await (await patch(d.id, { mcPractice: false })).json()) as any).mcPractice).toBe(
+      false,
+    );
+  });
+});

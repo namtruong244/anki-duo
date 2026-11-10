@@ -9,6 +9,8 @@ import {
   studyDay,
   SCHEDULER_VERSION,
   type FsrsState as DomainState,
+  suggestGrade,
+  type Answer,
   type Grade,
 } from '@anki-duo/domain';
 import type {
@@ -20,6 +22,7 @@ import type {
   RevokeEvent,
   SessionEvent,
   Settings,
+  StoredAnswer,
   StoredSession,
 } from '../local-store';
 
@@ -56,9 +59,44 @@ export interface ReviewedCard {
   reviews: number;
 }
 
+/** What a widget reports to `submitAnswer` (the checked answer, before the grade is chosen). */
+export interface AnswerResult {
+  verdict: 'correct' | 'almost' | 'wrong' | null;
+  given?: string;
+  choiceIndex?: number;
+}
+
+/** Context for `effectiveAnswer`; later stories (multiple choice practice) extend it. */
+export interface EffectiveAnswerContext {
+  settings: Settings;
+}
+
+/**
+ * The answer a card is checked against. Today it is the card's own interaction answer; the
+ * multiple-choice practice story extends this hook (deck `mcPractice`, distractor pools).
+ */
+export function effectiveAnswer(card: Card, _ctx: EffectiveAnswerContext): Answer | null {
+  void _ctx;
+  return (card.interaction?.answer as Answer | null | undefined) ?? null;
+}
+
+/** Only typed and choice answers go through the `answering` step; occlusion uses `reveal()`. */
+export function isAnswerable(answer: Answer | null): boolean {
+  return answer?.kind === 'type' || answer?.kind === 'choice';
+}
+
 export interface SessionState {
-  status: 'front' | 'back' | 'done' | 'empty';
+  status: 'front' | 'answering' | 'back' | 'done' | 'empty';
   card: Card | null;
+  /** The checked answer while on the back after `submitAnswer` (or a reload), else null. */
+  answer: StoredAnswer | null;
+  /** Grade suggested by the answer check; null for a plain reveal or an unchecked answer. */
+  suggested: 1 | 2 | 3 | null;
+  /**
+   * True after an auto-graded answer: the card is already graded and its back stays on screen
+   * (with `answer` and `suggested`) until `continue()`.
+   */
+  continuing: boolean;
   previews: Previews | null;
   /** `total` counts each queued card once, however often it comes back. */
   progress: { done: number; total: number };
@@ -115,6 +153,8 @@ export class SessionMachine {
   private listeners = new Set<() => void>();
   private pending: Promise<unknown> = Promise.resolve();
   private revealed = false;
+  /** Auto-graded card whose back is held until `continue()`. */
+  private held: { card: Card; answer: StoredAnswer } | null = null;
   private previews: Previews | null = null;
   private finished = false;
   private cards = new Map<string, Card>();
@@ -127,6 +167,12 @@ export class SessionMachine {
     cards: Card[],
   ) {
     for (const c of cards) this.cards.set(c.id, c);
+    // Resume on the feedback screen of an already checked answer (R7).
+    const card = this.current();
+    if (card && p.answer) {
+      this.revealed = true;
+      this.previews = this.previewsFor(card);
+    }
   }
 
   /**
@@ -245,14 +291,38 @@ export class SessionMachine {
     const total = p.planned.length;
     const open = new Set(p.queue.slice(p.position));
     const done = total - p.planned.filter((id) => open.has(id)).length;
+    if (this.held) {
+      const { card, answer } = this.held;
+      return state('back', card, null, done, total, null, answer, true);
+    }
     if (this.finished) return state('done', null, null, done, total, this.summary());
     const card = this.cards.get(p.queue[p.position]!) ?? null;
-    return state(this.revealed ? 'back' : 'front', card, this.previews, done, total, null);
+    const status = this.revealed ? 'back' : card && this.needsAnswer(card) ? 'answering' : 'front';
+    return state(
+      status,
+      card,
+      this.previews,
+      done,
+      total,
+      null,
+      this.revealed ? (p.answer ?? null) : null,
+    );
   }
 
   subscribe(fn: () => void) {
     this.listeners.add(fn);
     return () => this.listeners.delete(fn);
+  }
+
+  /** The effective answer of the card being shown (null when none or when finished). */
+  currentAnswer(): Answer | null {
+    const card = this.held?.card ?? this.current();
+    return card ? effectiveAnswer(card, { settings: this.settings }) : null;
+  }
+
+  /** True once the last card is graded (also while an auto-graded back is still held). */
+  get isFinished() {
+    return this.finished;
   }
 
   canUndo() {
@@ -266,19 +336,55 @@ export class SessionMachine {
 
   // --- actions -----------------------------------------------------------------------------
 
+  /** Shows the back of a card with no answer step. Does nothing while `answering` or held. */
   reveal() {
     const card = this.current();
-    if (!card || this.revealed) return;
+    if (!card || this.revealed || this.held || this.needsAnswer(card)) return;
     this.revealed = true;
-    this.previews = previewIntervals(
-      toDomain(card.fsrs),
-      this.deps.now(),
-      schedulerParams(this.settings),
-    );
+    this.previews = this.previewsFor(card);
+    this.emit();
+  }
+
+  /**
+   * Records the checked answer of an `answering` card and moves to its back with the suggested
+   * grade (never pushed; the review event carries only the grade, FR-010). With `autoGrade` the
+   * suggestion is graded at once and the back stays until `continue()`.
+   */
+  submitAnswer(result: AnswerResult) {
+    const card = this.current();
+    if (!card || this.revealed || this.held || !this.needsAnswer(card)) return;
+    const suggested = result.verdict ? suggestGrade(result.verdict) : null;
+    const answer: StoredAnswer = {
+      verdict: result.verdict,
+      ...(result.given !== undefined ? { given: result.given } : {}),
+      ...(result.choiceIndex !== undefined ? { choiceIndex: result.choiceIndex } : {}),
+      suggested: suggested as StoredAnswer['suggested'],
+    };
+    this.p.answer = answer;
+    this.revealed = true;
+    this.previews = this.previewsFor(card);
+    if (this.settings.autoGrade && suggested !== null) {
+      this.held = { card, answer };
+      this.applyGrade(suggested);
+      return;
+    }
+    this.track(this.deps.store.putSession({ ...this.p }));
+    this.emit();
+  }
+
+  /** Leaves the held back of an auto-graded card for the next card (or the summary). */
+  continue() {
+    if (!this.held) return;
+    this.held = null;
     this.emit();
   }
 
   grade(grade: Grade) {
+    if (this.held) return;
+    this.applyGrade(grade);
+  }
+
+  private applyGrade(grade: Grade) {
     const card = this.current();
     if (!card || this.finished) return;
     const now = this.deps.now();
@@ -330,6 +436,7 @@ export class SessionMachine {
     p.queue = [...p.queue.slice(0, p.position + 1), ...remaining];
     p.position += 1;
     p.shownAtMs = now.getTime();
+    delete p.answer;
     this.revealed = false;
     this.previews = null;
 
@@ -370,6 +477,8 @@ export class SessionMachine {
     p.shownAtMs = snap.shownAtMs;
     p.undoState = null;
     p.undo = null;
+    delete p.answer;
+    this.held = null;
     const wasFinished = this.finished;
     this.finished = false;
     this.revealed = false;
@@ -395,6 +504,14 @@ export class SessionMachine {
   }
 
   // --- helpers -----------------------------------------------------------------------------
+
+  private needsAnswer(card: Card): boolean {
+    return isAnswerable(effectiveAnswer(card, { settings: this.settings }));
+  }
+
+  private previewsFor(card: Card): Previews {
+    return previewIntervals(toDomain(card.fsrs), this.deps.now(), schedulerParams(this.settings));
+  }
 
   private current(): Card | null {
     if (this.finished || this.p.planned.length === 0) return null;
@@ -473,7 +590,18 @@ const state = (
   done: number,
   total: number,
   summary: Summary | null,
-): SessionState => ({ status, card, previews, progress: { done, total }, summary });
+  answer: StoredAnswer | null = null,
+  continuing = false,
+): SessionState => ({
+  status,
+  card,
+  answer,
+  suggested: answer?.suggested ?? null,
+  continuing,
+  previews,
+  progress: { done, total },
+  summary,
+});
 
 export function studyWindow(now: Date, settings: Pick<Settings, 'timeZone' | 'dayStartHour'>) {
   const day = studyDay(now, settings.timeZone, settings.dayStartHour);

@@ -93,6 +93,7 @@ export const learnerSettings = pgTable(
     sessionSize: smallint('session_size').notNull().default(20),
     soundEnabled: boolean('sound_enabled').notNull().default(true),
     motion: text('motion').notNull().default('system'),
+    autoGrade: boolean('auto_grade').notNull().default(false),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
     changeSeq: bigint('change_seq', { mode: 'number' }),
   },

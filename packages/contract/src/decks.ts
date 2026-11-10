@@ -25,6 +25,7 @@ export const createDeckRoute = createRoute({
             id: z.uuid().optional().openapi({ description: 'Optional client id' }),
             name: deckName,
             newCardsPerDay: z.number().int().min(0).max(999).default(20).optional(),
+            mcPractice: z.boolean().default(false).optional(),
           }),
         },
       },
@@ -39,7 +40,7 @@ export const createDeckRoute = createRoute({
 export const patchDeckRoute = createRoute({
   method: 'patch',
   path: '/decks/{deckId}',
-  summary: 'Rename a deck or change its new-card limit',
+  summary: 'Rename a deck or change its new-card limit or multiple-choice practice',
   request: {
     params: z.object({ deckId }),
     body: {
@@ -50,6 +51,7 @@ export const patchDeckRoute = createRoute({
             .object({
               name: deckName.optional(),
               newCardsPerDay: z.number().int().min(0).max(999).optional(),
+              mcPractice: z.boolean().optional(),
             })
             .refine(atLeastOne, { message: 'at least one field is required' })
             .openapi({ minProperties: 1 }),

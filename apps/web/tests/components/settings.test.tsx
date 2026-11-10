@@ -34,6 +34,7 @@ const base: Settings = {
   sessionSize: 20,
   soundEnabled: true,
   motion: 'system',
+  autoGrade: false,
 };
 
 beforeEach(async () => {
@@ -103,6 +104,24 @@ describe('gamification settings (FR-021, FR-022, FR-025)', () => {
         motion: 'reduced',
       }),
     );
+  });
+});
+
+describe('auto-grade toggle (FR-008)', () => {
+  it('is off by default and saves autoGrade when switched on', async () => {
+    renderSettings();
+    const sw = await screen.findByRole('switch', { name: 'Auto-grade' });
+    expect(sw.getAttribute('aria-checked')).toBe('false');
+    fireEvent.click(sw);
+    await waitFor(() =>
+      expect(mocks.patch).toHaveBeenCalledWith('/me/settings', { body: { autoGrade: true } }),
+    );
+    await waitFor(() =>
+      expect(screen.getByRole('switch', { name: 'Auto-grade' }).getAttribute('aria-checked')).toBe(
+        'true',
+      ),
+    );
+    expect((await dexieStore.getSettings('u'))?.autoGrade).toBe(true);
   });
 });
 

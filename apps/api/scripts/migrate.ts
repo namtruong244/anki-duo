@@ -4,6 +4,7 @@ import { migrate as migrateNode } from 'drizzle-orm/node-postgres/migrator';
 import { migrate as migrateNeon } from 'drizzle-orm/neon-serverless/migrator';
 import { migrate as migratePglite } from 'drizzle-orm/pglite/migrator';
 import { getDb } from '../src/db/client.js';
+import { backfill0005 } from '../src/db/backfill-0005.js';
 
 const envFile = new URL('../.env', import.meta.url);
 if (existsSync(envFile)) {
@@ -20,5 +21,7 @@ if (url.startsWith('pglite://')) {
 } else {
   await migrateNode(db, { migrationsFolder: folder });
 }
-console.log('migrations applied');
+// Data backfills run after the schema migrations; each one is idempotent.
+const backfilled = await backfill0005(db);
+console.log(`migrations applied (backfill-0005: ${backfilled} cards)`);
 process.exit(0);

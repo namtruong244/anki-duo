@@ -1,7 +1,30 @@
 export * from './types.js';
-export { renderCard, validateNoteType, renameFieldInTemplates } from './template.js';
-export { sanitizeHtml, sanitizeCss, htmlToText } from './sanitize.js';
-export { DEFAULT_NOTE_TYPES, DEFAULT_CARD_CSS } from './defaults.js';
+export * from './interaction.js';
+export * from './filters.js';
+export * from './slots.js';
+export * from './cloze.js';
+export * from './furigana.js';
+export { validateMasks, nextMaskN } from './occlusion.js';
+import './typein.js';
+import './choice.js';
+import './occlusion.js';
+export {
+  renderCard,
+  validateNoteType,
+  noteTypeWarnings,
+  frontFieldsWithFilter,
+  hasContent,
+  renameFieldInTemplates,
+  type RenderOptions,
+  type RenderedCard,
+} from './template.js';
+export { sanitizeHtml, sanitizeCss, htmlToText, stripReservedAttrs } from './sanitize.js';
+export {
+  DEFAULT_NOTE_TYPES,
+  DEFAULT_CARD_CSS,
+  type BuiltinKey,
+  type BuiltinNoteType,
+} from './defaults.js';
 
 const B36 = '0123456789abcdefghijklmnopqrstuvwxyz';
 

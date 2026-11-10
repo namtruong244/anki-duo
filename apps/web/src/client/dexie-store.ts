@@ -45,6 +45,10 @@ export class DexieStore extends Dexie implements LocalStore {
       dailyActivity: 'studyDay',
     });
     this.version(2).stores({ noteTypes: 'id' });
+    // v3 (feature 002) only widens the stored rows (cards: ordinal/interaction/answerText, decks:
+    // mcPractice, settings: autoGrade, noteTypes: kind/options/builtinKey). No new index, no
+    // upgrade function: v2 rows are kept untouched and missing fields are read as 0 / null / ''.
+    this.version(3).stores({});
   }
 
   async getMeta<K extends keyof MetaValues>(key: K) {
@@ -74,11 +78,12 @@ export class DexieStore extends Dexie implements LocalStore {
   async putDecks(decks: Deck[]) {
     await this.decks.bulkPut(decks);
   }
-  getDeck(id: string) {
-    return this.decks.get(id);
+  async getDeck(id: string) {
+    const row = await this.decks.get(id);
+    return row ? withDeckDefaults(row) : undefined;
   }
-  listDecks() {
-    return this.decks.toArray();
+  async listDecks() {
+    return (await this.decks.toArray()).map(withDeckDefaults);
   }
 
   async putCards(cards: Card[]) {
@@ -222,7 +227,17 @@ export class DexieStore extends Dexie implements LocalStore {
 }
 
 const toStored = (c: Card): StoredCard => ({ ...c, state: c.fsrs.state, due: c.fsrs.due });
-const fromStored = (row: StoredCard): Card => omit(row, ['state', 'due']) as Card;
+/** v2 rows predate `ordinal`/`interaction`/`answerText`; they read back as 0 / null / '' (feature 002). */
+const fromStored = (row: StoredCard): Card => {
+  const c = omit(row, ['state', 'due']) as Partial<Card>;
+  return {
+    ...c,
+    ordinal: c.ordinal ?? 0,
+    interaction: c.interaction ?? null,
+    answerText: c.answerText ?? '',
+  } as Card;
+};
+const withDeckDefaults = (d: Deck): Deck => ({ ...d, mcPractice: d.mcPractice ?? false });
 
 function omit<T extends object>(obj: T, keys: string[]): object {
   return Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k)));

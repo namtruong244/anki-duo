@@ -19,6 +19,7 @@ const base: Settings = {
   sessionSize: 20,
   soundEnabled: true,
   motion: 'system',
+  autoGrade: false,
 };
 
 beforeEach(async () => {
@@ -47,5 +48,14 @@ describe('saveSettings', () => {
     expect(i18next.language).toBe('vi');
     expect((await dexieStore.getSettings('u'))?.locale).toBe('vi');
     expect(res.settings?.locale).toBe('vi');
+  });
+
+  it('saves autoGrade locally and to the account, defaulting to off', async () => {
+    expect((await dexieStore.getSettings('u'))?.autoGrade).toBe(false);
+    mocks.patch.mockResolvedValue({ data: { ...base, autoGrade: true } });
+    const res = await saveSettings({ autoGrade: true });
+    expect(mocks.patch).toHaveBeenCalledWith('/me/settings', { body: { autoGrade: true } });
+    expect(res.settings?.autoGrade).toBe(true);
+    expect((await dexieStore.getSettings('u'))?.autoGrade).toBe(true);
   });
 });

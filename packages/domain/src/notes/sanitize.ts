@@ -289,3 +289,56 @@ export function htmlToText(html: string): string {
     .replace(/\n{2,}/g, '\n')
     .trim();
 }
+
+const RESERVED_PREFIX = 'ad-';
+
+/**
+ * Removes the app-owned names from author markup (R4, FR-013): any `id` starting with `ad-` and
+ * any `class` token starting with `ad-`. Only the app emits `ad-slot-N` and `ad-hint`.
+ *
+ * Works on a template or a field in place: only tags that carry a reserved name are rewritten,
+ * everything else (text, `{{...}}` tags, unbalanced html) is returned byte for byte. Attribute
+ * values are entity-decoded before the check, so `id="&#97;d-x"` does not slip through.
+ */
+export function stripReservedAttrs(html: string): string {
+  const src = String(html ?? '');
+  if (!/ad-|&/i.test(src)) return src;
+  const edits: Array<{ start: number; end: number; text: string }> = [];
+  const parser: Parser = new Parser(
+    {
+      onopentag(name, attribs) {
+        const id = attribs.id;
+        const cls = attribs.class;
+        const badId = id !== undefined && id.trim().toLowerCase().startsWith(RESERVED_PREFIX);
+        const tokens = cls === undefined ? [] : cls.split(/\s+/).filter(Boolean);
+        const badCls = tokens.some((t) => t.toLowerCase().startsWith(RESERVED_PREFIX));
+        if (!badId && !badCls) return;
+        let attrs = '';
+        for (const [k, v] of Object.entries(attribs)) {
+          if (k === 'id' && badId) continue;
+          if (k === 'class' && badCls) {
+            const kept = tokens.filter((t) => !t.toLowerCase().startsWith(RESERVED_PREFIX));
+            if (kept.length) attrs += ` class="${escapeAttr(kept.join(' '))}"`;
+            continue;
+          }
+          attrs += ` ${k}="${escapeAttr(v)}"`;
+        }
+        edits.push({
+          start: parser.startIndex,
+          end: parser.endIndex + 1,
+          text: `<${name}${attrs}>`,
+        });
+      },
+    },
+    { decodeEntities: true },
+  );
+  parser.write(src);
+  parser.end();
+  let out = '';
+  let at = 0;
+  for (const e of edits) {
+    out += src.slice(at, e.start) + e.text;
+    at = e.end;
+  }
+  return out + src.slice(at);
+}

@@ -111,7 +111,8 @@
       "dueNow": "now",
       "times": "{count, plural, one {# review} other {# reviews}}",
       "edit": "Edit card: {front}"
-    }
+    },
+    "suggested": "Suggested"
   },
   "grade": {
     "again": "Again",
@@ -149,7 +150,9 @@
     "restoreDone": "Deck restored",
     "exportFailed": "Could not export the deck.",
     "error": "Something went wrong. Please try again.",
-    "reviewShort": "Review"
+    "reviewShort": "Review",
+    "mcPractice": "Multiple-choice practice",
+    "mcPracticeHint": "Turns this deck's basic cards into multiple choice using other answers in the deck; scheduling is unchanged."
   },
   "learning": {
     "saveFailed": "Could not save settings",
@@ -362,7 +365,12 @@
     "note_type_in_use": "Notes still use this note type, so it cannot be deleted.",
     "note_type_name_taken": "You already have a note type with that name.",
     "empty_front": "The front of every card would be empty. Fill in at least one field used on a front.",
-    "edit_via_note": "This card belongs to a note. Edit the note instead."
+    "edit_via_note": "This card belongs to a note. Edit the note instead.",
+    "cards_would_be_removed": "Saving would remove cards you have already reviewed. Confirm to remove them.",
+    "too_many_cards": "A note can make at most 100 cards. Shorten it or split it into several notes.",
+    "cloze_required": "Add at least one cloze deletion to the text.",
+    "wrong_answers_required": "Add at least one wrong answer, or turn on multiple-choice practice for this deck.",
+    "occlusion_masks_required": "Add an image and at least one mask."
   },
   "ui": {
     "theme": {
@@ -564,5 +572,56 @@
       "backTemplate": "Back template",
       "css": "Styling (CSS)"
     }
+  },
+  "card": {
+    "showHint": "Show hint"
+  },
+  "settings": {
+    "autoGrade": "Auto-grade",
+    "autoGradeHint": "After you answer a type-in or multiple-choice card, the suggested grade is applied automatically."
+  },
+  "editor": {
+    "removeCardsTitle": "Remove cards?",
+    "removeCardsBody": "{count, plural, one {# card and its review history will be removed.} other {# cards and their review history will be removed.}}",
+    "cloze": "Cloze",
+    "clozeShortcut": "Cloze deletion (Ctrl+Shift+C)",
+    "cardCount": "{count, plural, one {# card} other {# cards}}",
+    "clozeProblem": "A cloze is not closed or numbered correctly. Check its opening and closing markers.",
+    "wrongAnswersHint": "One wrong answer per line"
+  },
+  "noteTypes": {
+    "ignoreCase": "Ignore case",
+    "ignoreDiacritics": "Ignore diacritics (accents)",
+    "builtin": {
+      "cloze": "Cloze",
+      "basicType": "Basic (type in the answer)",
+      "multipleChoice": "Multiple choice",
+      "imageOcclusion": "Image Occlusion"
+    }
+  },
+  "answer": {
+    "typePlaceholder": "Type the answer",
+    "correct": "Correct",
+    "almost": "Almost correct",
+    "incorrect": "Incorrect",
+    "yourAnswer": "Your answer",
+    "expected": "Correct answer",
+    "missing": "missing",
+    "extra": "extra",
+    "choose": "Choose the answer",
+    "explanation": "Explanation"
+  },
+  "occlusion": {
+    "rect": "Rectangle",
+    "ellipse": "Ellipse",
+    "modeHideAll": "Hide all, guess one",
+    "modeHideOne": "Hide one, guess one",
+    "label": "Label",
+    "deleteMask": "Delete mask",
+    "imageMissing": "Image could not be loaded"
+  },
+  "tts": {
+    "play": "Play audio",
+    "noVoice": "No voice available for this language"
   }
 }

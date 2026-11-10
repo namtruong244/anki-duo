@@ -3,7 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import { eq } from 'drizzle-orm';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { newCard, SCHEDULER_VERSION, type Grade } from '@anki-duo/domain';
+import { newCard, registerSlotLister, SCHEDULER_VERSION, type Grade } from '@anki-duo/domain';
 import { schema } from '../../src/db/client.js';
 import { createCard, createDeck, createTestDb, type TestDb } from '../helpers/db.js';
 import { appAs } from '../helpers/session.js';
@@ -125,7 +125,7 @@ describe('GET /decks/{id}/export', () => {
     const doc = await exportDeck();
     expect(doc).toMatchObject({
       format: 'anki-duo-export',
-      version: 1,
+      version: 2,
       deck: { id: deckId, name: 'Từ vựng', newCardsPerDay: 20 },
     });
     expect(doc.scheduler).toMatchObject({
@@ -259,7 +259,7 @@ describe('POST /decks/restore', () => {
     expect((await t.db.select().from(schema.card)).length).toBe(1);
   });
 
-  it.each([[{ format: 'other' }], [{ version: 2 }], [{ cards: 'nope' }]])(
+  it.each([[{ format: 'other' }], [{ version: 3 }], [{ cards: 'nope' }]])(
     'rejects a malformed file %j with export_invalid',
     async (patch) => {
       const doc = { ...(await exportDeck()), ...patch };
@@ -297,5 +297,142 @@ describe('POST /decks/restore', () => {
     const [c] = await t.db.select().from(schema.card).where(eq(schema.card.deckId, deck.id));
     expect(c!.front).not.toContain('media:');
     expect(c!.front).not.toContain('[[audio');
+  });
+});
+
+describe('export v2 (R13)', () => {
+  registerSlotLister('cloze', (def, fields) =>
+    (fields[def.fields[0]!.id] ?? '')
+      .split('|')
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .flatMap((_, i) => def.templates.map((tpl) => ({ templateId: tpl.id, ordinal: i + 1 }))),
+  );
+
+  async function fanOutNote(text: string) {
+    const typeId = randomUUID();
+    await t.db.insert(schema.noteType).values({
+      id: typeId,
+      userId,
+      name: 'Fan',
+      kind: 'cloze',
+      options: { typeIgnoreCase: false },
+      builtinKey: null,
+      fields: [{ id: 'f_text', name: 'Text' }],
+      templates: [{ id: 't_1', name: 'C1', front: '{{Text}}', back: '{{FrontSide}}' }],
+    });
+    const res = await h.call(userId, `/decks/${deckId}/notes`, {
+      method: 'POST',
+      json: { noteTypeId: typeId, fields: { f_text: text } },
+    });
+    expect(res.status).toBe(201);
+    return typeId;
+  }
+  const cardsOf = (id: string) => t.db.select().from(schema.card).where(eq(schema.card.deckId, id));
+
+  it('writes the v2 fields and round-trips ordinals and answerText', async () => {
+    await fanOutNote('a|b|c');
+    const types = (await (await h.call(userId, '/note-types')).json()) as any;
+    const basic = types.noteTypes.find((n: any) => n.builtinKey === 'basic');
+    await h.call(userId, `/decks/${deckId}/notes`, {
+      method: 'POST',
+      json: { noteTypeId: basic.id, fields: { f_front: 'q', f_back: 'the answer' } },
+    });
+    const doc = await exportDeck();
+    expect(doc.version).toBe(2);
+    expect(doc.deck.mcPractice).toBe(false);
+    expect(doc.noteTypes.find((n: any) => n.kind === 'cloze')).toMatchObject({
+      options: { typeIgnoreCase: false },
+      builtinKey: null,
+    });
+    expect(doc.noteTypes.find((n: any) => n.kind === 'standard').builtinKey).toBe('basic');
+    expect(doc.notes.every((n: any) => n.extra === null)).toBe(true);
+    expect(doc.cards.map((c: any) => c.ordinal).sort()).toEqual([0, 1, 2, 3]);
+    expect(doc.cards.find((c: any) => c.front.includes('q'))).toMatchObject({
+      answerText: 'the answer',
+    });
+
+    const restored = (await (await restore(doc)).json()) as { id: string };
+    const src = await cardsOf(deckId);
+    const dst = await cardsOf(restored.id);
+    const key = (c: (typeof src)[number]) => `${c.noteTypeId}:${c.templateId}:${c.ordinal}`;
+    expect(dst.map((c) => [c.templateId, c.ordinal, c.answerText, c.front, c.back]).sort()).toEqual(
+      src.map((c) => [c.templateId, c.ordinal, c.answerText, c.front, c.back]).sort(),
+    );
+    expect(new Set(dst.map(key)).size).toBe(src.length);
+  });
+
+  it('restore recomputes interaction and answerText and ignores the file', async () => {
+    const types = (await (await h.call(userId, '/note-types')).json()) as any;
+    const basic = types.noteTypes.find((n: any) => n.builtinKey === 'basic');
+    await h.call(userId, `/decks/${deckId}/notes`, {
+      method: 'POST',
+      json: { noteTypeId: basic.id, fields: { f_front: 'q', f_back: 'real' } },
+    });
+    const doc = await exportDeck();
+    doc.cards[0].interaction = {
+      v: 1,
+      slots: [{ kind: 'tts', lang: 'en', text: 'evil' }],
+      answer: null,
+    };
+    doc.cards[0].answerText = 'forged';
+    doc.cards[0].front = '<b>forged front</b>';
+    const restored = (await (await restore(doc)).json()) as { id: string };
+    const [c] = await cardsOf(restored.id);
+    expect(c!.interaction).toBeNull();
+    expect(c!.answerText).toBe('real');
+    expect(c!.front).not.toContain('forged');
+  });
+
+  it('accepts a v1 file and fills the v2 defaults', async () => {
+    const types = (await (await h.call(userId, '/note-types')).json()) as any;
+    const basic = types.noteTypes.find((n: any) => n.builtinKey === 'basic');
+    await h.call(userId, `/decks/${deckId}/notes`, {
+      method: 'POST',
+      json: { noteTypeId: basic.id, fields: { f_front: 'q', f_back: 'a' } },
+    });
+    const doc = await exportDeck();
+    doc.version = 1;
+    delete doc.deck.mcPractice;
+    for (const n of doc.noteTypes) {
+      delete n.kind;
+      delete n.options;
+      delete n.builtinKey;
+    }
+    for (const n of doc.notes) delete n.extra;
+    for (const c of doc.cards) {
+      delete c.ordinal;
+      delete c.answerText;
+      delete c.interaction;
+    }
+    const res = await restore(doc);
+    expect(res.status).toBe(201);
+    const body = (await res.json()) as any;
+    expect(body.mcPractice).toBe(false);
+    const [c] = await cardsOf(body.id);
+    expect(c).toMatchObject({ ordinal: 0, answerText: 'a' });
+  });
+
+  it('keeps builtinKey only when the account has no live type with that key', async () => {
+    const types = (await (await h.call(userId, '/note-types')).json()) as any;
+    const basic = types.noteTypes.find((n: any) => n.builtinKey === 'basic');
+    await h.call(userId, `/decks/${deckId}/notes`, {
+      method: 'POST',
+      json: { noteTypeId: basic.id, fields: { f_front: 'q', f_back: 'a' } },
+    });
+    const doc = await exportDeck();
+    // another learner has no types: restore creates their own
+    const other = (await h.newUser()).id;
+    const res = await h.call(other, '/decks/restore', { method: 'POST', json: doc });
+    expect(res.status).toBe(201);
+    const mine = await t.db.select().from(schema.noteType).where(eq(schema.noteType.userId, other));
+    expect(mine.map((r) => r.builtinKey)).toEqual(['basic']);
+    // the same learner already holds a live 'basic' type; with a new id it must get null
+    doc.noteTypes[0].id = randomUUID();
+    for (const n of doc.notes) n.noteTypeId = doc.noteTypes[0].id;
+    for (const c of doc.cards) c.noteTypeId = doc.noteTypes[0].id;
+    expect((await restore(doc)).status).toBe(201);
+    const own = await t.db.select().from(schema.noteType).where(eq(schema.noteType.userId, userId));
+    expect(own.filter((r) => r.builtinKey === 'basic')).toHaveLength(1);
   });
 });

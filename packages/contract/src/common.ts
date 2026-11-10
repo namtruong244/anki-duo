@@ -18,6 +18,11 @@ export const PROBLEM_CODES = [
   'edit_via_note',
   'rate_limited',
   'reauth_required',
+  'cards_would_be_removed',
+  'too_many_cards',
+  'cloze_required',
+  'wrong_answers_required',
+  'occlusion_masks_required',
 ] as const;
 export type ProblemCode = (typeof PROBLEM_CODES)[number];
 
@@ -31,6 +36,22 @@ export const ProblemSchema = z
     errors: z
       .array(z.object({ path: z.string().optional(), message: z.string().optional() }))
       .optional(),
+    count: z
+      .number()
+      .int()
+      .optional()
+      .openapi({ description: 'cards_would_be_removed: number of reviewed cards that vanish' }),
+    cards: z
+      .array(
+        z.object({
+          id: z.uuid(),
+          templateId: z.string(),
+          ordinal: z.number().int().min(0),
+          reps: z.number().int().min(0),
+        }),
+      )
+      .optional()
+      .openapi({ description: 'cards_would_be_removed: only the reviewed vanished cards' }),
   })
   .openapi('Problem');
 
@@ -49,11 +70,96 @@ export const FsrsStateSchema = z
 
 const nullableDate = z.iso.datetime().nullable();
 
+export const MaskSchema = z
+  .object({
+    n: z.number().int().min(1),
+    shape: z.enum(['rect', 'ellipse']),
+    x: z.number().min(0).max(1),
+    y: z.number().min(0).max(1),
+    w: z.number().gt(0).max(1),
+    h: z.number().gt(0).max(1),
+    label: z.string().optional(),
+  })
+  .openapi('Mask');
+
+const OcclusionModeSchema = z.enum(['hide_all', 'hide_one']);
+
+export const NoteExtraSchema = z
+  .object({
+    occlusion: z.object({ mode: OcclusionModeSchema, masks: z.array(MaskSchema) }).optional(),
+  })
+  .openapi('NoteExtra');
+
+export const SlotSchema = z
+  .discriminatedUnion('kind', [
+    z.object({ kind: z.literal('type') }),
+    z.object({ kind: z.literal('choice') }),
+    z.object({ kind: z.literal('occlusion') }),
+    z.object({ kind: z.literal('tts'), lang: z.string(), text: z.string() }),
+  ])
+  .openapi('Slot');
+
+export const AnswerSchema = z
+  .discriminatedUnion('kind', [
+    z.object({
+      kind: z.literal('type'),
+      expected: z.string(),
+      ignoreCase: z.boolean(),
+      ignoreDiacritics: z.boolean(),
+    }),
+    z.object({
+      kind: z.literal('choice'),
+      correct: z.string(),
+      wrong: z.array(z.string()),
+      explanationHtml: z.string(),
+    }),
+    z.object({
+      kind: z.literal('occlusion'),
+      image: z.string(),
+      mode: OcclusionModeSchema,
+      masks: z.array(MaskSchema),
+      target: z.number().int().min(1),
+    }),
+  ])
+  .openapi('Answer');
+
+/** Output only: produced by the server's renderCard, never accepted from clients. */
+export const InteractionSchema = z
+  .object({
+    v: z.literal(1),
+    slots: z.array(SlotSchema),
+    answer: z.union([AnswerSchema, z.null()]),
+  })
+  .openapi('Interaction');
+
+export const NoteTypeKindSchema = z.enum([
+  'standard',
+  'cloze',
+  'image_occlusion',
+  'multiple_choice',
+]);
+
+export const NoteTypeOptionsSchema = z
+  .object({
+    typeIgnoreCase: z.boolean().optional(),
+    typeIgnoreDiacritics: z.boolean().optional(),
+    roles: z
+      .object({
+        correct: z.string(),
+        wrong: z.string(),
+        explanation: z.string(),
+      })
+      .optional()
+      .openapi({ description: 'Field ids; required for multiple_choice' }),
+  })
+  .openapi('NoteTypeOptions');
+
 export const DeckSchema = z
   .object({
     id: z.uuid(),
     name: z.string(),
     newCardsPerDay: z.number().int(),
+    mcPractice: z.boolean(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
     deletedAt: nullableDate,
@@ -75,6 +181,9 @@ export const CardSchema = z
     noteId: z.uuid().nullable(),
     noteTypeId: z.uuid().nullable(),
     templateId: z.string().nullable(),
+    ordinal: z.number().int().min(0),
+    interaction: z.union([InteractionSchema, z.null()]),
+    answerText: z.string(),
     format: z.enum(['markdown', 'html']),
     fsrs: FsrsStateSchema,
     updatedAt: z.iso.datetime(),
@@ -95,6 +204,9 @@ export const NoteTypeSchema = z
     fields: z.array(NoteFieldSchema),
     templates: z.array(NoteTemplateSchema),
     css: z.string(),
+    kind: NoteTypeKindSchema,
+    options: NoteTypeOptionsSchema,
+    builtinKey: z.string().nullable(),
     updatedAt: z.iso.datetime(),
     deletedAt: nullableDate,
   })
@@ -107,7 +219,10 @@ export const NoteSchema = z
     noteTypeId: z.uuid(),
     fields: z.record(z.string(), z.string()),
     tags: z.array(z.string()),
-    cards: z.array(z.object({ id: z.uuid(), templateId: z.string() })),
+    extra: z.union([NoteExtraSchema, z.null()]),
+    cards: z.array(
+      z.object({ id: z.uuid(), templateId: z.string(), ordinal: z.number().int().min(0) }),
+    ),
     updatedAt: z.iso.datetime(),
   })
   .openapi('Note');
@@ -148,6 +263,7 @@ export const SettingsFields = {
   sessionSize: z.number().int().min(5).max(50),
   soundEnabled: z.boolean(),
   motion: z.enum(['system', 'reduced', 'full']),
+  autoGrade: z.boolean(),
 };
 
 export const SettingsSchema = z.object(SettingsFields).openapi('Settings');

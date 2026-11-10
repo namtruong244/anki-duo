@@ -16,18 +16,24 @@ import {
   exportParams,
   fsrsWeights,
   newCard,
+  listCardSlots,
   parseExport,
+  renderCard,
   reviewXp,
   schedule,
   toReplayLog,
   verifyExport,
   type ExportDoc,
   type FsrsState,
+  type NoteExtra,
+  type NoteTypeDef,
+  type NoteTypeKind,
 } from '@anki-duo/domain';
 import { schema, type Db } from '../db/client.js';
 import { ApiProblem } from '../problem.js';
 import type { Storage } from '../storage.js';
 import { toDeck } from './mappers.js';
+import { toDef } from './notes.js';
 import { getSettings } from './settings.js';
 
 const MAX_CARDS = 20_000;
@@ -105,6 +111,7 @@ export async function exportDeck(
       name: deck.name,
       newCardsPerDay: deck.newCardsPerDay,
       createdAt: deck.createdAt.toISOString(),
+      mcPractice: deck.mcPractice,
     },
     noteTypes: noteTypes.map((nt) => ({
       id: nt.id,
@@ -112,6 +119,9 @@ export async function exportDeck(
       fields: nt.fields,
       templates: nt.templates,
       css: nt.css,
+      kind: nt.kind as NoteTypeKind,
+      options: nt.options,
+      builtinKey: nt.builtinKey,
     })),
     notes: notes.map((n) => ({
       id: n.id,
@@ -119,6 +129,7 @@ export async function exportDeck(
       fields: n.fields,
       tags: n.tags,
       createdAt: n.createdAt.toISOString(),
+      extra: n.extra ?? null,
     })),
     cards: await Promise.all(
       cards.map(async (c) => ({
@@ -133,6 +144,10 @@ export async function exportDeck(
         noteId: c.noteId,
         noteTypeId: c.noteTypeId,
         templateId: c.templateId,
+        ordinal: c.ordinal,
+        answerText: c.answerText,
+        // Informational only: restore recomputes it from the note.
+        interaction: c.interaction ?? null,
         format: c.format as 'markdown' | 'html',
         fsrs: {
           state: c.state as FsrsState['state'],
@@ -201,7 +216,13 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
 
   // Untrusted input: note types must be well-formed before anything is written.
   for (const nt of doc.noteTypes ?? []) {
-    const errors = validateNoteType({ fields: nt.fields, templates: nt.templates, css: nt.css });
+    const errors = validateNoteType({
+      fields: nt.fields,
+      templates: nt.templates,
+      css: nt.css,
+      kind: nt.kind ?? 'standard',
+      options: nt.options ?? {},
+    });
     if (errors.length) throw new ApiProblem(422, 'export_invalid', `note type: ${errors[0]}`);
   }
 
@@ -243,6 +264,7 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
         userId,
         name,
         newCardsPerDay: doc.deck.newCardsPerDay,
+        mcPractice: doc.deck.mcPractice ?? false,
         createdAt: now,
         updatedAt: now,
       })
@@ -250,6 +272,7 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
 
     // Note types: a live type of this learner with the same id is reused, others are re-created.
     const typeMap = new Map<string, string>();
+    const typeDefs = new Map<string, NoteTypeDef>();
     const takenTypeNames = new Set(
       (
         await tx
@@ -258,9 +281,20 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
           .where(and(eq(schema.noteType.userId, userId), isNull(schema.noteType.deletedAt)))
       ).map((r) => r.name.toLowerCase()),
     );
+    // A builtinKey is kept only while no live type of the account holds it (unique index).
+    const takenKeys = new Set(
+      (
+        await tx
+          .select({ key: schema.noteType.builtinKey })
+          .from(schema.noteType)
+          .where(and(eq(schema.noteType.userId, userId), isNull(schema.noteType.deletedAt)))
+      )
+        .map((r) => r.key)
+        .filter((k): k is string => !!k),
+    );
     for (const nt of doc.noteTypes ?? []) {
       const [own] = await tx
-        .select({ id: schema.noteType.id })
+        .select()
         .from(schema.noteType)
         .where(
           and(
@@ -271,6 +305,7 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
         );
       if (own) {
         typeMap.set(nt.id, own.id);
+        typeDefs.set(own.id, toDef(own));
         continue;
       }
       const tBase = nt.name.slice(0, 80);
@@ -280,31 +315,50 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
       takenTypeNames.add(tName.toLowerCase());
       const newId = randomUUID();
       typeMap.set(nt.id, newId);
-      await tx.insert(schema.noteType).values({
+      const builtinKey = nt.builtinKey && !takenKeys.has(nt.builtinKey) ? nt.builtinKey : null;
+      if (builtinKey) takenKeys.add(builtinKey);
+      const row = {
         id: newId,
         userId,
         name: tName,
         fields: nt.fields,
         templates: nt.templates,
         css: sanitizeCss(nt.css),
+        kind: nt.kind ?? 'standard',
+        options: nt.options ?? {},
+        builtinKey,
         createdAt: now,
         updatedAt: now,
-      });
+      };
+      await tx.insert(schema.noteType).values(row);
+      typeDefs.set(newId, toDef(row));
     }
-    const noteMap = new Map<string, { id: string; typeId: string }>();
+    const noteMap = new Map<
+      string,
+      {
+        id: string;
+        typeId: string;
+        fields: Record<string, string>;
+        extra: NoteExtra | null;
+        tags: string[];
+      }
+    >();
     const noteRows: (typeof schema.note.$inferInsert)[] = [];
     for (const n of doc.notes ?? []) {
       const id = randomUUID();
       const typeId = typeMap.get(n.noteTypeId)!;
-      noteMap.set(n.id, { id, typeId });
+      const fields = Object.fromEntries(
+        Object.entries(n.fields).map(([k, v]) => [k, sanitizeHtml(stripMediaHtml(v))]),
+      );
+      const extra = n.extra ?? null;
+      noteMap.set(n.id, { id, typeId, fields, extra, tags: n.tags.slice(0, 20) });
       noteRows.push({
         id,
         userId,
         deckId,
         noteTypeId: typeId,
-        fields: Object.fromEntries(
-          Object.entries(n.fields).map(([k, v]) => [k, sanitizeHtml(stripMediaHtml(v))]),
-        ),
+        fields,
+        extra,
         tags: n.tags.slice(0, 20),
         createdAt: new Date(n.createdAt),
         updatedAt: now,
@@ -325,22 +379,74 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
     const params = exportParams(doc);
 
     const logRows: (typeof schema.reviewLog.$inferInsert)[] = [];
+    // Note cards are re-rendered here, never copied from the file: front, back, interaction and
+    // answerText come from the note (R13). A file card is matched to its slot by
+    // (noteId, templateId, ordinal); one whose slot no longer exists is skipped.
+    const slotCards = new Map<string, ReturnType<typeof renderCard>>();
+    const slotOrder: { noteKey: string; templateId: string; ordinal: number }[] = [];
+    for (const [fileNoteId, note] of noteMap) {
+      const def = typeDefs.get(note.typeId)!;
+      const full = Object.fromEntries(def.fields.map((f) => [f.id, note.fields[f.id] ?? '']));
+      for (const slot of listCardSlots(def, full, note.extra)) {
+        slotCards.set(
+          `${fileNoteId}\n${slot.templateId}\n${slot.ordinal}`,
+          renderCard(def, full, note.extra, {
+            templateId: slot.templateId,
+            ordinal: slot.ordinal,
+            tags: note.tags,
+            deckName: name,
+          }),
+        );
+        slotOrder.push({ noteKey: fileNoteId, ...slot });
+      }
+    }
+    const slotKeyOf = (noteKey: string, templateId: string, ordinal: number) =>
+      `${noteKey}\n${templateId}\n${ordinal}`;
+    const claimed = new Set<string>();
+    type Item = {
+      file: ExportDoc['cards'][number] | null;
+      noteKey: string | null;
+      tpl: string;
+      ordinal: number;
+    };
+    const items: Item[] = [];
     for (const c of [...doc.cards].sort((a, b) => a.position - b.position)) {
+      if (c.noteId && noteMap.has(c.noteId)) {
+        const ordinal = c.ordinal ?? 0;
+        const key = slotKeyOf(c.noteId, c.templateId ?? '', ordinal);
+        if (!slotCards.has(key) || claimed.has(key)) {
+          continue;
+        }
+        claimed.add(key);
+        items.push({ file: c, noteKey: c.noteId, tpl: c.templateId ?? '', ordinal });
+      } else items.push({ file: c, noteKey: null, tpl: '', ordinal: 0 });
+    }
+    // Slots the file has no card for (should not happen) get a new card.
+    for (const o of slotOrder) {
+      const key = slotKeyOf(o.noteKey, o.templateId, o.ordinal);
+      if (!claimed.has(key) && !slotCards.get(key)!.frontEmpty)
+        items.push({ file: null, noteKey: o.noteKey, tpl: o.templateId, ordinal: o.ordinal });
+    }
+
+    for (const item of items) {
+      const c = item.file;
       const id = randomUUID();
-      idMap.set(c.id, id);
+      if (c) idMap.set(c.id, id);
       const nodeIndex = assignNodeIndex(lastNode, lastCount);
       lastCount = nodeIndex === lastNode ? lastCount + 1 : 1;
       lastNode = nodeIndex;
 
       // Rebuild state step by step so every log gets its own before/after snapshot.
-      const created = new Date(c.createdAt);
+      const created = c ? new Date(c.createdAt) : now;
       let state = newCard(created);
-      const ordered = [...(logsByCard.get(c.id) ?? [])]
-        .map((r) => ({ r, l: toReplayLog(r, doc) }))
-        .sort(
-          (a, b) =>
-            a.l.reviewedAt.getTime() - b.l.reviewedAt.getTime() || (a.l.id < b.l.id ? -1 : 1),
-        );
+      const ordered = c
+        ? [...(logsByCard.get(c.id) ?? [])]
+            .map((r) => ({ r, l: toReplayLog(r, doc) }))
+            .sort(
+              (a, b) =>
+                a.l.reviewedAt.getTime() - b.l.reviewedAt.getTime() || (a.l.id < b.l.id ? -1 : 1),
+            )
+        : [];
       for (const { r, l } of ordered) {
         const before = state;
         const after =
@@ -370,10 +476,24 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
         });
       }
       states.set(id, state);
-      const note = c.noteId ? noteMap.get(c.noteId) : undefined;
-      const html = !!note || c.format === 'html';
+      const note = item.noteKey ? noteMap.get(item.noteKey) : undefined;
+      const rendered = note
+        ? slotCards.get(slotKeyOf(item.noteKey!, item.tpl, item.ordinal))
+        : undefined;
+      const html = !!note || c?.format === 'html';
       const clean = (v: string) => (html ? sanitizeHtml(stripMediaHtml(v)) : stripMedia(v));
-      const front = clean(c.front) || '&nbsp;';
+      const front = rendered ? rendered.front : clean(c!.front) || '&nbsp;';
+      const back = rendered ? rendered.back : clean(c!.back);
+      let frontNorm: string;
+      if (rendered && note) {
+        const def = typeDefs.get(note.typeId)!;
+        const firstText = htmlToText(note.fields[def.fields[0]?.id ?? ''] ?? '');
+        frontNorm = normaliseFront(firstText || htmlToText(front));
+      } else {
+        frontNorm = html
+          ? normaliseFront(htmlToText(front))
+          : front.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase();
+      }
       cardRows.push({
         id,
         userId,
@@ -381,15 +501,16 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
         position: position++,
         nodeIndex,
         front,
-        back: clean(c.back),
-        frontNorm: html
-          ? normaliseFront(htmlToText(front))
-          : front.normalize('NFC').trim().replace(/\s+/g, ' ').toLowerCase(),
+        back,
+        frontNorm,
         noteId: note?.id ?? null,
         noteTypeId: note?.typeId ?? null,
-        templateId: note ? (c.templateId ?? null) : null,
+        templateId: note ? item.tpl : null,
+        ordinal: note ? item.ordinal : 0,
+        interaction: rendered?.interaction ?? null,
+        answerText: rendered?.answerText ?? '',
         format: html ? 'html' : 'markdown',
-        tags: c.tags,
+        tags: c ? c.tags : (note?.tags ?? []),
         state: state.state,
         due: state.due,
         stability: state.stability,
@@ -398,11 +519,13 @@ export async function restoreDeck(db: Db, userId: string, input: unknown, now: D
         reps: state.reps,
         lapses: state.lapses,
         lastReview: state.lastReview,
-        suspended: c.suspended,
+        suspended: c?.suspended ?? false,
         createdAt: created,
         updatedAt: now,
       });
     }
+    if ((stats?.cardCount ?? 0) + cardRows.length > MAX_CARDS)
+      throw new ApiProblem(422, 'card_limit_reached');
 
     for (let i = 0; i < cardRows.length; i += 1000)
       await tx.insert(schema.card).values(cardRows.slice(i, i + 1000));

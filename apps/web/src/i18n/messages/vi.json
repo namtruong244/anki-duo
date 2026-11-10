@@ -111,7 +111,8 @@
       "dueNow": "ngay",
       "times": "{count, plural, other {# lượt ôn}}",
       "edit": "Sửa thẻ: {front}"
-    }
+    },
+    "suggested": "Gợi ý"
   },
   "grade": {
     "again": "Học lại",
@@ -149,7 +150,9 @@
     "restoreDone": "Đã khôi phục bộ thẻ",
     "exportFailed": "Không thể xuất bộ thẻ.",
     "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
-    "reviewShort": "Ôn tập"
+    "reviewShort": "Ôn tập",
+    "mcPractice": "Luyện trắc nghiệm",
+    "mcPracticeHint": "Chuyển các thẻ cơ bản của bộ này thành trắc nghiệm, dùng đáp án của các thẻ khác trong bộ làm lựa chọn sai; lịch ôn tập không thay đổi."
   },
   "learning": {
     "saveFailed": "Không lưu được cài đặt",
@@ -362,7 +365,12 @@
     "note_type_in_use": "Vẫn còn ghi chú dùng loại này nên không thể xóa.",
     "note_type_name_taken": "Bạn đã có một loại ghi chú trùng tên.",
     "empty_front": "Mặt trước của mọi thẻ sẽ trống. Hãy điền ít nhất một trường dùng ở mặt trước.",
-    "edit_via_note": "Thẻ này thuộc một ghi chú. Hãy sửa ghi chú thay vì sửa thẻ."
+    "edit_via_note": "Thẻ này thuộc một ghi chú. Hãy sửa ghi chú thay vì sửa thẻ.",
+    "cards_would_be_removed": "Lưu sẽ xóa các thẻ bạn đã ôn tập. Hãy xác nhận để tiếp tục.",
+    "too_many_cards": "Một ghi chú chỉ tạo tối đa 100 thẻ. Hãy rút gọn hoặc tách thành nhiều ghi chú.",
+    "cloze_required": "Hãy thêm ít nhất một đoạn điền khuyết vào nội dung.",
+    "wrong_answers_required": "Hãy thêm ít nhất một đáp án sai, hoặc bật luyện trắc nghiệm cho bộ thẻ này.",
+    "occlusion_masks_required": "Hãy thêm một hình ảnh và ít nhất một vùng che."
   },
   "ui": {
     "theme": {
@@ -564,5 +572,56 @@
       "backTemplate": "Mẫu mặt sau",
       "css": "Kiểu dáng (CSS)"
     }
+  },
+  "card": {
+    "showHint": "Hiện gợi ý"
+  },
+  "settings": {
+    "autoGrade": "Tự động chấm điểm",
+    "autoGradeHint": "Sau khi bạn trả lời thẻ điền đáp án hoặc trắc nghiệm, điểm gợi ý sẽ được áp dụng tự động."
+  },
+  "editor": {
+    "removeCardsTitle": "Xóa thẻ?",
+    "removeCardsBody": "{count, plural, other {# thẻ}} và lịch sử ôn tập của chúng sẽ bị xóa.",
+    "cloze": "Điền khuyết",
+    "clozeShortcut": "Tạo điền khuyết (Ctrl+Shift+C)",
+    "cardCount": "{count, plural, other {# thẻ}}",
+    "clozeProblem": "Điền khuyết chưa đúng cú pháp. Hãy kiểm tra dấu mở và dấu đóng.",
+    "wrongAnswersHint": "Mỗi dòng một đáp án sai"
+  },
+  "noteTypes": {
+    "ignoreCase": "Không phân biệt hoa thường",
+    "ignoreDiacritics": "Bỏ qua dấu phụ (dấu thanh)",
+    "builtin": {
+      "cloze": "Điền khuyết",
+      "basicType": "Cơ bản (nhập đáp án)",
+      "multipleChoice": "Trắc nghiệm",
+      "imageOcclusion": "Che hình ảnh"
+    }
+  },
+  "answer": {
+    "typePlaceholder": "Nhập đáp án",
+    "correct": "Chính xác",
+    "almost": "Gần đúng",
+    "incorrect": "Chưa đúng",
+    "yourAnswer": "Đáp án của bạn",
+    "expected": "Đáp án đúng",
+    "missing": "thiếu",
+    "extra": "thừa",
+    "choose": "Chọn đáp án",
+    "explanation": "Giải thích"
+  },
+  "occlusion": {
+    "rect": "Hình chữ nhật",
+    "ellipse": "Hình elip",
+    "modeHideAll": "Ẩn tất cả, đoán một",
+    "modeHideOne": "Ẩn một, đoán một",
+    "label": "Nhãn",
+    "deleteMask": "Xóa vùng che",
+    "imageMissing": "Không thể tải hình ảnh"
+  },
+  "tts": {
+    "play": "Phát âm thanh",
+    "noVoice": "Không có giọng đọc cho ngôn ngữ này"
   }
 }

@@ -11,6 +11,8 @@ import { describeApiError } from '../../lib/api-error';
 import { CardHtml } from '../card/CardHtml';
 import { ChunkyButton, Select } from '../ui';
 import { RichFieldEditor } from './RichFieldEditor';
+import { useRemovalConfirm } from './RemovalConfirm';
+import { vanishedNoteCardIds } from '../../client/removal';
 
 export const LAST_NOTE_TYPE_KEY = 'anki-duo.lastNoteType';
 
@@ -60,6 +62,7 @@ export function NoteEditor({ deckId, note, onClose, onCreated, onSaved }: NoteEd
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [resetKey, setResetKey] = useState(0);
+  const removal = useRemovalConfirm((e) => setError(describeApiError(t, e)));
 
   useEffect(() => {
     let live = true;
@@ -92,14 +95,24 @@ export function NoteEditor({ deckId, note, onClose, onCreated, onSaved }: NoteEd
 
   const type = types?.find((x) => x.id === typeId);
   const def: NoteTypeDef | null = type
-    ? { fields: type.fields, templates: type.templates, css: type.css }
+    ? {
+        fields: type.fields,
+        templates: type.templates,
+        css: type.css,
+        kind: type.kind,
+        options: type.options,
+      }
     : null;
   const activeTpl = def?.templates.find((x) => x.id === tab) ?? def?.templates[0];
 
   const preview = useMemo(() => {
     if (!def || !activeTpl) return null;
-    return renderCard(def, activeTpl, fields, { tags: parseTags(tags) });
-  }, [def, activeTpl, fields, tags]);
+    return renderCard(def, fields, note?.extra ?? null, {
+      templateId: activeTpl.id,
+      ordinal: 0,
+      tags: parseTags(tags),
+    });
+  }, [def, activeTpl, fields, tags, note?.extra]);
 
   const save = async (another: boolean) => {
     if (!type) return;
@@ -111,10 +124,17 @@ export function NoteEditor({ deckId, note, onClose, onCreated, onSaved }: NoteEd
       );
       const tagList = parseTags(tags);
       if (note) {
-        const saved = await content.updateNote(note.id, { fields: clean, tags: tagList });
-        notify.show(t('notes.editor.saved'));
-        onSaved?.(saved);
-        onClose();
+        const vanished = def ? vanishedNoteCardIds(def, note, clean, note.extra) : [];
+        await removal.guard(vanished, async (confirmRemoval) => {
+          const saved = await content.updateNote(note.id, {
+            fields: clean,
+            tags: tagList,
+            ...(confirmRemoval ? { confirmRemoval: true } : {}),
+          });
+          notify.show(t('notes.editor.saved'));
+          onSaved?.(saved);
+          onClose();
+        });
       } else {
         writeLast(type.id);
         const created = await content.createNote(deckId, {
@@ -269,6 +289,7 @@ export function NoteEditor({ deckId, note, onClose, onCreated, onSaved }: NoteEd
           </div>
         </div>
       )}
+      {removal.dialog}
       {error && (
         <p
           role="alert"
