@@ -11,6 +11,11 @@ export const PROBLEM_CODES = [
   'import_too_large',
   'import_bad_encoding',
   'export_invalid',
+  'invalid_note_type',
+  'note_type_in_use',
+  'note_type_name_taken',
+  'empty_front',
+  'edit_via_note',
   'rate_limited',
   'reauth_required',
 ] as const;
@@ -67,11 +72,45 @@ export const CardSchema = z
     back: z.string(),
     tags: z.array(z.string()),
     suspended: z.boolean(),
+    noteId: z.uuid().nullable(),
+    noteTypeId: z.uuid().nullable(),
+    templateId: z.string().nullable(),
+    format: z.enum(['markdown', 'html']),
     fsrs: FsrsStateSchema,
     updatedAt: z.iso.datetime(),
     deletedAt: nullableDate,
   })
   .openapi('Card');
+
+export const NoteFieldSchema = z.object({ id: z.string(), name: z.string() }).openapi('NoteField');
+
+export const NoteTemplateSchema = z
+  .object({ id: z.string(), name: z.string(), front: z.string(), back: z.string() })
+  .openapi('NoteTemplate');
+
+export const NoteTypeSchema = z
+  .object({
+    id: z.uuid(),
+    name: z.string(),
+    fields: z.array(NoteFieldSchema),
+    templates: z.array(NoteTemplateSchema),
+    css: z.string(),
+    updatedAt: z.iso.datetime(),
+    deletedAt: nullableDate,
+  })
+  .openapi('NoteType');
+
+export const NoteSchema = z
+  .object({
+    id: z.uuid(),
+    deckId: z.uuid(),
+    noteTypeId: z.uuid(),
+    fields: z.record(z.string(), z.string()),
+    tags: z.array(z.string()),
+    cards: z.array(z.object({ id: z.uuid(), templateId: z.string() })),
+    updatedAt: z.iso.datetime(),
+  })
+  .openapi('Note');
 
 export const MediaSchema = z
   .object({

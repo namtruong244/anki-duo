@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '../../client/auth';
+import { authErrorMessage, MIN_PASSWORD_LENGTH } from '../../client/auth-errors';
 import { ChunkyButton } from '../../components/ui';
 import { AuthShell, Field, FormError } from './Shell';
 
@@ -18,18 +19,29 @@ export function ResetPasswordPage() {
     const f = new FormData(e.currentTarget);
     setError(null);
     if (token) {
-      const { error: err } = await authClient.resetPassword({
-        newPassword: String(f.get('password')),
-        token,
-      });
-      if (err) setError(t('auth.error'));
+      let err: unknown;
+      try {
+        ({ error: err } = await authClient.resetPassword({
+          newPassword: String(f.get('password')),
+          token,
+        }));
+      } catch (ex) {
+        err = ex;
+      }
+      if (err) setError(authErrorMessage(err, t));
       else setMessage(t('auth.resetDone'));
     } else {
-      await authClient.requestPasswordReset({
-        email: String(f.get('email')),
-        redirectTo: '/reset-password',
-      });
-      setMessage(t('auth.resetSent'));
+      try {
+        const { error: err } = await authClient.requestPasswordReset({
+          email: String(f.get('email')),
+          redirectTo: '/reset-password',
+        });
+        // Unknown accounts are not revealed; only surface rate limits / network problems.
+        if (err && (err.status === 429 || err.status === 0)) setError(authErrorMessage(err, t));
+        else setMessage(t('auth.resetSent'));
+      } catch (ex) {
+        setError(authErrorMessage(ex, t));
+      }
     }
   }
 
@@ -42,7 +54,7 @@ export function ResetPasswordPage() {
             name="password"
             type="password"
             autoComplete="new-password"
-            minLength={8}
+            minLength={MIN_PASSWORD_LENGTH}
             required
           />
         ) : (

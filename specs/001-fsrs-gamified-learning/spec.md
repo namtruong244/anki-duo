@@ -229,7 +229,9 @@ daily review counts and ring segments match card counts per state.
 - **FR-009**: Learners MUST be able to create, rename and delete decks, and create, edit, delete,
   tag and search cards within a deck.
 - **FR-010**: Each card side MUST support plain text and Markdown (headings, emphasis, lists, code,
-  tables, links) and MAY include one or more images and audio clips.
+  tables, links) and MAY include one or more images and audio clips. Legacy cards are Markdown
+  cards. Note-type cards (FR-035 to FR-039) instead hold rich HTML field values edited in a WYSIWYG
+  editor, and their layout is defined by the note type's templates and CSS.
 - **FR-011**: Image (PNG, JPEG, WebP, GIF, SVG rendered safely) and audio (MP3, M4A/AAC, OGG, WAV)
   attachments MUST be accepted up to 5 MB each.
 - **FR-012**: Learners MUST be able to suspend a card (exclude it from sessions) and reset a card's
@@ -315,8 +317,26 @@ daily review counts and ring segments match card counts per state.
   phones to large desktop screens without horizontal scrolling.
 - **FR-033**: Interactive controls MUST meet WCAG 2.2 AA colour contrast, have visible focus, and
   have accessible names for screen readers.
-- **FR-034**: Markdown and imported content MUST be displayed safely so that no embedded script can
-  run.
+- **FR-034**: Markdown, HTML and imported content MUST be displayed safely so that no embedded
+  script can run. Note-type HTML and CSS are allowed but MUST be sanitized on save and on render
+  (no script, no event-handler attributes, no unlisted URL schemes). Each note-type card MUST render
+  in its own Shadow DOM so that its CSS cannot change the rest of the app.
+- **FR-035**: Learners MUST be able to create, rename, edit and delete note types. A note type
+  MUST define named fields, one or more card templates (front and back HTML that refers to fields
+  by name) and CSS shared by its templates. Field names and template names MUST be unique within
+  the note type.
+- **FR-036**: Every learner MUST have three built-in note types, created on first use: Basic (Front,
+  Back), Basic (and reversed card) and Basic (optional reversed card). Learners MAY edit or delete
+  them under the same rules as any other note type.
+- **FR-037**: Learners MUST be able to add notes of a note type to a deck, filling its fields in
+  the WYSIWYG editor. A note MUST generate one card per template whose rendered front is non-empty
+  (text or media), and MUST be rejected when no template yields a non-empty front. Each generated
+  card carries the note's tags.
+- **FR-038**: Editing a note type MUST update its notes. Every existing card MUST be re-rendered;
+  a newly added template MUST create cards for existing notes whose front is non-empty; a removed
+  template MUST delete its cards.
+- **FR-039**: A note type that any live note uses MUST NOT be deletable; the learner MUST be told
+  that the note type is in use, and the notes that block it MUST be left unchanged.
 
 ### Key Entities
 
@@ -325,8 +345,13 @@ daily review counts and ring segments match card counts per state.
   limit, day-start hour, sound and motion preferences), total XP, current and longest streak.
 - **Deck**: A named collection of cards owned by a learner, with its own new-card limit and its
   learning path.
-- **Card**: One flashcard with Front and Back content (text/Markdown plus optional media), tags, and
-  FSRS memory state (Difficulty, Stability, Retrievability, state, due date, lapses, suspended).
+- **Card**: One flashcard with Front and Back content (text/Markdown plus optional media, or the
+  rendered HTML of a note-type template), tags, and FSRS memory state (Difficulty, Stability,
+  Retrievability, state, due date, lapses, suspended).
+- **Note Type**: A reusable card design with named fields, one or more card templates and shared
+  CSS. Three built-in note types are provided (FR-036).
+- **Note**: One set of field values for a note type, held in a deck. It produces one card per
+  template whose front is non-empty (FR-037).
 - **Media Asset**: An image or audio file attached to a card side, with type and size.
 - **Review Log**: One immutable record per grade: card, grade, review time, time taken, state
   before and after. The card's FSRS state can be recomputed from its review logs.

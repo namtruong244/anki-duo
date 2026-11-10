@@ -29,6 +29,13 @@ const SettingsPage = lazy(() =>
   import('./settings/SettingsPage').then((m) => ({ default: m.SettingsPage })),
 );
 
+const NoteTypesPage = lazy(() =>
+  import('./note-types/NoteTypesPage').then((m) => ({ default: m.NoteTypesPage })),
+);
+const NoteTypeEditorPage = lazy(() =>
+  import('./note-types/NoteTypeEditorPage').then((m) => ({ default: m.NoteTypeEditorPage })),
+);
+
 function Loading() {
   const { t } = useTranslation();
   return (
@@ -93,6 +100,8 @@ export function AppRoutes() {
           <Route path="/decks/:deckId/import" element={<ImportPage />} />
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/settings" element={<SettingsPage />} />
+          <Route path="/note-types" element={<NoteTypesPage />} />
+          <Route path="/note-types/:noteTypeId" element={<NoteTypeEditorPage />} />
         </Route>
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />

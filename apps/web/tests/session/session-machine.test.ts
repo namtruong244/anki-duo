@@ -33,6 +33,10 @@ const dueCard = (n: number): Card => ({
   back: `back ${n}`,
   tags: [],
   suspended: false,
+  noteId: null,
+  noteTypeId: null,
+  templateId: null,
+  format: 'markdown' as const,
   fsrs: {
     state: 'review',
     due: `2026-03-01T0${n}:00:00.000Z`,
@@ -74,6 +78,27 @@ const start = async (cards: Card[], kind: 'review' | 'ahead' = 'review') => {
 const outbox = async () => store.listOutbox();
 
 describe('session machine', () => {
+  it('replaceContent merges edited content but keeps scheduling state', async () => {
+    const m = await start([dueCard(1)]);
+    const before = m.getState().card!;
+    const v = m.version;
+    m.replaceContent({
+      ...before,
+      front: 'new front',
+      back: 'new back',
+      tags: ['x'],
+      updatedAt: '2026-03-01T13:00:00.000Z',
+      fsrs: { ...before.fsrs, stability: 999 },
+    });
+    const after = m.getState().card!;
+    expect(after).toMatchObject({ front: 'new front', back: 'new back', tags: ['x'] });
+    expect(after.updatedAt).toBe('2026-03-01T13:00:00.000Z');
+    expect(after.fsrs).toEqual(before.fsrs);
+    expect(m.version).toBeGreaterThan(v);
+    m.replaceContent({ ...before, id: 'nope', front: 'z' });
+    expect(m.version).toBe(v + 1);
+  });
+
   it('queues due cards by due date and shows the first on its front', async () => {
     const m = await start([dueCard(3), dueCard(1), dueCard(2)]);
     const s = m.getState();

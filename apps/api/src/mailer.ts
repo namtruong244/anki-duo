@@ -16,7 +16,10 @@ export function createMailer(
   const resend = env.RESEND_API_KEY ? new Resend(env.RESEND_API_KEY) : null;
   const send = async (to: string, subject: string, text: string) => {
     if (!resend) {
-      write(`[mail] to=${to} subject="${subject}"\n${text}`);
+      const bar = '='.repeat(72);
+      write(
+        `\n${bar}\n[mail] (dev: no RESEND_API_KEY, not sent) to=${to} subject="${subject}"\n${text}\n${bar}\n`,
+      );
       return;
     }
     const { error } = await resend.emails.send({ from: FROM, to, subject, text });
@@ -24,8 +27,12 @@ export function createMailer(
   };
   return {
     sendVerification: (to, url) =>
-      send(to, 'Verify your Anki Duo email', `Confirm your email: ${url}`),
+      send(to, 'Verify your Anki Duo email', `Confirm your email by opening this link:\n${url}`),
     sendPasswordReset: (to, url) =>
-      send(to, 'Reset your Anki Duo password', `Choose a new password: ${url}`),
+      send(
+        to,
+        'Reset your Anki Duo password',
+        `Choose a new password by opening this link:\n${url}`,
+      ),
   };
 }

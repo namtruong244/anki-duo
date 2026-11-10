@@ -20,6 +20,10 @@ beforeEach(async () => {
       back: '',
       tags: [],
       suspended: false,
+      noteId: null,
+      noteTypeId: null,
+      templateId: null,
+      format: 'markdown' as const,
       fsrs: {
         state: 'new',
         due: 'x',

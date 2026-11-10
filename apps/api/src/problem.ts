@@ -12,6 +12,11 @@ const TITLES: Record<ProblemCode, string> = {
   import_too_large: 'Import too large',
   import_bad_encoding: 'Import file encoding not supported',
   export_invalid: 'Invalid export file',
+  invalid_note_type: 'Invalid note type',
+  note_type_in_use: 'Note type in use',
+  note_type_name_taken: 'Note type name already in use',
+  empty_front: 'Card front is empty',
+  edit_via_note: 'Edit this card through its note',
   rate_limited: 'Too many requests',
   reauth_required: 'Sign in again',
 };

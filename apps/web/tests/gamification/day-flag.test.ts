@@ -31,6 +31,10 @@ const card = (
   back: '',
   tags: [],
   suspended: false,
+  noteId: null,
+  noteTypeId: null,
+  templateId: null,
+  format: 'markdown' as const,
   fsrs: {
     state,
     due,

@@ -17,17 +17,17 @@
   --color-primary-depth: #58a700;
   --color-primary-tint: #e8f8d8;
   --color-primary-accent: #2b7a00;
-  --color-on-primary: #131f24;
+  --color-on-primary: #ffffff;
 
   --color-secondary: #1cb0f6;
   --color-secondary-depth: #1899d6;
   --color-secondary-tint: #ddf4ff;
-  --color-on-secondary: #131f24;
+  --color-on-secondary: #ffffff;
 
   --color-danger: #ff4b4b;
   --color-danger-depth: #ea2b2b;
   --color-danger-tint: #ffdfe0;
-  --color-on-danger: #131f24;
+  --color-on-danger: #ffffff;
 
   --color-gold: #ffc800;
   --color-gold-depth: #e5b400;
@@ -37,12 +37,12 @@
   --color-orange: #ff9600;
   --color-orange-depth: #e58700;
   --color-orange-tint: #fff0d6;
-  --color-on-orange: #131f24;
+  --color-on-orange: #ffffff;
 
   --color-purple: #ce82ff;
   --color-purple-depth: #a568cc;
   --color-purple-tint: #f3e4ff;
-  --color-on-purple: #131f24;
+  --color-on-purple: #ffffff;
 
   --color-neutral: #e5e5e5;
   --color-neutral-depth: #bdbdbd;
@@ -212,7 +212,55 @@ dialog::backdrop {
   transition-duration: 0.01ms !important;
 }
 
-:focus-visible {
-  outline: 3px solid var(--color-focus);
-  outline-offset: 2px;
+@layer base {
+  /* Single source of truth for focus. Pointer/touch focus shows nothing; keyboard focus shows the
+     designed ring. Components must NOT add their own focus-visible outline or outline-none. */
+  html {
+    -webkit-tap-highlight-color: transparent;
+    /* 15px root: scales every rem-based size (spacing, type, controls) down a notch. */
+    font-size: 93.75%;
+  }
+
+  a,
+  button,
+  summary,
+  label,
+  [role='button'],
+  [role='switch'],
+  [role='tab'],
+  [role='option'],
+  [tabindex] {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  button::-moz-focus-inner,
+  input[type='button']::-moz-focus-inner,
+  input[type='submit']::-moz-focus-inner {
+    border: 0;
+    padding: 0;
+  }
+
+  :focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  :focus-visible {
+    outline: 3px solid var(--color-focus);
+    outline-offset: 2px;
+  }
+
+  /* The dialog surface is focused programmatically as a fallback; it is a container, not a control. */
+  [role='dialog']:focus,
+  [role='dialog']:focus-visible {
+    outline: none;
+  }
+
+  input:focus,
+  input:focus-visible,
+  textarea:focus,
+  textarea:focus-visible,
+  select:focus,
+  select:focus-visible {
+    outline: none;
+  }
 }

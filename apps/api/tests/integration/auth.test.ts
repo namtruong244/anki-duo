@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../../src/app.js';
 import { schema } from '../../src/db/client.js';
 import { createAuth } from '../../src/auth.js';
@@ -71,7 +71,16 @@ describe('sign-up and verification (V13)', () => {
     await signUp();
     const signIn = await post('/api/auth/sign-in/email', { email, password });
     expect(signIn.status).toBe(403);
+    expect(((await signIn.json()) as { code?: string }).code).toBe('EMAIL_NOT_VERIFIED');
     expect((await protectedCall({})).status).toBe(401);
+  });
+
+  it('an unverified sign-in attempt re-sends the verification link', async () => {
+    await signUp();
+    expect(mailer.sent).toHaveLength(1);
+    await post('/api/auth/sign-in/email', { email, password });
+    await vi.waitFor(() => expect(mailer.sent).toHaveLength(2));
+    expect(mailer.last('verify').to).toBe(email);
   });
 
   it('after verification a cookie session works', async () => {

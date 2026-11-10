@@ -27,6 +27,10 @@ const dueCard = (id: string, deckId: string) => ({
   back: 'b',
   tags: [],
   suspended: false,
+  noteId: null,
+  noteTypeId: null,
+  templateId: null,
+  format: 'markdown' as const,
   fsrs: {
     state: 'review' as const,
     due: '2020-01-01T00:00:00.000Z',

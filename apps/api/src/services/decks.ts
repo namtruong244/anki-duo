@@ -130,6 +130,7 @@ export async function deleteDeck(deps: AppDeps, userId: string, deckId: string):
     await tx.delete(schema.studySession).where(eq(schema.studySession.deckId, deckId));
     await tx.delete(schema.importJob).where(eq(schema.importJob.deckId, deckId));
     await tx.delete(schema.card).where(eq(schema.card.deckId, deckId));
+    await tx.delete(schema.note).where(eq(schema.note.deckId, deckId));
     await tx
       .update(schema.deck)
       .set({ deletedAt: now(), name: '', updatedAt: now() })

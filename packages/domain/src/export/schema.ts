@@ -41,6 +41,25 @@ export interface ExportCard {
   createdAt: string;
   fsrs: ExportFsrs;
   media: ExportMedia[];
+  /** Note cards only (absent or null on legacy Markdown cards). */
+  noteId?: string | null;
+  noteTypeId?: string | null;
+  templateId?: string | null;
+  format?: 'markdown' | 'html';
+}
+export interface ExportNoteType {
+  id: string;
+  name: string;
+  fields: { id: string; name: string }[];
+  templates: { id: string; name: string; front: string; back: string }[];
+  css: string;
+}
+export interface ExportNote {
+  id: string;
+  noteTypeId: string;
+  fields: Record<string, string>;
+  tags: string[];
+  createdAt: string;
 }
 export interface ExportReview {
   id: string;
@@ -70,6 +89,9 @@ export interface ExportDoc {
     parameters: number[];
   };
   deck: { id: string; name: string; newCardsPerDay: number; createdAt: string };
+  /** Optional extension: note types and notes of the deck's note cards. */
+  noteTypes?: ExportNoteType[];
+  notes?: ExportNote[];
   cards: ExportCard[];
   reviews: ExportReview[];
 }
@@ -121,6 +143,40 @@ export function parseExport(input: unknown): ExportDoc {
       num(f[k], `fsrs.${k}`);
     if (f.lastReview !== null) iso(f.lastReview, 'fsrs.lastReview');
     arr(card.media ?? [], 'card.media');
+  }
+  const noteTypeIds = new Set<string>();
+  for (const [i, n] of arr(d.noteTypes ?? [], 'noteTypes').entries()) {
+    const nt = obj(n, `noteTypes[${i}]`);
+    noteTypeIds.add(str(nt.id, 'noteType.id'));
+    str(nt.name, 'noteType.name');
+    str(nt.css, 'noteType.css');
+    for (const f of arr(nt.fields, 'noteType.fields')) {
+      const fo = obj(f, 'noteType.field');
+      str(fo.id, 'field.id');
+      str(fo.name, 'field.name');
+    }
+    for (const tp of arr(nt.templates, 'noteType.templates')) {
+      const to = obj(tp, 'noteType.template');
+      for (const k of ['id', 'name', 'front', 'back']) str(to[k], `template.${k}`);
+    }
+  }
+  const noteIds = new Set<string>();
+  for (const [i, n] of arr(d.notes ?? [], 'notes').entries()) {
+    const note = obj(n, `notes[${i}]`);
+    noteIds.add(str(note.id, 'note.id'));
+    if (!noteTypeIds.has(str(note.noteTypeId, 'note.noteTypeId')))
+      fail('note refers to an unknown note type');
+    const nf = obj(note.fields, 'note.fields');
+    for (const v of Object.values(nf)) str(v, 'note field value');
+    arr(note.tags, 'note.tags');
+    iso(note.createdAt, 'note.createdAt');
+  }
+  for (const c of d.cards as Record<string, unknown>[]) {
+    if (c.noteId !== undefined && c.noteId !== null && !noteIds.has(str(c.noteId, 'card.noteId')))
+      fail('card refers to an unknown note');
+    if (c.format !== undefined && c.format !== 'markdown' && c.format !== 'html')
+      fail('card.format invalid');
+    if (c.noteId && typeof c.templateId !== 'string') fail('note card needs a templateId');
   }
   const ids = new Set((d.cards as { id: string }[]).map((c) => c.id));
   for (const [i, r] of arr(d.reviews, 'reviews').entries()) {

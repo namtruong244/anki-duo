@@ -66,12 +66,41 @@ describe('donut (fixtures/donut.json)', () => {
 describe('heatmapBuckets', () => {
   const today = '2026-03-10';
 
-  it('covers the last 12 months (365 days) ending today, oldest first', () => {
+  it('covers the calendar year of today (Jan 1 to Dec 31), oldest first', () => {
     const cells = heatmapBuckets([], today);
     expect(cells).toHaveLength(365);
-    expect(cells[0]!.date).toBe('2025-03-11');
-    expect(cells.at(-1)!.date).toBe(today);
+    expect(cells[0]!.date).toBe('2026-01-01');
+    expect(cells.at(-1)!.date).toBe('2026-12-31');
     expect(cells.every((c) => c.reviews === 0 && c.level === 0)).toBe(true);
+  });
+
+  it('marks only days after today as future', () => {
+    const cells = heatmapBuckets([], today);
+    const byDate = (d: string) => cells.find((c) => c.date === d)!;
+    expect(byDate(today).future).toBeUndefined();
+    expect(byDate('2026-03-11').future).toBe(true);
+    expect(byDate('2026-03-11').reviews).toBe(0);
+    expect(cells.filter((c) => c.future).length).toBe(365 - 69); // Mar 11 .. Dec 31
+  });
+
+  it('covers 366 days in a leap year', () => {
+    const cells = heatmapBuckets([], '2028-06-01');
+    expect(cells).toHaveLength(366);
+    expect(cells[0]!.date).toBe('2028-01-01');
+    expect(cells.at(-1)!.date).toBe('2028-12-31');
+  });
+
+  it('ignores activity dated after today within the year', () => {
+    const cells = heatmapBuckets(
+      [
+        { studyDay: '2026-03-09', reviews: 4 },
+        { studyDay: '2026-03-20', reviews: 50 },
+      ],
+      today,
+    );
+    expect(cells.find((c) => c.date === '2026-03-20')!.reviews).toBe(0);
+    expect(cells.find((c) => c.date === '2026-03-09')!.level).toBe(4);
+    expect(cells.every((c) => !c.future || (c.reviews === 0 && c.level === 0))).toBe(true);
   });
 
   it('uses 5 intensity levels relative to the busiest day', () => {

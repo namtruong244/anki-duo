@@ -4,6 +4,7 @@ const iso = (d: Date | null) => (d ? d.toISOString() : null);
 
 type DeckRow = typeof schema.deck.$inferSelect;
 type CardRow = typeof schema.card.$inferSelect;
+type NoteTypeRow = typeof schema.noteType.$inferSelect;
 type MediaRow = typeof schema.mediaAsset.$inferSelect;
 type StatsRow = typeof schema.learnerStats.$inferSelect;
 type DailyRow = typeof schema.dailyActivity.$inferSelect;
@@ -26,6 +27,10 @@ export const toCard = (r: CardRow) => ({
   back: r.back,
   tags: r.tags,
   suspended: r.suspended,
+  noteId: r.noteId,
+  noteTypeId: r.noteTypeId,
+  templateId: r.templateId,
+  format: r.format as 'markdown' | 'html',
   fsrs: {
     state: r.state as 'new' | 'learning' | 'review' | 'relearning',
     due: r.due.toISOString(),
@@ -67,4 +72,15 @@ export const toDaily = (r: DailyRow) => ({
   goalXp: r.goalXp,
   allAvailableDone: r.allAvailableDone,
   goalMet: r.goalMet,
+});
+
+/** Tombstones (deleted note types) carry no content. */
+export const toNoteType = (r: NoteTypeRow) => ({
+  id: r.id,
+  name: r.name,
+  fields: r.deletedAt ? [] : r.fields,
+  templates: r.deletedAt ? [] : r.templates,
+  css: r.deletedAt ? '' : r.css,
+  updatedAt: r.updatedAt.toISOString(),
+  deletedAt: iso(r.deletedAt),
 });

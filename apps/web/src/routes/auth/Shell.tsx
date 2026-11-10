@@ -23,7 +23,7 @@ export function AuthShell({ title, children, variant = 'signin' }: AuthShellProp
         </span>
         <Link
           to={toSignUp ? '/sign-up' : '/sign-in'}
-          className="inline-flex min-h-11 items-center justify-center rounded-2xl border-2 border-border bg-card px-6 text-sm font-extrabold uppercase tracking-[0.06em] text-nav-active-text shadow-[0_4px_0_var(--color-border)] transition-colors hover:bg-surface focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus"
+          className="inline-flex min-h-11 items-center justify-center rounded-2xl border-2 border-border bg-card px-6 text-sm font-extrabold uppercase tracking-[0.06em] text-nav-active-text shadow-[0_4px_0_var(--color-border)] transition-[transform,box-shadow,background-color] duration-[var(--duration-fast)] hover:bg-surface active:translate-y-[3px] active:shadow-none"
         >
           {toSignUp ? t('ui.auth.topSignUp') : t('ui.auth.topSignIn')}
         </Link>
@@ -72,7 +72,7 @@ export function Field({
             tabIndex={-1}
             onClick={() => setShown(!shown)}
             aria-label={shown ? t('ui.auth.hidePassword') : t('ui.auth.showPassword')}
-            className="absolute right-3 flex h-8 w-8 items-center justify-center rounded-lg text-text-muted hover:text-text focus:outline-none transition-colors"
+            className="absolute right-3 flex h-8 w-8 items-center justify-center rounded-lg text-text-muted transition-[transform,color] duration-[var(--duration-fast)] hover:text-text active:scale-90"
           >
             <Icon name={shown ? 'eye-off' : 'eye'} className="h-5 w-5" />
           </button>

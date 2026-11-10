@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import {
   decodeState,
@@ -11,7 +11,7 @@ import {
   type Grade,
 } from '@anki-duo/domain';
 import { schema } from '../../src/db/client.js';
-import { createCard, createDeck, createTestDbAt, createUser, type TestDb } from '../helpers/db.js';
+import { createDeck, createTestDbAt, createUser, type TestDb } from '../helpers/db.js';
 
 const params = { desiredRetention: 0.9, maximumIntervalDays: 36500 };
 let t: TestDb | undefined;
@@ -20,8 +20,8 @@ afterEach(async () => t?.close());
 /** Constitution Principle II: migrations must not damage review history or derived card state. */
 describe('migrations keep history intact', () => {
   it('replaying every card after the final migration reproduces the stored FSRS columns', async () => {
-    // Apply only the first migration, seed history, then apply the rest.
-    const x = await createTestDbAt(1);
+    // Apply the migrations that predate note types, seed history, then apply the rest.
+    const x = await createTestDbAt(4);
     t = x;
     const { db } = x;
     const user = await createUser(db);
@@ -31,7 +31,11 @@ describe('migrations keep history intact', () => {
     const seeded: { id: string; expected: ReturnType<typeof newCard> }[] = [];
     for (let i = 0; i < 5; i++) {
       let state = newCard(created);
-      const card = await createCard(db, user.id, deck.id, { position: i, due: created });
+      // Raw SQL: the card table at this point predates the columns the current schema adds.
+      const card = { id: randomUUID() };
+      await db.execute(sql`
+        insert into card (id, user_id, deck_id, position, node_index, front, back, front_norm, due)
+        values (${card.id}, ${user.id}, ${deck.id}, ${i}, 0, 'front', 'back', 'front', ${created.toISOString()})`);
       let at = created.getTime();
       for (const grade of [3, 3, 4, 1, 3, 3].slice(0, 2 + i) as Grade[]) {
         at = Math.max(at, state.due.getTime());

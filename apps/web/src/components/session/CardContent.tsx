@@ -70,7 +70,7 @@ function AudioClip({ src }: { src: string }) {
       />
       <button
         type="button"
-        className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl bg-secondary px-4 py-2 font-extrabold text-on-secondary shadow-[0_3px_0_var(--color-secondary-depth)] hover:brightness-[1.03] active:translate-y-[2px] active:shadow-none transition-transform"
+        className="inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-2xl bg-secondary px-4 py-2 font-extrabold text-on-secondary shadow-[0_3px_0_var(--color-secondary-depth)] transition-[transform,box-shadow,filter] duration-[var(--duration-fast)] hover:brightness-[1.03] active:translate-y-[2px] active:shadow-none"
         onClick={() => {
           const el = ref.current;
           if (!el) return;

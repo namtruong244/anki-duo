@@ -5,6 +5,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ChunkyButton } from '../../src/components/ui/ChunkyButton';
 import { ProgressBar } from '../../src/components/ui/ProgressBar';
 import { Dialog } from '../../src/components/ui/Dialog';
+import { Select } from '../../src/components/ui/Select';
 import { Toast } from '../../src/components/ui/Toast';
 
 afterEach(cleanup);
@@ -15,9 +16,11 @@ describe('ChunkyButton', () => {
     expect(screen.getByRole('button', { name: 'Good' })).toBeTruthy();
   });
 
-  it('has a visible focus style', () => {
+  it('leaves focus rings to the global :focus-visible rule', () => {
     render(<ChunkyButton>Good</ChunkyButton>);
-    expect(screen.getByRole('button').className).toMatch(/focus-visible:/);
+    expect(screen.getByRole('button').className).not.toMatch(
+      /outline-none|focus:outline|focus-visible:outline/,
+    );
   });
 
   it('exposes a pressed state while held', () => {
@@ -27,6 +30,51 @@ describe('ChunkyButton', () => {
     fireEvent.pointerDown(b);
     expect(b.getAttribute('data-pressed')).toBe('true');
     fireEvent.pointerUp(b);
+    expect(b.getAttribute('data-pressed')).toBe('false');
+  });
+
+  it('resets pressed state on pointerCancel and blur', () => {
+    render(<ChunkyButton>Good</ChunkyButton>);
+    const b = screen.getByRole('button');
+    fireEvent.pointerDown(b);
+    expect(b.getAttribute('data-pressed')).toBe('true');
+    fireEvent.pointerCancel(b);
+    expect(b.getAttribute('data-pressed')).toBe('false');
+
+    fireEvent.pointerDown(b);
+    expect(b.getAttribute('data-pressed')).toBe('true');
+    fireEvent.blur(b);
+    expect(b.getAttribute('data-pressed')).toBe('false');
+  });
+
+  it('toggles pressed state on Space and Enter keys', () => {
+    render(<ChunkyButton>Good</ChunkyButton>);
+    const b = screen.getByRole('button');
+
+    fireEvent.keyDown(b, { key: ' ' });
+    expect(b.getAttribute('data-pressed')).toBe('true');
+    fireEvent.keyUp(b, { key: ' ' });
+    expect(b.getAttribute('data-pressed')).toBe('false');
+
+    fireEvent.keyDown(b, { key: 'Enter' });
+    expect(b.getAttribute('data-pressed')).toBe('true');
+    fireEvent.keyUp(b, { key: 'Enter' });
+    expect(b.getAttribute('data-pressed')).toBe('false');
+  });
+
+  it('respects external pressed prop', () => {
+    const { rerender } = render(<ChunkyButton pressed>Good</ChunkyButton>);
+    const b = screen.getByRole('button');
+    expect(b.getAttribute('data-pressed')).toBe('true');
+
+    rerender(<ChunkyButton pressed={false}>Good</ChunkyButton>);
+    expect(b.getAttribute('data-pressed')).toBe('false');
+
+    rerender(
+      <ChunkyButton disabled pressed>
+        Good
+      </ChunkyButton>,
+    );
     expect(b.getAttribute('data-pressed')).toBe('false');
   });
 
@@ -114,5 +162,35 @@ describe('Toast', () => {
     });
     expect(onDismiss).toHaveBeenCalled();
     vi.useRealTimers();
+  });
+});
+
+describe('Select', () => {
+  const options = [
+    { value: 'a', label: 'Alpha' },
+    { value: 'b', label: 'Beta' },
+    { value: 'c', label: 'Gamma' },
+  ];
+
+  it('opens custom listbox on click and selects an option', async () => {
+    const onChange = vi.fn();
+    render(<Select aria-label="Pick" value="a" onChange={onChange} options={options} />);
+    const trigger = screen.getByRole('button', { name: 'Alpha' });
+    await userEvent.click(trigger);
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    await userEvent.click(screen.getByRole('option', { name: 'Beta' }));
+    expect(onChange).toHaveBeenCalledWith('b');
+    expect(screen.queryByRole('listbox')).toBeNull();
+  });
+
+  it('supports keyboard navigation with ArrowDown, Enter and Escape', async () => {
+    const onChange = vi.fn();
+    render(<Select aria-label="Pick" value="a" onChange={onChange} options={options} />);
+    const trigger = screen.getByRole('button', { name: 'Alpha' });
+    trigger.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(screen.getByRole('listbox')).toBeTruthy();
+    await userEvent.keyboard('{ArrowDown}{Enter}');
+    expect(onChange).toHaveBeenCalledWith('b');
   });
 });

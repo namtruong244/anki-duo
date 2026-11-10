@@ -39,20 +39,34 @@ describe('DonutRing', () => {
 });
 
 describe('Heatmap', () => {
-  const cells = heatmapBuckets(
-    [
-      { studyDay: '2026-03-09', reviews: 5 },
-      { studyDay: '2026-03-10', reviews: 1 },
-    ],
-    '2026-03-10',
-  );
+  const mk = (today: string) =>
+    heatmapBuckets(
+      [
+        { studyDay: '2026-03-09', reviews: 5 },
+        { studyDay: '2026-03-10', reviews: 1 },
+      ],
+      today,
+    );
+  const cells = mk('2026-03-10');
 
-  it('gives every cell an accessible name', () => {
+  it('gives every non-future cell an accessible name', () => {
     render(<Heatmap cells={cells} />);
     expect(screen.getByRole('img', { name: '2026-03-09: 5 reviews' })).toBeTruthy();
     expect(screen.getByRole('img', { name: '2026-03-10: 1 review' })).toBeTruthy();
     expect(screen.getByRole('img', { name: '2026-03-08: 0 reviews' })).toBeTruthy();
-    expect(screen.getAllByRole('img')).toHaveLength(365);
+    // Jan 1 .. Mar 10 of 2026 = 31 + 28 + 10
+    expect(screen.getAllByRole('img')).toHaveLength(69);
+  });
+
+  it('does not expose future days as images or focus targets', () => {
+    render(<Heatmap cells={cells} />);
+    expect(screen.queryByRole('img', { name: /2026-03-11/ })).toBeNull();
+    expect(screen.queryByRole('img', { name: /2026-12-31/ })).toBeNull();
+    const today = screen.getByRole('img', { name: '2026-03-10: 1 review' });
+    expect(today.getAttribute('tabindex')).toBe('0');
+    fireEvent.keyDown(today, { key: 'ArrowDown' });
+    expect(document.activeElement).not.toBe(today);
+    expect(document.activeElement?.getAttribute('role')).not.toBe('img');
   });
 
   it('shows a tooltip on hover, focus and tap', () => {
@@ -70,6 +84,15 @@ describe('Heatmap', () => {
     expect(screen.getByRole('tooltip').textContent).toBe('2026-03-10: 1 review');
   });
 
+  it('portals the tooltip to body with fixed positioning', () => {
+    const { container } = render(<Heatmap cells={cells} />);
+    fireEvent.mouseEnter(screen.getByRole('img', { name: '2026-03-09: 5 reviews' }));
+    const tip = screen.getByRole('tooltip');
+    expect(container.contains(tip)).toBe(false);
+    expect(tip.parentElement).toBe(document.body);
+    expect(tip.className).toContain('fixed');
+  });
+
   it('moves between cells with the arrow keys', () => {
     render(<Heatmap cells={cells} />);
     const cell = screen.getByRole('img', { name: '2026-03-09: 5 reviews' });
@@ -80,5 +103,29 @@ describe('Heatmap', () => {
     expect(document.activeElement).toBe(cell);
     fireEvent.keyDown(cell, { key: 'ArrowLeft' });
     expect(document.activeElement).toBe(screen.getByRole('img', { name: '2026-03-02: 0 reviews' }));
+  });
+
+  it('labels months Jan..Dec once each, in order, regardless of today', () => {
+    for (const today of ['2026-11-09', '2026-03-25', '2026-01-02', '2026-12-31']) {
+      const { container, unmount } = render(<Heatmap cells={mk(today)} />);
+      const labels = Array.from(container.querySelectorAll('span.absolute')).map(
+        (s) => s.textContent,
+      );
+      expect(labels).toEqual([
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec',
+      ]);
+      unmount();
+    }
   });
 });

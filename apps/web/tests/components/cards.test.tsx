@@ -32,6 +32,10 @@ const card = (
   back,
   tags,
   suspended: false,
+  noteId: null,
+  noteTypeId: null,
+  templateId: null,
+  format: 'markdown' as const,
   fsrs: {
     state,
     due,
@@ -149,10 +153,14 @@ describe('Card editor', () => {
       </MemoryRouter>,
     );
 
+  // New cards use the note editor (tests/components/note-editor.test.tsx); the Markdown editor
+  // is kept for existing legacy cards.
   it('toolbar wraps the selection in markdown and the preview follows', async () => {
     await dexieStore.putDecks([deck('d1', 'IELTS')]);
-    renderEditor('/decks/d1/cards/new');
+    await dexieStore.putCards([card('a', 'd1', 'front', 'back', [])]);
+    renderEditor('/decks/d1/cards/a');
     const front = (await screen.findByLabelText('Front (Markdown)')) as HTMLTextAreaElement;
+    await waitFor(() => expect(front.value).toBe('front'));
     fireEvent.change(front, { target: { value: 'hello' } });
     front.focus();
     front.setSelectionRange(0, 5);
@@ -163,16 +171,8 @@ describe('Card editor', () => {
     );
   });
 
-  it('media buttons wait for a saved card; deck is locked when editing', async () => {
+  it('deck is locked when editing a legacy markdown card', async () => {
     await dexieStore.putDecks([deck('d1', 'IELTS')]);
-    renderEditor('/decks/d1/cards/new');
-    await screen.findByLabelText('Front (Markdown)');
-    expect((screen.getByRole('button', { name: '+ Image' }) as HTMLButtonElement).disabled).toBe(
-      true,
-    );
-    expect((screen.getByLabelText('Deck') as HTMLSelectElement).disabled).toBe(false);
-    cleanup();
-
     await dexieStore.putCards([card('a', 'd1', 'front', 'back', ['x'])]);
     renderEditor('/decks/d1/cards/a');
     await waitFor(() =>

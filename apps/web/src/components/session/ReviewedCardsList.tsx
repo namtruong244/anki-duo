@@ -1,15 +1,15 @@
 import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
-import type { Grade } from '@anki-duo/domain';
+import { htmlToText, type Grade } from '@anki-duo/domain';
 import type { ReviewedCard } from '../../client/session/session-machine';
 import { intervalLabel } from '../../lib/interval';
 import { ChunkyButton, Icon } from '../ui';
 
 const GRADE_STYLE: Record<Grade, { key: 'again' | 'hard' | 'good' | 'easy'; cls: string }> = {
-  1: { key: 'again', cls: 'bg-danger text-white' },
-  2: { key: 'hard', cls: 'bg-gold text-[var(--color-ink)]' },
-  3: { key: 'good', cls: 'bg-primary text-white' },
-  4: { key: 'easy', cls: 'bg-secondary text-white' },
+  1: { key: 'again', cls: 'bg-danger text-on-danger' },
+  2: { key: 'hard', cls: 'bg-gold text-on-gold' },
+  3: { key: 'good', cls: 'bg-primary text-on-primary' },
+  4: { key: 'easy', cls: 'bg-secondary text-on-secondary' },
 };
 
 /** Plain-text preview of a card side: markdown and media tokens removed. */
@@ -41,7 +41,7 @@ export function ReviewedCardsList({
           type="button"
           onClick={onBack}
           aria-label={t('session.reviewList.back')}
-          className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-muted transition-colors hover:bg-surface focus-visible:outline-3 focus-visible:outline-focus"
+          className="inline-flex size-11 shrink-0 cursor-pointer items-center justify-center rounded-full text-text-muted transition-[transform,background-color] duration-[var(--duration-fast)] hover:bg-surface active:scale-95"
         >
           <Icon name="arrow-right" size={26} className="rotate-180" />
         </button>
@@ -58,13 +58,14 @@ export function ReviewedCardsList({
               ms <= 0
                 ? t('session.reviewList.dueNow')
                 : intervalLabel(ms, (k, o) => t(k, { ...o }));
-            const front = plainText(card.front) || '—';
+            const front =
+              (card.format === 'html' ? htmlToText(card.front) : plainText(card.front)) || '—';
             return (
               <li key={card.id}>
                 <Link
                   to={`/decks/${card.deckId}/cards/${card.id}`}
                   aria-label={t('session.reviewList.edit', { front })}
-                  className="flex items-center gap-3 rounded-2xl border-2 border-border bg-[var(--color-card)] p-3 shadow-[0_3px_0_var(--color-border)] hover:border-primary focus-visible:outline-3 focus-visible:outline-focus"
+                  className="flex items-center gap-3 rounded-2xl border-2 border-border bg-[var(--color-card)] p-3 shadow-[0_3px_0_var(--color-border)] transition-[transform,border-color,box-shadow] duration-[var(--duration-fast)] hover:border-primary active:translate-y-[2px] active:shadow-none"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-base font-bold text-text">{front}</p>
@@ -89,7 +90,7 @@ export function ReviewedCardsList({
       </main>
       <div className="sticky bottom-0 z-10 border-t-2 border-border bg-bg">
         <div className="mx-auto flex w-full max-w-[1100px] justify-end px-4 py-4">
-          <ChunkyButton size="lg" className="min-w-48 rounded-2xl" onClick={onBack}>
+          <ChunkyButton size="lg" className="rounded-2xl" onClick={onBack}>
             {t('session.reviewList.back')}
           </ChunkyButton>
         </div>

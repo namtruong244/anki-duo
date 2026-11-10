@@ -20,44 +20,73 @@ const styles: Record<ButtonVariant, string> = {
 export interface ChunkyButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
+  pressed?: boolean;
 }
 
 const sizes = {
-  sm: 'min-h-11 px-3.5 py-1.5 text-xs',
-  md: 'min-h-11 px-5 py-2.5 text-sm',
-  lg: 'min-h-13 px-6 py-3 text-[15px]',
+  sm: 'min-h-9 px-3 py-1 text-xs',
+  md: 'min-h-10 px-4 py-2 text-[13px]',
+  lg: 'min-h-11 px-5 py-2.5 text-sm',
 };
 
-/** A chunky 3D Duolingo-style pressable button: depth lip collapses on press. Min 44px touch target. */
+/** A chunky 3D Duolingo-style pressable button: depth lip collapses on press. Compact sizes: 36 / 40 / 44px tall. */
 export function ChunkyButton({
   variant = 'primary',
   size = 'md',
+  pressed: pressedProp,
   className = '',
   disabled,
   type = 'button',
   onPointerDown,
   onPointerUp,
   onPointerLeave,
+  onPointerCancel,
+  onBlur,
+  onKeyDown,
+  onKeyUp,
   ...rest
 }: ChunkyButtonProps) {
-  const [pressed, setPressed] = useState(false);
+  const [internalPressed, setInternalPressed] = useState(false);
+  const isPressed =
+    !disabled && (pressedProp !== undefined ? pressedProp || internalPressed : internalPressed);
+
   return (
     <button
       type={type}
       disabled={disabled}
-      data-pressed={pressed}
-      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-button)] font-extrabold uppercase tracking-[0.06em] transition-transform duration-[var(--duration-fast)] focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus disabled:cursor-not-allowed disabled:border-transparent disabled:bg-neutral disabled:text-text-subtle disabled:shadow-none data-[pressed=true]:translate-y-[var(--button-press-offset)] data-[pressed=true]:shadow-none ${sizes[size]} ${styles[variant]} ${className}`}
+      data-pressed={isPressed}
+      className={`inline-flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-button)] font-extrabold uppercase tracking-[0.04em] transition-[transform,box-shadow,filter] duration-[var(--duration-fast)] disabled:cursor-not-allowed disabled:border-transparent disabled:bg-neutral disabled:text-text-subtle disabled:shadow-none enabled:active:translate-y-[var(--button-press-offset)] enabled:active:shadow-none data-[pressed=true]:translate-y-[var(--button-press-offset)] data-[pressed=true]:shadow-none ${sizes[size]} ${styles[variant]} ${className}`}
       onPointerDown={(e) => {
-        if (!disabled) setPressed(true);
+        if (!disabled) setInternalPressed(true);
         onPointerDown?.(e);
       }}
       onPointerUp={(e) => {
-        setPressed(false);
+        setInternalPressed(false);
         onPointerUp?.(e);
       }}
       onPointerLeave={(e) => {
-        setPressed(false);
+        setInternalPressed(false);
         onPointerLeave?.(e);
+      }}
+      onPointerCancel={(e) => {
+        setInternalPressed(false);
+        onPointerCancel?.(e);
+      }}
+      onBlur={(e) => {
+        setInternalPressed(false);
+        onBlur?.(e);
+      }}
+      onKeyDown={(e) => {
+        if (!disabled && (e.key === ' ' || e.key === 'Enter')) {
+          setInternalPressed(true);
+        }
+        onKeyDown?.(e);
+      }}
+      onKeyUp={(e) => {
+        if (e.key === ' ' || e.key === 'Enter') {
+          setInternalPressed(false);
+        }
+        onKeyUp?.(e);
       }}
       {...rest}
     />

@@ -1,15 +1,15 @@
-import { useState, type ReactNode } from 'react';
+import { useState } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
 import { donutCounts, heatmapBuckets, todayWorkload } from '@anki-duo/domain';
 import { introducedToday, studyWindow } from '../../client/session/session-machine';
 import { dexieStore } from '../../client/store';
-import { Icon, type IconName } from '../../components/ui';
+import { Icon, Select, type IconName } from '../../components/ui';
 import { DonutRing } from '../../components/charts/DonutRing';
 import { Heatmap } from '../../components/charts/Heatmap';
 
 /**
- * Stats page (frames "Thống kê" / "Mobile stats"): deck filter chips, three record cards,
+ * Stats page (frames "Thống kê" / "Mobile stats"): deck filter select, three record cards,
  * card-status donut and the 12-month study calendar.
  * The deck filter only narrows the donut: daily activity is stored per day, not per deck.
  */
@@ -67,27 +67,27 @@ export function DashboardPage() {
   const counts = donutCounts(statCards, win.end);
   const centre = todayWorkload(statCards, deckInfo, win.end);
   const cells = heatmapBuckets(activity, win.day);
-  const daysStudied = activity.filter((a) => a.reviews > 0).length;
+  const daysStudied = cells.filter((c) => c.reviews > 0).length;
 
   return (
     <section className="flex flex-col gap-4 py-4">
-      <h1 className="text-3xl font-black tracking-tight text-text">{t('dashboard.title')}</h1>
-
-      {/* Deck filter chips */}
-      <div
-        role="group"
-        aria-label={t('dashboard.deckFilter')}
-        className="-mx-1 flex gap-2.5 overflow-x-auto px-1 pb-2"
-      >
-        <DeckChip active={deckId === 'all'} onClick={() => setDeckId('all')}>
-          <span className="hidden sm:inline">{t('dashboard.allDecks')}</span>
-          <span className="sm:hidden">{t('dashboard.allDecksShort')}</span>
-        </DeckChip>
-        {decks.map((d) => (
-          <DeckChip key={d.id} active={deckId === d.id} onClick={() => setDeckId(d.id)}>
-            {d.name}
-          </DeckChip>
-        ))}
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="min-w-0 text-3xl font-black tracking-tight text-text">
+          {t('dashboard.title')}
+        </h1>
+        {/* Deck filter */}
+        <Select
+          size="sm"
+          align="right"
+          className="max-w-56"
+          aria-label={t('dashboard.deckFilter')}
+          value={deckId}
+          onChange={setDeckId}
+          options={[
+            { value: 'all', label: t('dashboard.allDecks') },
+            ...decks.map((d) => ({ value: d.id, label: d.name })),
+          ]}
+        />
       </div>
 
       {/* Record cards */}
@@ -125,10 +125,12 @@ export function DashboardPage() {
       </div>
 
       {/* 12-month calendar */}
-      <div className="rounded-[var(--radius-card)] border-2 border-border bg-card p-5">
-        <div className="mb-3 flex items-center justify-between gap-2">
-          <h2 className="text-base font-black text-text">{t('dashboard.heatmapTitle12')}</h2>
-          <span className="text-xs font-bold text-text-subtle">
+      <div className="flex flex-col gap-2.5 rounded-[var(--radius-card)] border-2 border-border bg-card p-4 sm:gap-3 sm:p-5">
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="text-base font-black text-text sm:text-lg sm:font-extrabold">
+            {t('dashboard.heatmapTitle12')}
+          </h2>
+          <span className="text-[13px] font-bold text-text-subtle">
             <span className="hidden sm:inline">
               {t('dashboard.daysStudied', { n: daysStudied })}
             </span>
@@ -138,31 +140,6 @@ export function DashboardPage() {
         <Heatmap cells={cells} />
       </div>
     </section>
-  );
-}
-
-function DeckChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      onClick={onClick}
-      className={`min-h-9 shrink-0 cursor-pointer whitespace-nowrap rounded-xl border-2 px-3 text-xs font-extrabold text-nav-active-text transition-colors focus-visible:outline-3 focus-visible:outline-focus ${
-        active
-          ? 'border-nav-active-border bg-nav-active-bg shadow-[0_3px_0_var(--color-nav-active-border)]'
-          : 'border-border bg-card shadow-[0_3px_0_var(--color-border)] hover:bg-surface'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 

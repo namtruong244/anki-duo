@@ -13,6 +13,7 @@ export async function pullAll(store: LocalStore, api: Pick<Api, 'GET'>): Promise
       stats: data.stats,
       decks: data.decks,
       cards: data.cards,
+      noteTypes: data.noteTypes,
       media: data.media,
       dailyActivity: data.dailyActivity,
       cursor: data.cursor,

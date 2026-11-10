@@ -1,5 +1,14 @@
 import type { Api } from './api';
-import type { Card, Deck, LocalStore } from './local-store';
+import type { components } from './api-types';
+import type { Card, Deck, LocalStore, NoteType } from './local-store';
+
+export type Note = components['schemas']['Note'];
+export interface NoteTypeBody {
+  name: string;
+  fields: NoteType['fields'];
+  templates: NoteType['templates'];
+  css: string;
+}
 
 export interface ExportedFile {
   text: string;
@@ -21,6 +30,8 @@ export function createContentActions(
   api: Api,
   store: LocalStore,
   now: () => Date = () => new Date(),
+  /** Called after a note write so the affected cards reach LocalStore (e.g. a sync pull). */
+  afterNoteWrite: () => Promise<unknown> | void = () => undefined,
 ) {
   /** Removing rows locally reuses the tombstone path of `applyPull`. */
   const dropDeck = (deck: Deck) =>
@@ -78,6 +89,80 @@ export function createContentActions(
       const { data } = await api.POST('/cards/{cardId}/reset', { params: { path: { cardId } } });
       await store.putCards([data!]);
       return data!;
+    },
+
+    async listNoteTypes(): Promise<NoteType[]> {
+      try {
+        const { data } = await api.GET('/note-types');
+        const rows = data!.noteTypes;
+        await store.putNoteTypes(rows);
+        return rows.filter((n) => !n.deletedAt);
+      } catch (e) {
+        if ((e as { code?: string }).code !== 'network_error') throw e;
+        return store.listNoteTypes();
+      }
+    },
+
+    async createNoteType(body: NoteTypeBody & { id?: string }) {
+      const { data } = await api.POST('/note-types', { body });
+      await store.putNoteTypes([data!]);
+      return data!;
+    },
+
+    async updateNoteType(noteTypeId: string, body: Partial<NoteTypeBody>) {
+      const { data } = await api.PATCH('/note-types/{noteTypeId}', {
+        params: { path: { noteTypeId } },
+        body,
+      });
+      await store.putNoteTypes([data!]);
+      await afterNoteWrite();
+      return data!;
+    },
+
+    async deleteNoteType(noteTypeId: string) {
+      await api.DELETE('/note-types/{noteTypeId}', { params: { path: { noteTypeId } } });
+      const nt = await store.getNoteType(noteTypeId);
+      if (nt) await store.putNoteTypes([{ ...nt, deletedAt: now().toISOString() }]);
+    },
+
+    async getNote(noteId: string): Promise<Note> {
+      const { data } = await api.GET('/notes/{noteId}', { params: { path: { noteId } } });
+      return data!;
+    },
+
+    async createNote(
+      deckId: string,
+      body: {
+        id?: string;
+        noteTypeId: string;
+        fields: Record<string, string>;
+        tags?: string[];
+        cardIds?: Record<string, string>;
+      },
+    ) {
+      const { data } = await api.POST('/decks/{deckId}/notes', {
+        params: { path: { deckId } },
+        body,
+      });
+      await afterNoteWrite();
+      return data!;
+    },
+
+    async updateNote(
+      noteId: string,
+      body: { fields?: Record<string, string>; tags?: string[]; deckId?: string },
+    ) {
+      const { data } = await api.PATCH('/notes/{noteId}', {
+        params: { path: { noteId } },
+        body,
+      });
+      await afterNoteWrite();
+      return data!;
+    },
+
+    async deleteNote(noteId: string) {
+      await api.DELETE('/notes/{noteId}', { params: { path: { noteId } } });
+      await afterNoteWrite();
     },
 
     async exportDeck(deck: Pick<Deck, 'id' | 'name'>): Promise<ExportedFile> {

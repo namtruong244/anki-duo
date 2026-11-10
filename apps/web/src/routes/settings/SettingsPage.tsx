@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { api } from '../../client/api';
 import { useAuth } from '../../client/auth-context';
 import { authClient } from '../../client/auth';
@@ -9,7 +9,7 @@ import { notify } from '../../client/notify';
 import { dexieStore } from '../../client/store';
 import { saveSettings } from '../../client/settings-save';
 import type { Settings } from '../../client/local-store';
-import { ChunkyButton, Dialog, Icon } from '../../components/ui';
+import { ChunkyButton, Dialog, Icon, Select } from '../../components/ui';
 import { useSignOut } from '../use-sign-out';
 import { useColorScheme } from '../../client/theme';
 
@@ -17,7 +17,7 @@ const GOALS = [10, 20, 30, 50] as const;
 
 /** Big toggle button used by theme and language: selected = nav tint + nav border + blue lip. */
 const toggleBtn = (active: boolean) =>
-  `flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 px-4 text-sm font-extrabold uppercase tracking-wider transition-colors focus-visible:outline-3 focus-visible:outline-focus ${
+  `flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 rounded-2xl border-2 px-4 text-sm font-extrabold uppercase tracking-wider transition-[transform,box-shadow,background-color,border-color] duration-[var(--duration-fast)] active:translate-y-[3px] active:shadow-none ${
     active
       ? 'border-nav-active-border bg-nav-active-bg text-nav-active-text shadow-[0_4px_0_var(--color-nav-active-border)]'
       : 'border-border bg-card text-text-muted shadow-[0_4px_0_var(--color-border)] hover:bg-surface'
@@ -105,7 +105,7 @@ export function SettingsPage() {
                 return (
                   <label
                     key={g}
-                    className={`relative flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 px-1 text-sm font-extrabold transition-colors focus-within:outline-3 focus-within:outline-focus ${
+                    className={`relative flex min-h-12 cursor-pointer items-center justify-center gap-1.5 rounded-2xl border-2 px-1 text-sm font-extrabold transition-[transform,box-shadow,background-color,border-color] duration-[var(--duration-fast)] active:translate-y-[3px] active:shadow-none has-[:focus-visible]:outline-3 has-[:focus-visible]:outline-focus ${
                       active
                         ? 'border-gold bg-gold text-on-gold shadow-[0_4px_0_var(--color-gold-depth)]'
                         : 'border-border bg-card text-text shadow-[0_4px_0_var(--color-border)] hover:bg-surface'
@@ -207,18 +207,28 @@ export function SettingsPage() {
                 checked={settings.soundEnabled}
                 onToggle={() => void save({ soundEnabled: !settings.soundEnabled })}
               />
-              <label className="flex min-h-12 items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 text-sm font-extrabold text-text">
-                <span>{t('gamification.motion')}</span>
-                <select
+              <Link
+                to="/note-types"
+                className="flex min-h-12 items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 py-1.5 text-sm font-extrabold text-text hover:bg-surface"
+              >
+                {t('notes.types.title')}
+                <Icon name="chevron-right" size={18} />
+              </Link>
+              <div className="flex min-h-12 items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 py-1.5 text-sm font-extrabold text-text">
+                <label htmlFor="settings-motion">{t('gamification.motion')}</label>
+                <Select
+                  id="settings-motion"
+                  size="sm"
+                  align="right"
                   value={settings.motion}
-                  onChange={(e) => void save({ motion: e.target.value as Settings['motion'] })}
-                  className="min-h-9 rounded-lg border-2 border-border bg-surface px-2 font-bold text-text focus:border-secondary focus:outline-none"
-                >
-                  <option value="system">{t('gamification.motionSystem')}</option>
-                  <option value="reduced">{t('gamification.motionReduced')}</option>
-                  <option value="full">{t('gamification.motionFull')}</option>
-                </select>
-              </label>
+                  onChange={(val) => void save({ motion: val as Settings['motion'] })}
+                  options={[
+                    { value: 'system', label: t('gamification.motionSystem') },
+                    { value: 'reduced', label: t('gamification.motionReduced') },
+                    { value: 'full', label: t('gamification.motionFull') },
+                  ]}
+                />
+              </div>
             </div>
           </div>
 
@@ -254,14 +264,14 @@ function SwitchRow({
       aria-checked={checked}
       aria-label={label}
       onClick={onToggle}
-      className="flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 text-sm font-extrabold text-text transition-colors hover:bg-surface focus-visible:outline-3 focus-visible:outline-focus"
+      className="group flex min-h-12 cursor-pointer items-center justify-between gap-3 rounded-2xl border-2 border-border bg-card px-4 text-sm font-extrabold text-text transition-[transform,background-color] duration-[var(--duration-fast)] hover:bg-surface active:scale-[0.99]"
     >
       <span>{label}</span>
       <span
-        className={`h-7 w-12 shrink-0 rounded-full p-0.5 ${checked ? 'bg-primary' : 'bg-track'}`}
+        className={`h-7 w-12 shrink-0 rounded-full p-0.5 transition-colors duration-200 ${checked ? 'bg-primary' : 'bg-track'}`}
       >
         <span
-          className={`block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform ${
+          className={`block h-6 w-6 transform rounded-full bg-white shadow-md transition-transform duration-200 group-active:scale-95 ${
             checked ? 'translate-x-5' : 'translate-x-0'
           }`}
         />
@@ -339,7 +349,7 @@ function FsrsRow(props: {
           aria-label={`${label}: ${display}`}
           title={`${min}–${max}`}
           onClick={start}
-          className="min-h-9 shrink-0 cursor-pointer rounded-xl border-2 border-border bg-surface px-3 text-sm font-extrabold tabular-nums text-nav-active-text transition-colors hover:border-nav-active-border focus-visible:outline-3 focus-visible:outline-focus"
+          className="min-h-9 shrink-0 cursor-pointer rounded-xl border-2 border-border bg-surface px-3 text-sm font-extrabold tabular-nums text-nav-active-text transition-[transform,border-color,background-color] duration-[var(--duration-fast)] hover:border-nav-active-border active:scale-95"
         >
           {display}
         </button>

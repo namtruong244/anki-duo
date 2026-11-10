@@ -6,6 +6,7 @@ import type {
   LocalStore,
   MediaAsset,
   MetaValues,
+  NoteType,
   OutboxEvent,
   PullApplication,
   Settings,
@@ -24,6 +25,7 @@ export class DexieStore extends Dexie implements LocalStore {
   decks!: Table<Deck, string>;
   cards!: Table<StoredCard, string>;
   media!: Table<MediaAsset, string>;
+  noteTypes!: Table<NoteType, string>;
   outbox!: Table<OutboxEvent, string>;
   sessions!: Table<StoredSession, string>;
   dailyActivity!: Table<DailyActivity, string>;
@@ -42,6 +44,7 @@ export class DexieStore extends Dexie implements LocalStore {
       sessions: 'id',
       dailyActivity: 'studyDay',
     });
+    this.version(2).stores({ noteTypes: 'id' });
   }
 
   async getMeta<K extends keyof MetaValues>(key: K) {
@@ -100,6 +103,16 @@ export class DexieStore extends Dexie implements LocalStore {
   }
   async listCards(deckId: string) {
     return (await this.cards.where('deckId').equals(deckId).toArray()).map(fromStored);
+  }
+
+  async putNoteTypes(rows: NoteType[]) {
+    await this.noteTypes.bulkPut(rows);
+  }
+  getNoteType(id: string) {
+    return this.noteTypes.get(id);
+  }
+  async listNoteTypes() {
+    return (await this.noteTypes.toArray()).filter((n) => !n.deletedAt);
   }
 
   async putMedia(media: MediaAsset[]) {
@@ -166,6 +179,7 @@ export class DexieStore extends Dexie implements LocalStore {
         this.stats,
         this.decks,
         this.cards,
+        this.noteTypes,
         this.media,
         this.dailyActivity,
       ],
@@ -185,6 +199,10 @@ export class DexieStore extends Dexie implements LocalStore {
         for (const c of page.cards ?? []) {
           if (c.deletedAt) await this.cards.delete(c.id);
           else await this.cards.put(toStored(c));
+        }
+        for (const n of page.noteTypes ?? []) {
+          if (n.deletedAt) await this.noteTypes.delete(n.id);
+          else await this.noteTypes.put(n);
         }
         for (const m of page.media ?? []) {
           if (m.deletedAt) await this.media.delete(m.id);

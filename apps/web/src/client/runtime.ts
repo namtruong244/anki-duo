@@ -35,4 +35,9 @@ export const syncEngine = createSyncEngine({
 export const newId = () => uuidv7();
 
 /** Online-only content actions (decks, cards, import helpers) that mirror results into LocalStore. */
-export const content = createContentActions(api, dexieStore);
+export const content = createContentActions(
+  api,
+  dexieStore,
+  () => new Date(),
+  () => syncEngine.syncNow().catch(() => undefined),
+);

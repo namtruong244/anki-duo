@@ -438,6 +438,23 @@ export class SessionMachine {
     this.pending = this.pending.then(() => promise).catch((e) => this.deps.onError?.(e));
   }
 
+  /**
+   * Applies edited card content (front/back/tags) to the in-memory card, keeping this machine's
+   * own scheduling state. Does nothing if the card is not part of the session.
+   */
+  replaceContent(card: Card) {
+    const cur = this.cards.get(card.id);
+    if (!cur) return;
+    this.cards.set(card.id, {
+      ...cur,
+      front: card.front,
+      back: card.back,
+      tags: card.tags,
+      updatedAt: card.updatedAt,
+    });
+    this.emit();
+  }
+
   /** Increases on every change; a cheap snapshot for `useSyncExternalStore`. */
   get version() {
     return this.rev;

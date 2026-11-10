@@ -43,7 +43,32 @@
     "legalSignIn": "Bằng việc đăng nhập, bạn đồng ý với Điều khoản & Chính sách riêng tư của Anki Duo.",
     "legalSignUp": "Tôi đồng ý với Điều khoản dịch vụ và Chính sách riêng tư của Anki Duo.",
     "termsRequired": "Hãy đồng ý với điều khoản để tạo tài khoản.",
-    "error": "Đã xảy ra lỗi. Vui lòng thử lại."
+    "error": "Đã xảy ra lỗi. Vui lòng thử lại.",
+    "passwordHint": "Ít nhất 10 ký tự",
+    "resend": "Gửi lại email xác minh",
+    "resendCooldown": "Gửi lại sau {seconds} giây",
+    "resendSending": "Đang gửi…",
+    "resendSent": "Đã gửi email xác minh tới {email}. Hãy kiểm tra hộp thư đến và thư mục spam.",
+    "resendFailed": "Không gửi được email. Vui lòng thử lại sau ít phút.",
+    "checkSpam": "Không thấy email? Hãy kiểm tra thư mục spam.",
+    "resendEmailLabel": "Email của bạn",
+    "unverifiedHelp": "Email của bạn chưa được xác minh. Hãy kiểm tra hộp thư đến (và thư mục spam) để mở liên kết xác minh.",
+    "invalidCredentialsHint": "Quên mật khẩu?",
+    "userExistsSignIn": "Đăng nhập",
+    "userExistsReset": "đặt lại mật khẩu",
+    "userExistsOr": "hoặc",
+    "errors": {
+      "emailNotVerified": "Email của bạn chưa được xác minh.",
+      "invalidCredentials": "Email hoặc mật khẩu không đúng.",
+      "userExists": "Email này đã có tài khoản.",
+      "passwordTooShort": "Mật khẩu quá ngắn. Hãy dùng ít nhất 10 ký tự.",
+      "passwordTooLong": "Mật khẩu quá dài.",
+      "invalidEmail": "Địa chỉ email không hợp lệ.",
+      "invalidToken": "Liên kết không hợp lệ hoặc đã hết hạn. Hãy yêu cầu liên kết mới.",
+      "rateLimited": "Bạn thử quá nhiều lần. Vui lòng đợi một phút rồi thử lại.",
+      "network": "Không kết nối được máy chủ. Hãy kiểm tra mạng và thử lại.",
+      "generic": "Đã xảy ra lỗi. Vui lòng thử lại."
+    }
   },
   "pwa": {
     "installed": "Đã cài đặt"
@@ -64,6 +89,7 @@
     "resumeTitle": "Tiếp tục phiên học?",
     "resumeBody": "Bạn có một phiên học chưa hoàn thành.",
     "resume": "Tiếp tục",
+    "continue": "Tiếp tục",
     "discard": "Bắt đầu lại",
     "emptyTitle": "Bạn đã học hết rồi",
     "nextDue": "Lần ôn tiếp theo: {when}",
@@ -270,8 +296,7 @@
     "longestStreakShort": "Dài nhất",
     "currentStreakHint": "ngày liên tiếp",
     "totalXpHint": "XP tích lũy",
-    "swipeHint": "vuốt ngang",
-    "monthShort": "T{n}"
+    "swipeHint": "vuốt ngang"
   },
   "home": {
     "title": "Học tập",
@@ -289,7 +314,9 @@
     "reviewAllTitle": "Ôn tập tất cả thẻ đến hạn hôm nay",
     "reviewAllMeta": "{n} thẻ đến hạn · khoảng {minutes} phút",
     "reviewNow": "Ôn tập ngay",
-    "myDecks": "Bộ thẻ của tôi"
+    "myDecks": "Bộ thẻ của tôi",
+    "searchDecks": "Tìm bộ thẻ…",
+    "noDeckMatch": "Không có bộ thẻ nào khớp."
   },
   "celebration": {
     "goal": "Đã đạt mục tiêu hằng ngày!",
@@ -330,7 +357,12 @@
     "import_bad_encoding": "Tệp không phải UTF-8. Hãy lưu lại ở dạng UTF-8 rồi thử lại.",
     "export_invalid": "Đây không phải tệp xuất hợp lệ của Anki Duo.",
     "rate_limited": "Quá nhiều yêu cầu. Vui lòng đợi một chút rồi thử lại.",
-    "reauth_required": "Vui lòng đăng nhập lại để tiếp tục."
+    "reauth_required": "Vui lòng đăng nhập lại để tiếp tục.",
+    "invalid_note_type": "Loại ghi chú này không hợp lệ. Hãy kiểm tra các trường và mẫu thẻ.",
+    "note_type_in_use": "Vẫn còn ghi chú dùng loại này nên không thể xóa.",
+    "note_type_name_taken": "Bạn đã có một loại ghi chú trùng tên.",
+    "empty_front": "Mặt trước của mọi thẻ sẽ trống. Hãy điền ít nhất một trường dùng ở mặt trước.",
+    "edit_via_note": "Thẻ này thuộc một ghi chú. Hãy sửa ghi chú thay vì sửa thẻ."
   },
   "ui": {
     "theme": {
@@ -386,15 +418,17 @@
     "cards": {
       "stateNew": "Mới",
       "stateLearning": "Đang học",
-      "showingCount": "Hiển thị {shown}/{total}",
+      "showingRange": "{from}–{to} trên {total}",
+      "prevPage": "Trang trước",
+      "nextPage": "Trang sau",
+      "pageOf": "Trang {page}/{count}",
       "livePreview": "Xem trước trực tiếp",
       "due": "Đến hạn",
       "deckFilter": "Bộ thẻ",
       "allDecks": "Tất cả bộ thẻ",
       "noDecks": "Bạn chưa có bộ thẻ nào. Hãy tạo một bộ thẻ trước để thêm thẻ.",
       "createDeck": "Tạo bộ thẻ",
-      "actions": "Thao tác với thẻ",
-      "showMore": "Hiển thị thêm"
+      "actions": "Thao tác với thẻ"
     },
     "import": {
       "stepChoose": "Chọn tệp",
@@ -458,6 +492,77 @@
       "addImage": "+ Ảnh",
       "addAudio": "+ Âm thanh",
       "saveFirst": "Hãy lưu thẻ trước để đính kèm ảnh hoặc âm thanh."
+    }
+  },
+  "notes": {
+    "toolbar": {
+      "label": "Định dạng cho {field}",
+      "bold": "In đậm",
+      "italic": "In nghiêng",
+      "underline": "Gạch chân",
+      "strike": "Gạch ngang",
+      "subscript": "Chỉ số dưới",
+      "superscript": "Chỉ số trên",
+      "color": "Màu chữ",
+      "highlight": "Tô sáng",
+      "bulletList": "Danh sách gạch đầu dòng",
+      "orderedList": "Danh sách đánh số",
+      "alignLeft": "Căn trái",
+      "alignCenter": "Căn giữa",
+      "alignRight": "Căn phải",
+      "link": "Liên kết",
+      "linkPrompt": "Địa chỉ liên kết (để trống để gỡ)",
+      "clear": "Xóa định dạng",
+      "image": "Chèn ảnh",
+      "audio": "Chèn âm thanh",
+      "html": "HTML",
+      "htmlSource": "Mã HTML của {field}",
+      "saveFirst": "Hãy lưu ghi chú trước để đính kèm ảnh hoặc âm thanh."
+    },
+    "editor": {
+      "newTitle": "Thêm ghi chú mới",
+      "editTitle": "Sửa ghi chú",
+      "noteType": "Loại ghi chú",
+      "typeLocked": "Không thể đổi loại của ghi chú đã có.",
+      "manageTypes": "Quản lý loại ghi chú",
+      "saveAndAdd": "Lưu và thêm tiếp",
+      "saved": "Đã lưu ghi chú"
+    },
+    "types": {
+      "title": "Loại ghi chú",
+      "intro": "Loại ghi chú quy định các trường của ghi chú và các mẫu thẻ tạo ra từ chúng.",
+      "add": "Thêm loại ghi chú",
+      "cloneFrom": "Bắt đầu từ",
+      "name": "Tên",
+      "copyName": "{name} (bản sao)",
+      "create": "Tạo",
+      "rename": "Đổi tên",
+      "summary": "{fields} trường, {templates} mẫu thẻ",
+      "deleteTitle": "Xóa loại ghi chú này?",
+      "deleteConfirm": "\"{name}\" sẽ bị xóa. Chỉ xóa được khi chưa có ghi chú nào dùng loại này.",
+      "deleted": "Đã xóa loại ghi chú",
+      "saved": "Đã lưu loại ghi chú",
+      "editTitle": "Sửa loại ghi chú",
+      "back": "Quay lại loại ghi chú",
+      "validation": "Vấn đề với loại ghi chú này",
+      "fields": "Các trường",
+      "fieldName": "Tên trường {n}",
+      "newFieldName": "Trường {n}",
+      "addField": "Thêm trường",
+      "moveUp": "Chuyển lên",
+      "moveDown": "Chuyển xuống",
+      "deleteField": "Xóa trường",
+      "deleteFieldConfirm": "Xóa trường này sẽ xóa nội dung của nó khỏi mọi ghi chú cùng loại.",
+      "templates": "Mẫu thẻ",
+      "templateName": "Tên mẫu",
+      "newTemplateName": "Thẻ {n}",
+      "addTemplate": "Thêm mẫu",
+      "deleteTemplate": "Xóa mẫu",
+      "deleteTemplateConfirm": "Mọi thẻ tạo từ mẫu này, kèm lịch sử ôn tập, sẽ bị xóa khi bạn lưu.",
+      "insertField": "Chèn trường...",
+      "frontTemplate": "Mẫu mặt trước",
+      "backTemplate": "Mẫu mặt sau",
+      "css": "Kiểu dáng (CSS)"
     }
   }
 }

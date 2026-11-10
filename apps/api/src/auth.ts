@@ -42,6 +42,7 @@ export function createAuth(deps: Pick<AppDeps, 'db' | 'env' | 'mailer'>) {
     },
     emailVerification: {
       sendOnSignUp: true,
+      sendOnSignIn: true,
       autoSignInAfterVerification: true,
       sendVerificationEmail: async ({ user, url }) => mailer.sendVerification(user.email, url),
     },

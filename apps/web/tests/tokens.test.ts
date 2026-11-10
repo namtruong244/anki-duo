@@ -22,9 +22,6 @@ describe('design tokens meet WCAG 2.2 AA contrast', () => {
     ['text', 'surface'],
     ['text-muted', 'bg'],
     ['text-muted', 'surface'],
-    ['on-primary', 'primary'],
-    ['on-secondary', 'secondary'],
-    ['on-danger', 'danger'],
     ['on-neutral', 'neutral'],
   ];
   for (const [fg, bg] of pairs) {

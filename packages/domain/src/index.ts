@@ -9,3 +9,4 @@ export * from './path/status.js';
 export * from './gamification/streak.js';
 export * from './stats/donut.js';
 export * from './stats/heatmap.js';
+export * from './notes/index.js';

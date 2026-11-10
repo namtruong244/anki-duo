@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { migrate as migrateNode } from 'drizzle-orm/node-postgres/migrator';
 import { migrate as migrateNeon } from 'drizzle-orm/neon-serverless/migrator';
+import { migrate as migratePglite } from 'drizzle-orm/pglite/migrator';
 import { getDb } from '../src/db/client.js';
 
 const envFile = new URL('../.env', import.meta.url);
@@ -12,8 +13,12 @@ if (existsSync(envFile)) {
 const url = process.env.DATABASE_URL ?? '';
 const folder = fileURLToPath(new URL('../drizzle', import.meta.url));
 const db = getDb(url) as never;
-await (/\.neon\.tech/.test(url)
-  ? migrateNeon(db, { migrationsFolder: folder })
-  : migrateNode(db, { migrationsFolder: folder }));
+if (url.startsWith('pglite://')) {
+  await migratePglite(db, { migrationsFolder: folder });
+} else if (/\.neon\.tech/.test(url)) {
+  await migrateNeon(db, { migrationsFolder: folder });
+} else {
+  await migrateNode(db, { migrationsFolder: folder });
+}
 console.log('migrations applied');
 process.exit(0);

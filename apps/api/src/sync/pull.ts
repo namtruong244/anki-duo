@@ -2,7 +2,7 @@ import { and, asc, eq, gt, sql } from 'drizzle-orm';
 import type { PullResponseSchema } from '@anki-duo/contract';
 import type { z } from '@hono/zod-openapi';
 import { schema, type Db } from '../db/client.js';
-import { toCard, toDaily, toDeck, toMedia, toStats } from '../services/mappers.js';
+import { toCard, toDaily, toDeck, toMedia, toNoteType, toStats } from '../services/mappers.js';
 import { toSettings } from '../services/settings.js';
 
 type Pull = z.infer<typeof PullResponseSchema>;
@@ -13,6 +13,7 @@ type Tagged =
   | { seq: number; kind: 'deck'; row: typeof schema.deck.$inferSelect }
   | { seq: number; kind: 'card'; row: typeof schema.card.$inferSelect }
   | { seq: number; kind: 'media'; row: typeof schema.mediaAsset.$inferSelect }
+  | { seq: number; kind: 'noteType'; row: typeof schema.noteType.$inferSelect }
   | { seq: number; kind: 'daily'; row: typeof schema.dailyActivity.$inferSelect };
 
 /**
@@ -36,7 +37,7 @@ export async function pullChanges(
       .orderBy(asc(t.changeSeq as never))
       .limit(limit + 1) as Promise<T[]>;
 
-  const [settings, stats, decks, cards, media, daily] = await Promise.all([
+  const [settings, stats, decks, cards, media, noteTypes, daily] = await Promise.all([
     first<typeof schema.learnerSettings.$inferSelect>(
       schema.learnerSettings,
       schema.learnerSettings,
@@ -45,6 +46,7 @@ export async function pullChanges(
     first<typeof schema.deck.$inferSelect>(schema.deck, schema.deck),
     first<typeof schema.card.$inferSelect>(schema.card, schema.card),
     first<typeof schema.mediaAsset.$inferSelect>(schema.mediaAsset, schema.mediaAsset),
+    first<typeof schema.noteType.$inferSelect>(schema.noteType, schema.noteType),
     first<typeof schema.dailyActivity.$inferSelect>(schema.dailyActivity, schema.dailyActivity),
   ]);
 
@@ -54,6 +56,7 @@ export async function pullChanges(
     ...decks.map((row) => ({ seq: row.changeSeq!, kind: 'deck' as const, row })),
     ...cards.map((row) => ({ seq: row.changeSeq!, kind: 'card' as const, row })),
     ...media.map((row) => ({ seq: row.changeSeq!, kind: 'media' as const, row })),
+    ...noteTypes.map((row) => ({ seq: row.changeSeq!, kind: 'noteType' as const, row })),
     ...daily.map((row) => ({ seq: row.changeSeq!, kind: 'daily' as const, row })),
   ].sort((a, b) => a.seq - b.seq);
 
@@ -66,6 +69,7 @@ export async function pullChanges(
     decks: [],
     cards: [],
     media: [],
+    noteTypes: [],
     dailyActivity: [],
   };
   for (const item of page) {
@@ -74,6 +78,7 @@ export async function pullChanges(
     else if (item.kind === 'deck') out.decks.push(toDeck(item.row));
     else if (item.kind === 'card') out.cards.push(toCard(item.row));
     else if (item.kind === 'media') out.media.push(toMedia(item.row));
+    else if (item.kind === 'noteType') out.noteTypes.push(toNoteType(item.row));
     else out.dailyActivity.push(toDaily(item.row));
   }
 

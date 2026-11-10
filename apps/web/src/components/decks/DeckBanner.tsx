@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon, type IconName } from '../ui';
 
@@ -6,7 +7,7 @@ export interface DeckBannerProps {
   name: string;
   due: number;
   fresh: number;
-  /** Kept for callers; the design meta line shows only due and new counts. */
+  /** Kept for callers; the meta line shows only due and new counts. */
   total?: number;
   masteredPct?: number;
   /** Picks color + icon in rotation (green, blue, gold, purple) unless `color` is given. */
@@ -14,35 +15,41 @@ export interface DeckBannerProps {
   color?: 'green' | 'blue' | 'gold' | 'purple';
   icon?: IconName;
   className?: string;
-  /** Renders the white HỌC NGAY button as a real button when provided; otherwise a decorative span. */
+  /** Renders the study button as a real button when provided; otherwise a decorative span. */
   onStudy?: () => void;
+  /** Secondary per-deck actions (icon buttons) shown before the study button. */
+  actions?: ReactNode;
 }
 
 const THEMES = {
   green: {
-    card: 'bg-primary shadow-[0_4px_0_var(--color-primary-depth)]',
-    text: 'text-primary-depth',
+    tile: 'bg-primary shadow-[0_3px_0_var(--color-primary-depth)] text-on-primary',
+    btn: 'bg-primary shadow-[0_3px_0_var(--color-primary-depth)] text-on-primary',
+    bar: 'bg-primary',
     icon: 'layers',
   },
   blue: {
-    card: 'bg-secondary shadow-[0_4px_0_var(--color-secondary-depth)]',
-    text: 'text-secondary-depth',
+    tile: 'bg-secondary shadow-[0_3px_0_var(--color-secondary-depth)] text-on-secondary',
+    btn: 'bg-secondary shadow-[0_3px_0_var(--color-secondary-depth)] text-on-secondary',
+    bar: 'bg-secondary',
     icon: 'languages',
   },
   gold: {
-    card: 'bg-gold shadow-[0_4px_0_var(--color-gold-depth)]',
-    text: 'text-[var(--color-ink)]',
+    tile: 'bg-gold shadow-[0_3px_0_var(--color-gold-depth)] text-on-gold',
+    btn: 'bg-gold shadow-[0_3px_0_var(--color-gold-depth)] text-on-gold',
+    bar: 'bg-gold',
     icon: 'pen-tool',
   },
   purple: {
-    card: 'bg-purple shadow-[0_4px_0_var(--color-purple-depth)]',
-    text: 'text-purple-depth',
+    tile: 'bg-purple shadow-[0_3px_0_var(--color-purple-depth)] text-on-purple',
+    btn: 'bg-purple shadow-[0_3px_0_var(--color-purple-depth)] text-on-purple',
+    bar: 'bg-purple',
     icon: 'heart-pulse',
   },
 } as const;
 const ORDER = ['green', 'blue', 'gold', 'purple'] as const;
 
-/** Colored deck card with lip, diagonal stripes, mastery bar and a full-width white study button. */
+/** Compact deck row: colored icon tile, name + due/new meta + slim mastery bar, actions, study button. */
 export function DeckBanner({
   name,
   due,
@@ -53,57 +60,67 @@ export function DeckBanner({
   icon,
   className = '',
   onStudy,
+  actions,
 }: DeckBannerProps) {
   const { t } = useTranslation();
   const key = color ?? ORDER[index % ORDER.length]!;
   const theme = THEMES[key];
-  const dark = key === 'gold';
-  const fg = dark ? 'text-[var(--color-ink)]' : 'text-white';
   const pct = Math.min(100, Math.max(0, masteredPct));
-  const btnCls = `flex h-12 w-full items-center justify-center rounded-2xl bg-white text-sm font-extrabold uppercase tracking-[0.06em] shadow-[0_4px_0_rgba(0,0,0,0.18)] ${theme.text}`;
+  const pending = due + fresh > 0;
+  const btnCls = `inline-flex h-9 shrink-0 items-center justify-center rounded-xl px-3 text-xs font-extrabold uppercase tracking-[0.06em] transition-[transform,box-shadow,filter] duration-[var(--duration-fast)] hover:brightness-105 active:translate-y-[3px] active:shadow-none ${
+    pending
+      ? theme.btn
+      : 'border-2 border-border bg-surface text-text-muted shadow-[0_3px_0_var(--color-border)]'
+  }`;
 
   return (
-    <div className={`relative overflow-hidden rounded-3xl p-6 ${fg} ${theme.card} ${className}`}>
+    <div
+      className={`flex items-center gap-3 rounded-2xl border-2 border-border bg-[var(--color-card)] p-2.5 pr-3 transition-colors duration-[var(--duration-fast)] hover:border-nav-active-border ${className}`}
+    >
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute -right-6 -top-10 h-80 w-40 rotate-[20deg]"
+        className={`flex size-10 shrink-0 items-center justify-center rounded-xl ${theme.tile}`}
       >
-        <div className="absolute left-0 h-full w-12 bg-white/10" />
-        <div className="absolute left-16 h-full w-6 bg-white/10" />
+        <Icon name={icon ?? theme.icon} size={20} />
       </div>
 
-      <div className="relative z-10 flex flex-col gap-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex min-w-0 flex-col gap-1.5">
-            <h3 className="truncate text-2xl font-black tracking-tight">{name}</h3>
-            <p className="text-sm font-bold opacity-90">{t('home.deckMetaShort', { due, fresh })}</p>
-          </div>
-          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-white/20">
-            <Icon name={icon ?? theme.icon} size={28} />
-          </div>
-        </div>
-
-        <div className="flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-xs font-extrabold uppercase tracking-[0.08em]">
-            <span>{t('home.mastered')}</span>
-            <span>{pct}%</span>
-          </div>
-          <div aria-hidden="true" className="h-3.5 w-full overflow-hidden rounded-full bg-white/30">
+      <div className="flex min-w-0 flex-1 flex-col gap-1">
+        <h3 className="truncate text-[15px] font-extrabold leading-tight text-text" title={name}>
+          {name}
+        </h3>
+        <div className="flex items-center gap-2">
+          <p
+            className={`shrink-0 text-xs font-bold ${pending ? 'text-text-muted' : 'text-text-subtle'}`}
+          >
+            {t('home.deckMetaShort', { due, fresh })}
+          </p>
+          <div
+            className="flex min-w-0 flex-1 items-center gap-1.5"
+            title={`${t('home.mastered')} ${pct}%`}
+          >
             <div
-              className={`h-full rounded-full transition-all duration-300 ${dark ? 'bg-[var(--color-ink)]' : 'bg-white'}`}
-              style={{ width: `${pct}%` }}
-            />
+              aria-hidden="true"
+              className="h-1.5 w-full max-w-24 overflow-hidden rounded-full bg-track"
+            >
+              <div
+                className={`h-full rounded-full transition-all duration-300 ${theme.bar}`}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+            <span className="text-[11px] font-extrabold text-text-subtle">{pct}%</span>
           </div>
         </div>
-
-        {onStudy ? (
-          <button type="button" onClick={onStudy} className={`${btnCls} cursor-pointer`}>
-            {t('home.studyNow')}
-          </button>
-        ) : (
-          <span className={btnCls}>{t('home.studyNow')}</span>
-        )}
       </div>
+
+      {actions && <div className="flex shrink-0 items-center">{actions}</div>}
+
+      {onStudy ? (
+        <button type="button" onClick={onStudy} className={`${btnCls} cursor-pointer`}>
+          {t('home.studyNow')}
+        </button>
+      ) : (
+        <span className={btnCls}>{t('home.studyNow')}</span>
+      )}
     </div>
   );
 }

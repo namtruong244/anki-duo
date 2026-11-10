@@ -4,1106 +4,1466 @@
  */
 
 export interface paths {
-  '/sync/pull': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    /**
-     * Fetch every change since a cursor
-     * @description Returns rows whose change_seq > cursor, in change_seq order, up to `limit` rows across all
-     *     collections. Deleted rows come back as tombstones (`deletedAt` set, content omitted).
-     *     Clients repeat the call while `hasMore` is true.
-     */
-    get: {
-      parameters: {
-        query: {
-          cursor: string;
-          limit?: number;
-          deviceId: string;
+    "/sync/pull": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Changes */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              cursor: string;
-              hasMore: boolean;
-              settings: components['schemas']['Settings'] | null;
-              stats: components['schemas']['Stats'] | null;
-              decks: components['schemas']['Deck'][];
-              cards: components['schemas']['Card'][];
-              media: components['schemas']['Media'][];
-              dailyActivity: components['schemas']['DailyActivity'][];
+        /**
+         * Fetch every change since a cursor
+         * @description Returns rows whose change_seq > cursor, in change_seq order, up to `limit` rows across all
+         *     collections. Deleted rows come back as tombstones (`deletedAt` set, content omitted).
+         *     Clients repeat the call while `hasMore` is true.
+         */
+        get: {
+            parameters: {
+                query: {
+                    cursor: string;
+                    limit?: number;
+                    deviceId: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
             };
-          };
-        };
-        400: components['responses']['Problem'];
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/sync/push': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Upload outbox events (reviews, revokes, sessions, day flags)
-     * @description Idempotent: events whose id was already stored are acknowledged again without effect.
-     *     Events are applied in the order given. A review older than the card's last_review, or a
-     *     revoke, causes the server to replay that card's history (research R6/R7).
-     *     Partial success is allowed: each event gets its own result.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': {
-            /** Format: uuid */
-            deviceId: string;
-            events: (
-              | components['schemas']['ReviewEvent']
-              | components['schemas']['RevokeEvent']
-              | components['schemas']['SessionEvent']
-              | components['schemas']['DayFlagEvent']
-            )[];
-          };
-        };
-      };
-      responses: {
-        /** @description Per-event results */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              results: {
-                /** Format: uuid */
-                id: string;
-                /** @enum {string} */
-                status: 'applied' | 'duplicate' | 'rejected';
-                /**
-                 * @description Set when rejected. Rejected events must not be retried.
-                 * @enum {string}
-                 */
-                code?: 'card_not_found' | 'future_timestamp' | 'invalid_grade' | 'review_not_found';
-              }[];
+            requestBody?: never;
+            responses: {
+                /** @description Changes */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            cursor: string;
+                            hasMore: boolean;
+                            settings: components["schemas"]["Settings"] | null;
+                            stats: components["schemas"]["Stats"] | null;
+                            decks: components["schemas"]["Deck"][];
+                            cards: components["schemas"]["Card"][];
+                            media: components["schemas"]["Media"][];
+                            noteTypes: components["schemas"]["NoteType"][];
+                            dailyActivity: components["schemas"]["DailyActivity"][];
+                        };
+                    };
+                };
+                400: components["responses"]["Problem"];
             };
-          };
         };
-        400: components['responses']['Problem'];
-        429: components['responses']['Problem'];
-      };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/decks': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Create a deck */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': {
-            /**
-             * Format: uuid
-             * @description Optional client id
-             */
-            id?: string;
-            name: string;
-            /** @default 20 */
-            newCardsPerDay?: number;
-          };
+    "/sync/push": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
         };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Deck'];
-          };
-        };
-        409: components['responses']['Problem'];
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/decks/{deckId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        deckId: components['parameters']['DeckId'];
-      };
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    /**
-     * Delete a deck with all its cards, media and history
-     * @description The client must have shown a confirmation first. Irreversible.
-     */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          deckId: components['parameters']['DeckId'];
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Deleted */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-        404: components['responses']['Problem'];
-      };
-    };
-    options?: never;
-    head?: never;
-    /** Rename a deck or change its new-card limit */
-    patch: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          deckId: components['parameters']['DeckId'];
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': {
-            name?: string;
-            newCardsPerDay?: number;
-          };
-        };
-      };
-      responses: {
-        /** @description Updated */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Deck'];
-          };
-        };
-        404: components['responses']['Problem'];
-        409: components['responses']['Problem'];
-      };
-    };
-    trace?: never;
-  };
-  '/decks/{deckId}/cards': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        deckId: components['parameters']['DeckId'];
-      };
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Create a card */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          deckId: components['parameters']['DeckId'];
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['CardInput'];
-        };
-      };
-      responses: {
-        /** @description Created */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Card'];
-          };
-        };
-        422: components['responses']['Problem'];
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/cards/{cardId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        cardId: components['parameters']['CardId'];
-      };
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    /** Delete a card and its media and history */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          cardId: components['parameters']['CardId'];
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Deleted */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-      };
-    };
-    options?: never;
-    head?: never;
-    /**
-     * Edit card content, tags or suspension
-     * @description Editing content never changes scheduling state.
-     */
-    patch: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          cardId: components['parameters']['CardId'];
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': {
-            front?: string;
-            back?: string;
-            tags?: string[];
-            suspended?: boolean;
-          };
-        };
-      };
-      responses: {
-        /** @description Updated */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Card'];
-          };
-        };
-        404: components['responses']['Problem'];
-      };
-    };
-    trace?: never;
-  };
-  '/cards/{cardId}/reset': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        cardId: components['parameters']['CardId'];
-      };
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Reset a card to New (records a ReviewLog of kind=reset) */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          cardId: components['parameters']['CardId'];
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Reset */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Card'];
-          };
-        };
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/decks/{deckId}/import': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        deckId: components['parameters']['DeckId'];
-      };
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Import one chunk of parsed CSV/TSV rows
-     * @description See contracts/csv-import.md. Send chunks in order with the same jobId.
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          deckId: components['parameters']['DeckId'];
-        };
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': {
-            /** Format: uuid */
-            jobId: string;
-            fileName: string;
-            totalRows: number;
-            chunkIndex: number;
-            /** @default false */
-            isLast?: boolean;
-            /** @enum {string} */
-            duplicateMode: 'skip' | 'update' | 'keep_both';
-            rows: {
-              /** @description 1-based line number in the source file */
-              row: number;
-              front: string;
-              /** @default  */
-              back?: string;
-              tags?: string[];
-            }[];
-          };
-        };
-      };
-      responses: {
-        /** @description Chunk result (cumulative totals for the job) */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              imported: number;
-              updated: number;
-              skipped: number;
-              errors: {
-                row: number;
-                reason: string;
-              }[];
+        get?: never;
+        put?: never;
+        /**
+         * Upload outbox events (reviews, revokes, sessions, day flags)
+         * @description Idempotent: events whose id was already stored are acknowledged again without effect.
+         *     Events are applied in the order given. A review older than the card's last_review, or a
+         *     revoke, causes the server to replay that card's history (research R6/R7).
+         *     Partial success is allowed: each event gets its own result.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
             };
-          };
-        };
-        413: components['responses']['Problem'];
-        422: components['responses']['Problem'];
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/decks/{deckId}/export': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        deckId: components['parameters']['DeckId'];
-      };
-      cookie?: never;
-    };
-    /** Export a deck in anki-duo-export v1 format */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          deckId: components['parameters']['DeckId'];
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Export file (Content-Disposition attachment) */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': unknown;
-          };
-        };
-      };
-    };
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/decks/restore': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Create a new deck from an anki-duo-export v1 file
-     * @description Replays review history so scheduling state matches the export exactly (FR-014).
-     */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': unknown;
-        };
-      };
-      responses: {
-        /** @description Restored */
-        201: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Deck'];
-          };
-        };
-        422: components['responses']['Problem'];
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/media/upload-url': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Reserve a media asset and get a presigned upload URL */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': {
-            /** Format: uuid */
-            cardId: string;
-            /** @enum {string} */
-            side: 'front' | 'back';
-            /** @enum {string} */
-            mime:
-              | 'image/png'
-              | 'image/jpeg'
-              | 'image/webp'
-              | 'image/gif'
-              | 'image/svg+xml'
-              | 'audio/mpeg'
-              | 'audio/mp4'
-              | 'audio/aac'
-              | 'audio/ogg'
-              | 'audio/wav';
-            bytes: number;
-          };
-        };
-      };
-      responses: {
-        /** @description Upload target */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': {
-              /** Format: uuid */
-              mediaId: string;
-              /** Format: uri */
-              uploadUrl: string;
-              /** Format: date-time */
-              expiresAt: string;
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        deviceId: string;
+                        events: (components["schemas"]["ReviewEvent"] | components["schemas"]["RevokeEvent"] | components["schemas"]["SessionEvent"] | components["schemas"]["DayFlagEvent"])[];
+                    };
+                };
             };
-          };
-        };
-        413: components['responses']['Problem'];
-        415: components['responses']['Problem'];
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/media/{mediaId}/complete': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        mediaId: components['parameters']['MediaId'];
-      };
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Confirm an upload. The server checks the object's size and type, then marks it ready */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          mediaId: components['parameters']['MediaId'];
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Ready */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Media'];
-          };
-        };
-        422: components['responses']['Problem'];
-      };
-    };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/media/{mediaId}': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path: {
-        mediaId: components['parameters']['MediaId'];
-      };
-      cookie?: never;
-    };
-    /** Redirect to a short-lived signed URL for the media bytes */
-    get: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          mediaId: components['parameters']['MediaId'];
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Redirect to signed URL */
-        302: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-        404: components['responses']['Problem'];
-      };
-    };
-    put?: never;
-    post?: never;
-    /** Remove a media asset from its card */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path: {
-          mediaId: components['parameters']['MediaId'];
-        };
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Deleted */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-      };
-    };
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/me/settings': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    delete?: never;
-    options?: never;
-    head?: never;
-    /** Update learner settings */
-    patch: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': components['schemas']['SettingsPatch'];
-        };
-      };
-      responses: {
-        /** @description Updated */
-        200: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content: {
-            'application/json': components['schemas']['Settings'];
-          };
-        };
-        422: components['responses']['Problem'];
-      };
-    };
-    trace?: never;
-  };
-  '/me': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    post?: never;
-    /**
-     * Delete the account and all its data (FR-030)
-     * @description Requires a fresh session (signed in within the last 10 minutes).
-     */
-    delete: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody?: never;
-      responses: {
-        /** @description Deleted */
-        204: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-        403: components['responses']['Problem'];
-      };
-    };
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
-  '/client-events': {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /** Report client-side errors and sync failures (observability, research R16) */
-    post: {
-      parameters: {
-        query?: never;
-        header?: never;
-        path?: never;
-        cookie?: never;
-      };
-      requestBody: {
-        content: {
-          'application/json': {
-            /** @enum {string} */
-            kind: 'error' | 'sync_failure';
-            message: string;
-            context?: {
-              [key: string]: unknown;
+            responses: {
+                /** @description Per-event results */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            results: {
+                                /** Format: uuid */
+                                id: string;
+                                /** @enum {string} */
+                                status: "applied" | "duplicate" | "rejected";
+                                /**
+                                 * @description Set when rejected. Rejected events must not be retried.
+                                 * @enum {string}
+                                 */
+                                code?: "card_not_found" | "future_timestamp" | "invalid_grade" | "review_not_found";
+                            }[];
+                        };
+                    };
+                };
+                400: components["responses"]["Problem"];
+                429: components["responses"]["Problem"];
             };
-          };
         };
-      };
-      responses: {
-        /** @description Accepted */
-        202: {
-          headers: {
-            [name: string]: unknown;
-          };
-          content?: never;
-        };
-      };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
     };
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
+    "/decks": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a deck */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description Optional client id
+                         */
+                        id?: string;
+                        name: string;
+                        /** @default 20 */
+                        newCardsPerDay?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Deck"];
+                    };
+                };
+                409: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/decks/{deckId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deckId: components["parameters"]["DeckId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a deck with all its cards, media and history
+         * @description The client must have shown a confirmation first. Irreversible.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deckId: components["parameters"]["DeckId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["Problem"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /** Rename a deck or change its new-card limit */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deckId: components["parameters"]["DeckId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        newCardsPerDay?: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Deck"];
+                    };
+                };
+                404: components["responses"]["Problem"];
+                409: components["responses"]["Problem"];
+            };
+        };
+        trace?: never;
+    };
+    "/decks/{deckId}/cards": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deckId: components["parameters"]["DeckId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create a card */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deckId: components["parameters"]["DeckId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["CardInput"];
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Card"];
+                    };
+                };
+                422: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/cards/{cardId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cardId: components["parameters"]["CardId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete a card and its media and history */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    cardId: components["parameters"]["CardId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Edit card content, tags or suspension
+         * @description Editing content never changes scheduling state.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    cardId: components["parameters"]["CardId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        front?: string;
+                        back?: string;
+                        tags?: string[];
+                        suspended?: boolean;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Card"];
+                    };
+                };
+                404: components["responses"]["Problem"];
+                409: components["responses"]["Problem"];
+            };
+        };
+        trace?: never;
+    };
+    "/cards/{cardId}/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                cardId: components["parameters"]["CardId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset a card to New (records a ReviewLog of kind=reset) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    cardId: components["parameters"]["CardId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Reset */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Card"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/note-types": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * List note types
+         * @description Creates the default note types the first time a learner has none.
+         */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Note types */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            noteTypes: components["schemas"]["NoteType"][];
+                        };
+                    };
+                };
+            };
+        };
+        put?: never;
+        /** Create a note type */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description Optional client id
+                         */
+                        id?: string;
+                        name: string;
+                        fields: components["schemas"]["NoteFieldsInput"];
+                        templates: components["schemas"]["NoteTemplatesInput"];
+                        css?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NoteType"];
+                    };
+                };
+                409: components["responses"]["Problem"];
+                422: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/note-types/{noteTypeId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                noteTypeId: components["parameters"]["NoteTypeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete a note type
+         * @description Answers 409 note_type_in_use while notes still use it.
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    noteTypeId: components["parameters"]["NoteTypeId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["Problem"];
+                409: components["responses"]["Problem"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Edit a note type
+         * @description A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates delete their cards. Every card of the type is re-rendered.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    noteTypeId: components["parameters"]["NoteTypeId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        name?: string;
+                        fields?: components["schemas"]["NoteFieldsInput"];
+                        templates?: components["schemas"]["NoteTemplatesInput"];
+                        css?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["NoteType"];
+                    };
+                };
+                404: components["responses"]["Problem"];
+                409: components["responses"]["Problem"];
+                422: components["responses"]["Problem"];
+            };
+        };
+        trace?: never;
+    };
+    "/decks/{deckId}/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deckId: components["parameters"]["DeckId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a note and its cards
+         * @description One card per template whose rendered front is not empty. Idempotent on id.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deckId: components["parameters"]["DeckId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /**
+                         * Format: uuid
+                         * @description Optional client id
+                         */
+                        id?: string;
+                        /** Format: uuid */
+                        noteTypeId: string;
+                        fields: {
+                            [key: string]: string;
+                        };
+                        tags?: string[];
+                        /** @description Optional client card ids by template id */
+                        cardIds?: {
+                            [key: string]: string;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Created */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Note"];
+                    };
+                };
+                404: components["responses"]["Problem"];
+                422: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/notes/{noteId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                noteId: components["parameters"]["NoteId"];
+            };
+            cookie?: never;
+        };
+        /** Get a note */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    noteId: components["parameters"]["NoteId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Note */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Note"];
+                    };
+                };
+                404: components["responses"]["Problem"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Delete a note with its cards, media and history */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    noteId: components["parameters"]["NoteId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["Problem"];
+            };
+        };
+        options?: never;
+        head?: never;
+        /**
+         * Edit a note
+         * @description Re-renders its cards and creates cards for templates that became non-empty.
+         */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    noteId: components["parameters"]["NoteId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        fields?: {
+                            [key: string]: string;
+                        };
+                        tags?: string[];
+                        /** Format: uuid */
+                        deckId?: string;
+                    };
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Note"];
+                    };
+                };
+                404: components["responses"]["Problem"];
+                422: components["responses"]["Problem"];
+            };
+        };
+        trace?: never;
+    };
+    "/decks/{deckId}/import": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deckId: components["parameters"]["DeckId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Import one chunk of parsed CSV/TSV rows
+         * @description See contracts/csv-import.md. Send chunks in order with the same jobId.
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deckId: components["parameters"]["DeckId"];
+                };
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        jobId: string;
+                        fileName: string;
+                        totalRows: number;
+                        chunkIndex: number;
+                        /** @default false */
+                        isLast?: boolean;
+                        /** @enum {string} */
+                        duplicateMode: "skip" | "update" | "keep_both";
+                        rows: {
+                            /** @description 1-based line number in the source file */
+                            row: number;
+                            front: string;
+                            /** @default  */
+                            back?: string;
+                            tags?: string[];
+                        }[];
+                    };
+                };
+            };
+            responses: {
+                /** @description Chunk result (cumulative totals for the job) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            imported: number;
+                            updated: number;
+                            skipped: number;
+                            errors: {
+                                row: number;
+                                reason: string;
+                            }[];
+                        };
+                    };
+                };
+                413: components["responses"]["Problem"];
+                422: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/decks/{deckId}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                deckId: components["parameters"]["DeckId"];
+            };
+            cookie?: never;
+        };
+        /** Export a deck in anki-duo-export v1 format */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    deckId: components["parameters"]["DeckId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Export file (Content-Disposition attachment) */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": unknown;
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/decks/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Create a new deck from an anki-duo-export v1 file
+         * @description Replays review history so scheduling state matches the export exactly (FR-014).
+         */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            responses: {
+                /** @description Restored */
+                201: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Deck"];
+                    };
+                };
+                422: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/upload-url": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reserve a media asset and get a presigned upload URL */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** Format: uuid */
+                        cardId: string;
+                        /** @enum {string} */
+                        side: "front" | "back";
+                        /** @enum {string} */
+                        mime: "image/png" | "image/jpeg" | "image/webp" | "image/gif" | "image/svg+xml" | "audio/mpeg" | "audio/mp4" | "audio/aac" | "audio/ogg" | "audio/wav";
+                        bytes: number;
+                    };
+                };
+            };
+            responses: {
+                /** @description Upload target */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            /** Format: uuid */
+                            mediaId: string;
+                            /** Format: uri */
+                            uploadUrl: string;
+                            /** Format: date-time */
+                            expiresAt: string;
+                        };
+                    };
+                };
+                413: components["responses"]["Problem"];
+                415: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/{mediaId}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["MediaId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm an upload. The server checks the object's size and type, then marks it ready */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    mediaId: components["parameters"]["MediaId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Ready */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Media"];
+                    };
+                };
+                422: components["responses"]["Problem"];
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/media/{mediaId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                mediaId: components["parameters"]["MediaId"];
+            };
+            cookie?: never;
+        };
+        /** Redirect to a short-lived signed URL for the media bytes */
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    mediaId: components["parameters"]["MediaId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Redirect to signed URL */
+                302: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                404: components["responses"]["Problem"];
+            };
+        };
+        put?: never;
+        post?: never;
+        /** Remove a media asset from its card */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    mediaId: components["parameters"]["MediaId"];
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/me/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update learner settings */
+        patch: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": components["schemas"]["SettingsPatch"];
+                };
+            };
+            responses: {
+                /** @description Updated */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": components["schemas"]["Settings"];
+                    };
+                };
+                422: components["responses"]["Problem"];
+            };
+        };
+        trace?: never;
+    };
+    "/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * Delete the account and all its data (FR-030)
+         * @description Requires a fresh session (signed in within the last 10 minutes).
+         */
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description Deleted */
+                204: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+                403: components["responses"]["Problem"];
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/client-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Report client-side errors and sync failures (observability, research R16) */
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody: {
+                content: {
+                    "application/json": {
+                        /** @enum {string} */
+                        kind: "error" | "sync_failure";
+                        message: string;
+                        context?: {
+                            [key: string]: unknown;
+                        };
+                    };
+                };
+            };
+            responses: {
+                /** @description Accepted */
+                202: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    Problem: {
-      type: string;
-      title: string;
-      status: number;
-      /** @enum {string} */
-      code:
-        | 'validation_failed'
-        | 'not_found'
-        | 'deck_name_taken'
-        | 'card_limit_reached'
-        | 'media_quota_exceeded'
-        | 'media_too_large'
-        | 'unsupported_media_type'
-        | 'import_too_large'
-        | 'import_bad_encoding'
-        | 'export_invalid'
-        | 'rate_limited'
-        | 'reauth_required';
-      detail?: string;
-      errors?: {
-        path?: string;
-        message?: string;
-      }[];
+    schemas: {
+        Problem: {
+            type: string;
+            title: string;
+            status: number;
+            /** @enum {string} */
+            code: "validation_failed" | "not_found" | "deck_name_taken" | "card_limit_reached" | "media_quota_exceeded" | "media_too_large" | "unsupported_media_type" | "import_too_large" | "import_bad_encoding" | "export_invalid" | "invalid_note_type" | "note_type_in_use" | "note_type_name_taken" | "empty_front" | "edit_via_note" | "rate_limited" | "reauth_required";
+            detail?: string;
+            errors?: {
+                path?: string;
+                message?: string;
+            }[];
+        };
+        FsrsState: {
+            /** @enum {string} */
+            state: "new" | "learning" | "review" | "relearning";
+            /** Format: date-time */
+            due: string;
+            stability: number;
+            /** @description 0 only for new cards */
+            difficulty: number;
+            learningSteps: number;
+            reps: number;
+            lapses: number;
+            /** Format: date-time */
+            lastReview: string | null;
+        };
+        Deck: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            newCardsPerDay: number;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt: string | null;
+        };
+        CardInput: {
+            /**
+             * Format: uuid
+             * @description Optional client id (create only)
+             */
+            id?: string;
+            front: string;
+            back?: string;
+            tags?: string[];
+        };
+        Card: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            deckId: string;
+            position: number;
+            nodeIndex: number;
+            front: string;
+            back: string;
+            tags: string[];
+            suspended: boolean;
+            /** Format: uuid */
+            noteId: string | null;
+            /** Format: uuid */
+            noteTypeId: string | null;
+            templateId: string | null;
+            /**
+             * @description markdown for legacy cards, html for note cards (sanitized, rendered)
+             * @enum {string}
+             */
+            format: "markdown" | "html";
+            fsrs: components["schemas"]["FsrsState"];
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt: string | null;
+        };
+        NoteField: {
+            id: string;
+            name: string;
+        };
+        NoteTemplate: {
+            id: string;
+            name: string;
+            front: string;
+            back: string;
+        };
+        NoteFieldsInput: {
+            id: string;
+            name: string;
+        }[];
+        NoteTemplatesInput: {
+            id: string;
+            name: string;
+            front: string;
+            back: string;
+        }[];
+        NoteType: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+            fields: components["schemas"]["NoteField"][];
+            templates: components["schemas"]["NoteTemplate"][];
+            css: string;
+            /** Format: date-time */
+            updatedAt: string;
+            /** Format: date-time */
+            deletedAt: string | null;
+        };
+        Note: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            deckId: string;
+            /** Format: uuid */
+            noteTypeId: string;
+            fields: {
+                [key: string]: string;
+            };
+            tags: string[];
+            cards: {
+                /** Format: uuid */
+                id: string;
+                templateId: string;
+            }[];
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        Media: {
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            cardId: string;
+            /** @enum {string} */
+            side: "front" | "back";
+            /** @enum {string} */
+            kind: "image" | "audio";
+            mime: string;
+            bytes: number;
+            sort: number;
+            /** Format: date-time */
+            deletedAt: string | null;
+        };
+        Settings: {
+            /** @enum {string} */
+            locale: "vi" | "en";
+            /** @description IANA time zone */
+            timeZone: string;
+            dayStartHour: number;
+            desiredRetention: number;
+            maximumIntervalDays: number;
+            /** @enum {integer} */
+            dailyXpGoal: 10 | 20 | 30 | 50;
+            sessionSize: number;
+            soundEnabled: boolean;
+            /** @enum {string} */
+            motion: "system" | "reduced" | "full";
+        };
+        SettingsPatch: {
+            /** @enum {string} */
+            locale?: "vi" | "en";
+            timeZone?: string;
+            dayStartHour?: number;
+            desiredRetention?: number;
+            maximumIntervalDays?: number;
+            /** @enum {integer} */
+            dailyXpGoal?: 10 | 20 | 30 | 50;
+            sessionSize?: number;
+            soundEnabled?: boolean;
+            /** @enum {string} */
+            motion?: "system" | "reduced" | "full";
+        };
+        Stats: {
+            totalXp: number;
+            currentStreak: number;
+            longestStreak: number;
+            /** Format: date */
+            lastGoalDay: string | null;
+            cardCount: number;
+            mediaBytes: number;
+        };
+        DailyActivity: {
+            /** Format: date */
+            studyDay: string;
+            reviews: number;
+            xp: number;
+            goalXp: number;
+            allAvailableDone: boolean;
+            goalMet: boolean;
+        };
+        ReviewEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "ReviewEvent";
+            /**
+             * Format: uuid
+             * @description UUIDv7 generated on device
+             */
+            id: string;
+            /** Format: uuid */
+            cardId: string;
+            /** Format: uuid */
+            sessionId: string;
+            /**
+             * @description 1 Again, 2 Hard, 3 Good, 4 Easy
+             * @enum {integer}
+             */
+            grade: 1 | 2 | 3 | 4;
+            /** Format: date-time */
+            reviewedAt: string;
+            durationMs: number;
+            /** @default false */
+            studyAhead: boolean;
+            schedulerVersion: string;
+            stateBefore: components["schemas"]["FsrsState"];
+            /** @description Client's optimistic result. The server recomputes it and its own result wins. */
+            stateAfter: components["schemas"]["FsrsState"];
+        };
+        RevokeEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "RevokeEvent";
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            reviewId: string;
+            /** Format: date-time */
+            revokedAt: string;
+        };
+        SessionEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "SessionEvent";
+            /**
+             * Format: uuid
+             * @description Equals StudySession.id. Re-sent with updates
+             */
+            id: string;
+            /** Format: uuid */
+            deckId: string;
+            /** @enum {string} */
+            kind: "node" | "review" | "ahead";
+            nodeIndex?: number | null;
+            /** Format: date-time */
+            startedAt: string;
+            /** Format: date-time */
+            endedAt?: string | null;
+            plannedCount: number;
+            cardsReviewed: number;
+            correctCount: number;
+            completed: boolean;
+        };
+        /** @description The client reports that every card available today has been studied (FR-025). */
+        DayFlagEvent: {
+            /**
+             * @description discriminator enum property added by openapi-typescript
+             * @enum {string}
+             */
+            type: "DayFlagEvent";
+            /** Format: uuid */
+            id: string;
+            /** Format: date */
+            studyDay: string;
+            /** @constant */
+            allAvailableDone: true;
+        };
     };
-    FsrsState: {
-      /** @enum {string} */
-      state: 'new' | 'learning' | 'review' | 'relearning';
-      /** Format: date-time */
-      due: string;
-      stability: number;
-      /** @description 0 only for new cards */
-      difficulty: number;
-      learningSteps: number;
-      reps: number;
-      lapses: number;
-      /** Format: date-time */
-      lastReview: string | null;
+    responses: {
+        /** @description Error */
+        Problem: {
+            headers: {
+                [name: string]: unknown;
+            };
+            content: {
+                "application/problem+json": components["schemas"]["Problem"];
+            };
+        };
     };
-    Deck: {
-      /** Format: uuid */
-      id: string;
-      name: string;
-      newCardsPerDay: number;
-      /** Format: date-time */
-      createdAt: string;
-      /** Format: date-time */
-      updatedAt: string;
-      /** Format: date-time */
-      deletedAt: string | null;
+    parameters: {
+        DeckId: string;
+        CardId: string;
+        NoteTypeId: string;
+        NoteId: string;
+        MediaId: string;
     };
-    CardInput: {
-      /**
-       * Format: uuid
-       * @description Optional client id (create only)
-       */
-      id?: string;
-      front: string;
-      back?: string;
-      tags?: string[];
-    };
-    Card: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      deckId: string;
-      position: number;
-      nodeIndex: number;
-      front: string;
-      back: string;
-      tags: string[];
-      suspended: boolean;
-      fsrs: components['schemas']['FsrsState'];
-      /** Format: date-time */
-      updatedAt: string;
-      /** Format: date-time */
-      deletedAt: string | null;
-    };
-    Media: {
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      cardId: string;
-      /** @enum {string} */
-      side: 'front' | 'back';
-      /** @enum {string} */
-      kind: 'image' | 'audio';
-      mime: string;
-      bytes: number;
-      sort: number;
-      /** Format: date-time */
-      deletedAt: string | null;
-    };
-    Settings: {
-      /** @enum {string} */
-      locale: 'vi' | 'en';
-      /** @description IANA time zone */
-      timeZone: string;
-      dayStartHour: number;
-      desiredRetention: number;
-      maximumIntervalDays: number;
-      /** @enum {integer} */
-      dailyXpGoal: 10 | 20 | 30 | 50;
-      sessionSize: number;
-      soundEnabled: boolean;
-      /** @enum {string} */
-      motion: 'system' | 'reduced' | 'full';
-    };
-    SettingsPatch: {
-      /** @enum {string} */
-      locale?: 'vi' | 'en';
-      timeZone?: string;
-      dayStartHour?: number;
-      desiredRetention?: number;
-      maximumIntervalDays?: number;
-      /** @enum {integer} */
-      dailyXpGoal?: 10 | 20 | 30 | 50;
-      sessionSize?: number;
-      soundEnabled?: boolean;
-      /** @enum {string} */
-      motion?: 'system' | 'reduced' | 'full';
-    };
-    Stats: {
-      totalXp: number;
-      currentStreak: number;
-      longestStreak: number;
-      /** Format: date */
-      lastGoalDay: string | null;
-      cardCount: number;
-      mediaBytes: number;
-    };
-    DailyActivity: {
-      /** Format: date */
-      studyDay: string;
-      reviews: number;
-      xp: number;
-      goalXp: number;
-      allAvailableDone: boolean;
-      goalMet: boolean;
-    };
-    ReviewEvent: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'ReviewEvent';
-      /**
-       * Format: uuid
-       * @description UUIDv7 generated on device
-       */
-      id: string;
-      /** Format: uuid */
-      cardId: string;
-      /** Format: uuid */
-      sessionId: string;
-      /**
-       * @description 1 Again, 2 Hard, 3 Good, 4 Easy
-       * @enum {integer}
-       */
-      grade: 1 | 2 | 3 | 4;
-      /** Format: date-time */
-      reviewedAt: string;
-      durationMs: number;
-      /** @default false */
-      studyAhead: boolean;
-      schedulerVersion: string;
-      stateBefore: components['schemas']['FsrsState'];
-      /** @description Client's optimistic result. The server recomputes it and its own result wins. */
-      stateAfter: components['schemas']['FsrsState'];
-    };
-    RevokeEvent: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'RevokeEvent';
-      /** Format: uuid */
-      id: string;
-      /** Format: uuid */
-      reviewId: string;
-      /** Format: date-time */
-      revokedAt: string;
-    };
-    SessionEvent: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'SessionEvent';
-      /**
-       * Format: uuid
-       * @description Equals StudySession.id. Re-sent with updates
-       */
-      id: string;
-      /** Format: uuid */
-      deckId: string;
-      /** @enum {string} */
-      kind: 'node' | 'review' | 'ahead';
-      nodeIndex?: number | null;
-      /** Format: date-time */
-      startedAt: string;
-      /** Format: date-time */
-      endedAt?: string | null;
-      plannedCount: number;
-      cardsReviewed: number;
-      correctCount: number;
-      completed: boolean;
-    };
-    /** @description The client reports that every card available today has been studied (FR-025). */
-    DayFlagEvent: {
-      /**
-       * @description discriminator enum property added by openapi-typescript
-       * @enum {string}
-       */
-      type: 'DayFlagEvent';
-      /** Format: uuid */
-      id: string;
-      /** Format: date */
-      studyDay: string;
-      /** @constant */
-      allAvailableDone: true;
-    };
-  };
-  responses: {
-    /** @description Error */
-    Problem: {
-      headers: {
-        [name: string]: unknown;
-      };
-      content: {
-        'application/problem+json': components['schemas']['Problem'];
-      };
-    };
-  };
-  parameters: {
-    DeckId: string;
-    CardId: string;
-    MediaId: string;
-  };
-  requestBodies: never;
-  headers: never;
-  pathItems: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

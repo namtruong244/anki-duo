@@ -114,7 +114,7 @@ export function DeckSettingsDialog({
         <label className="flex flex-col gap-1.5 text-xs font-black uppercase tracking-wide text-text-muted">
           <span>{t('decks.name')}</span>
           <input
-            className="min-h-11 rounded-[var(--radius-button)] border-2 border-border bg-surface px-3.5 text-sm font-bold text-text focus-visible:border-focus focus-visible:outline-none transition-colors"
+            className="min-h-11 rounded-[var(--radius-button)] border-2 border-border bg-surface px-3.5 text-sm font-bold text-text transition-colors focus:border-secondary focus:bg-[var(--color-card)] focus:outline-none"
             value={name}
             maxLength={100}
             onChange={(e) => setName(e.target.value)}
@@ -125,7 +125,7 @@ export function DeckSettingsDialog({
         <label className="flex flex-col gap-1.5 text-xs font-black uppercase tracking-wide text-text-muted">
           <span>{t('decks.newPerDay')}</span>
           <input
-            className="min-h-11 rounded-[var(--radius-button)] border-2 border-border bg-surface px-3.5 text-sm font-bold text-text focus-visible:border-focus focus-visible:outline-none transition-colors"
+            className="min-h-11 rounded-[var(--radius-button)] border-2 border-border bg-surface px-3.5 text-sm font-bold text-text transition-colors focus:border-secondary focus:bg-[var(--color-card)] focus:outline-none"
             inputMode="numeric"
             value={perDay}
             onChange={(e) => setPerDay(e.target.value)}

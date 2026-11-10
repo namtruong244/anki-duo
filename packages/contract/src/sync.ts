@@ -5,6 +5,7 @@ import {
   DailyActivitySchema,
   DeckSchema,
   MediaSchema,
+  NoteTypeSchema,
   SettingsSchema,
   StatsSchema,
   problemResponse,
@@ -24,6 +25,7 @@ export const PullResponseSchema = z.object({
   decks: z.array(DeckSchema),
   cards: z.array(CardSchema),
   media: z.array(MediaSchema),
+  noteTypes: z.array(NoteTypeSchema),
   dailyActivity: z.array(DailyActivitySchema),
 });
 

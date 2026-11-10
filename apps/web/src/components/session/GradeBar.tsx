@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Grade } from '@anki-duo/domain';
 import type { Previews } from '../../client/session/session-machine';
@@ -25,6 +25,35 @@ export function GradeBar({
   onGrade: (g: Grade) => void;
 }) {
   const { t } = useTranslation();
+  const [hotkeyGrade, setHotkeyGrade] = useState<Grade | null>(null);
+
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName))) return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
+      let targetGrade: Grade | null = null;
+      if (['1', '2', '3', '4'].includes(e.key)) {
+        targetGrade = Number(e.key) as Grade;
+      } else if (e.key === ' ') {
+        targetGrade = 3;
+      }
+      if (targetGrade !== null) {
+        setHotkeyGrade(targetGrade);
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          setHotkeyGrade(null);
+        }, 140);
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      if (timer) clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <div
       role="group"
@@ -40,8 +69,9 @@ export function GradeBar({
             variant={variant}
             aria-label={label}
             aria-keyshortcuts={String(grade)}
+            pressed={hotkeyGrade === grade}
             onClick={() => onGrade(grade)}
-            className="h-14 w-full whitespace-nowrap rounded-2xl px-2 text-sm sm:px-4"
+            className="h-12 w-full whitespace-nowrap rounded-2xl px-2 text-[13px] sm:px-3"
           >
             <span aria-hidden="true">{label}</span>
           </ChunkyButton>

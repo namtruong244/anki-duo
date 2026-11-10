@@ -43,7 +43,7 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [cursor, hasMore, settings, stats, decks, cards, media, dailyActivity]
+                required: [cursor, hasMore, settings, stats, decks, cards, media, noteTypes, dailyActivity]
                 properties:
                   cursor: { type: string }
                   hasMore: { type: boolean }
@@ -52,6 +52,7 @@ paths:
                   decks: { type: array, items: { $ref: '#/components/schemas/Deck' } }
                   cards: { type: array, items: { $ref: '#/components/schemas/Card' } }
                   media: { type: array, items: { $ref: '#/components/schemas/Media' } }
+                  noteTypes: { type: array, items: { $ref: '#/components/schemas/NoteType' } }
                   dailyActivity: { type: array, items: { $ref: '#/components/schemas/DailyActivity' } }
         '400': { $ref: '#/components/responses/Problem' }
 
@@ -180,6 +181,7 @@ paths:
       responses:
         '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Card' } } } }
         '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
     delete:
       summary: Delete a card and its media and history
       responses:
@@ -191,6 +193,124 @@ paths:
       summary: Reset a card to New (records a ReviewLog of kind=reset)
       responses:
         '200': { description: Reset, content: { application/json: { schema: { $ref: '#/components/schemas/Card' } } } }
+
+  /note-types:
+    get:
+      summary: List note types
+      description: Creates the default note types the first time a learner has none.
+      responses:
+        '200':
+          description: Note types
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [noteTypes]
+                properties:
+                  noteTypes: { type: array, items: { $ref: '#/components/schemas/NoteType' } }
+    post:
+      summary: Create a note type
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, fields, templates]
+              properties:
+                id: { type: string, format: uuid, description: Optional client id }
+                name: { type: string, minLength: 1, maxLength: 100 }
+                fields: { $ref: '#/components/schemas/NoteFieldsInput' }
+                templates: { $ref: '#/components/schemas/NoteTemplatesInput' }
+                css: { type: string, maxLength: 50000 }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/NoteType' } } } }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /note-types/{noteTypeId}:
+    parameters: [{ $ref: '#/components/parameters/NoteTypeId' }]
+    patch:
+      summary: Edit a note type
+      description: A field id kept with a new name rewrites templates. Added templates create cards for existing notes; removed templates delete their cards. Every card of the type is re-rendered.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                name: { type: string, minLength: 1, maxLength: 100 }
+                fields: { $ref: '#/components/schemas/NoteFieldsInput' }
+                templates: { $ref: '#/components/schemas/NoteTemplatesInput' }
+                css: { type: string, maxLength: 50000 }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/NoteType' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    delete:
+      summary: Delete a note type
+      description: Answers 409 note_type_in_use while notes still use it.
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/Problem' }
+        '409': { $ref: '#/components/responses/Problem' }
+
+  /decks/{deckId}/notes:
+    parameters: [{ $ref: '#/components/parameters/DeckId' }]
+    post:
+      summary: Create a note and its cards
+      description: One card per template whose rendered front is not empty. Idempotent on id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [noteTypeId, fields]
+              properties:
+                id: { type: string, format: uuid, description: Optional client id }
+                noteTypeId: { type: string, format: uuid }
+                fields: { type: object, additionalProperties: { type: string, maxLength: 100000 } }
+                tags: { type: array, maxItems: 20, items: { type: string, minLength: 1, maxLength: 50, pattern: '^\S+$' } }
+                cardIds: { type: object, additionalProperties: { type: string, format: uuid }, description: Optional client card ids by template id }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/Note' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+
+  /notes/{noteId}:
+    parameters: [{ $ref: '#/components/parameters/NoteId' }]
+    get:
+      summary: Get a note
+      responses:
+        '200': { description: Note, content: { application/json: { schema: { $ref: '#/components/schemas/Note' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+    patch:
+      summary: Edit a note
+      description: Re-renders its cards and creates cards for templates that became non-empty.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              minProperties: 1
+              properties:
+                fields: { type: object, additionalProperties: { type: string, maxLength: 100000 } }
+                tags: { type: array, maxItems: 20, items: { type: string, minLength: 1, maxLength: 50, pattern: '^\S+$' } }
+                deckId: { type: string, format: uuid }
+      responses:
+        '200': { description: Updated, content: { application/json: { schema: { $ref: '#/components/schemas/Note' } } } }
+        '404': { $ref: '#/components/responses/Problem' }
+        '422': { $ref: '#/components/responses/Problem' }
+    delete:
+      summary: Delete a note with its cards, media and history
+      responses:
+        '204': { description: Deleted }
+        '404': { $ref: '#/components/responses/Problem' }
 
   /decks/{deckId}/import:
     parameters: [{ $ref: '#/components/parameters/DeckId' }]
@@ -371,6 +491,8 @@ components:
   parameters:
     DeckId: { name: deckId, in: path, required: true, schema: { type: string, format: uuid } }
     CardId: { name: cardId, in: path, required: true, schema: { type: string, format: uuid } }
+    NoteTypeId: { name: noteTypeId, in: path, required: true, schema: { type: string, format: uuid } }
+    NoteId: { name: noteId, in: path, required: true, schema: { type: string, format: uuid } }
     MediaId: { name: mediaId, in: path, required: true, schema: { type: string, format: uuid } }
 
   responses:
@@ -401,6 +523,11 @@ components:
             - import_too_large
             - import_bad_encoding
             - export_invalid
+            - invalid_note_type
+            - note_type_in_use
+            - note_type_name_taken
+            - empty_front
+            - edit_via_note
             - rate_limited
             - reauth_required
         detail: { type: string }
@@ -447,7 +574,7 @@ components:
 
     Card:
       type: object
-      required: [id, deckId, position, nodeIndex, front, back, tags, suspended, fsrs, updatedAt, deletedAt]
+      required: [id, deckId, position, nodeIndex, front, back, tags, suspended, noteId, noteTypeId, templateId, format, fsrs, updatedAt, deletedAt]
       properties:
         id: { type: string, format: uuid }
         deckId: { type: string, format: uuid }
@@ -457,9 +584,84 @@ components:
         back: { type: string }
         tags: { type: array, items: { type: string } }
         suspended: { type: boolean }
+        noteId: { type: ['string', 'null'], format: uuid }
+        noteTypeId: { type: ['string', 'null'], format: uuid }
+        templateId: { type: ['string', 'null'] }
+        format: { type: string, enum: [markdown, html], description: 'markdown for legacy cards, html for note cards (sanitized, rendered)' }
         fsrs: { $ref: '#/components/schemas/FsrsState' }
         updatedAt: { type: string, format: date-time }
         deletedAt: { type: ['string', 'null'], format: date-time }
+
+    NoteField:
+      type: object
+      required: [id, name]
+      properties:
+        id: { type: string }
+        name: { type: string }
+
+    NoteTemplate:
+      type: object
+      required: [id, name, front, back]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        front: { type: string }
+        back: { type: string }
+
+    NoteFieldsInput:
+      type: array
+      minItems: 1
+      maxItems: 50
+      items:
+        type: object
+        required: [id, name]
+        properties:
+          id: { type: string, minLength: 1, maxLength: 40 }
+          name: { type: string, minLength: 1, maxLength: 100 }
+
+    NoteTemplatesInput:
+      type: array
+      minItems: 1
+      maxItems: 20
+      items:
+        type: object
+        required: [id, name, front, back]
+        properties:
+          id: { type: string, minLength: 1, maxLength: 40 }
+          name: { type: string, minLength: 1, maxLength: 100 }
+          front: { type: string, maxLength: 20000 }
+          back: { type: string, maxLength: 20000 }
+
+    NoteType:
+      type: object
+      required: [id, name, fields, templates, css, updatedAt, deletedAt]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        fields: { type: array, items: { $ref: '#/components/schemas/NoteField' } }
+        templates: { type: array, items: { $ref: '#/components/schemas/NoteTemplate' } }
+        css: { type: string }
+        updatedAt: { type: string, format: date-time }
+        deletedAt: { type: ['string', 'null'], format: date-time }
+
+    Note:
+      type: object
+      required: [id, deckId, noteTypeId, fields, tags, cards, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        deckId: { type: string, format: uuid }
+        noteTypeId: { type: string, format: uuid }
+        fields: { type: object, additionalProperties: { type: string } }
+        tags: { type: array, items: { type: string } }
+        cards:
+          type: array
+          items:
+            type: object
+            required: [id, templateId]
+            properties:
+              id: { type: string, format: uuid }
+              templateId: { type: string }
+        updatedAt: { type: string, format: date-time }
 
     Media:
       type: object

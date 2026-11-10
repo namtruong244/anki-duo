@@ -131,7 +131,7 @@ export function StatusRow({ data, className = '' }: { data: RailData; className?
         type="button"
         onClick={() => void toggleLanguage()}
         aria-label={t('ui.rail.language')}
-        className="flex cursor-pointer items-center gap-1.5 rounded-lg px-1 py-1 text-text-muted"
+        className="flex cursor-pointer items-center gap-1.5 rounded-lg px-1.5 py-1 text-text-muted transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface active:scale-95"
       >
         <Icon name="globe" size={20} className="text-secondary" />
         <span>{isVi ? 'VI' : 'EN'}</span>
@@ -166,13 +166,13 @@ export function DailyQuestCard({ data }: { data: RailData }) {
         <h3 className="text-base font-extrabold text-text">{t('ui.rail.studyGoal')}</h3>
         <Link
           to="/dashboard"
-          className="text-xs font-extrabold uppercase tracking-[0.08em] text-nav-active-text"
+          className="rounded-md px-1.5 py-0.5 text-xs font-extrabold uppercase tracking-[0.08em] text-nav-active-text transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface active:scale-95"
         >
           {t('ui.rail.details')}
         </Link>
       </div>
       <div className="flex items-center gap-3">
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold text-[var(--color-ink)] shadow-[0_4px_0_var(--color-gold-depth)]">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gold text-on-gold shadow-[0_4px_0_var(--color-gold-depth)]">
           <Icon name="zap" size={26} />
         </div>
         <div className="flex min-w-0 flex-1 flex-col gap-1.5">
@@ -233,7 +233,7 @@ export function RightRail({ data }: { data?: RailData }) {
   const live = useRailData();
   const d = data ?? live;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4">
       <StatusRow data={d} />
       <DailyQuestCard data={d} />
       <TodayOverview data={d} />

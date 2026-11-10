@@ -27,6 +27,7 @@ export function HomePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const net = useOnlineOnly();
+  const [query, setQuery] = useState('');
   const [editing, setEditing] = useState<Deck | null | undefined>(undefined); // undefined = closed
   const fileInput = useRef<HTMLInputElement>(null);
 
@@ -91,13 +92,19 @@ export function HomePage() {
   };
 
   const smallAction =
-    'inline-flex min-h-11 cursor-pointer items-center gap-1.5 rounded-lg px-2.5 text-xs font-extrabold uppercase tracking-[0.06em] text-text-muted transition-colors hover:bg-surface hover:text-text focus-visible:outline-3 focus-visible:outline-focus disabled:cursor-not-allowed disabled:opacity-50';
+    'inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-xs font-extrabold uppercase tracking-[0.06em] text-text-muted transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface hover:text-text enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50';
+  const iconAction =
+    'inline-flex size-9 cursor-pointer items-center justify-center rounded-lg text-text-muted transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface hover:text-text enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50';
+
+  const q = query.trim().toLocaleLowerCase();
+  const shown = q ? home.filter((d) => d.deck.name.toLocaleLowerCase().includes(q)) : home;
+  const searchable = home.length > 5;
 
   return (
-    <section className="flex flex-col gap-5 py-4">
+    <section className="flex flex-col gap-4 py-2">
       <div className="flex items-center justify-between gap-3">
-        <h1 className="min-w-0 text-3xl font-black tracking-tight text-text">{t('home.decks')}</h1>
-        <div className="flex shrink-0 items-center gap-3">
+        <h1 className="min-w-0 text-2xl font-black tracking-tight text-text">{t('home.decks')}</h1>
+        <div className="flex shrink-0 items-center gap-2">
           <ChunkyButton variant="outline" size="sm" onClick={importCsv} {...net.buttonProps}>
             {t('ui.hub.importCsv')}
           </ChunkyButton>
@@ -114,16 +121,16 @@ export function HomePage() {
         </p>
       )}
 
-      <div className="flex flex-col gap-4 rounded-2xl border-2 border-border bg-[var(--color-card)] p-4 sm:flex-row sm:items-center">
-        <div className="flex min-w-0 flex-1 items-center gap-4">
+      <div className="flex flex-col gap-3 rounded-2xl border-2 border-border bg-[var(--color-card)] p-3 sm:flex-row sm:items-center">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           <div
             aria-hidden="true"
-            className="flex size-14 shrink-0 items-center justify-center rounded-2xl border-2 border-nav-active-border bg-nav-active-bg text-secondary"
+            className="flex size-11 shrink-0 items-center justify-center rounded-xl border-2 border-nav-active-border bg-nav-active-bg text-secondary"
           >
-            <Icon name="timer" size={26} />
+            <Icon name="timer" size={22} />
           </div>
           <div className="min-w-0">
-            <p className="text-base font-extrabold text-text">{t('home.reviewAllTitle')}</p>
+            <p className="text-[15px] font-extrabold text-text">{t('home.reviewAllTitle')}</p>
             <p className="text-sm font-semibold text-text-muted">
               {totalDue > 0
                 ? t('home.reviewAllMeta', { n: totalDue, minutes: estimate })
@@ -142,9 +149,10 @@ export function HomePage() {
         ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-3 pt-1">
+      <div className="flex items-center justify-between gap-3">
         <h2 className="text-xs font-extrabold uppercase tracking-[0.1em] text-text-subtle">
           {t('home.myDecks')}
+          <span className="ml-1.5 text-text-subtle/80">{home.length}</span>
         </h2>
         <button
           type="button"
@@ -178,44 +186,78 @@ export function HomePage() {
           </ChunkyButton>
         </div>
       ) : (
-        <ul className="flex flex-col gap-5">
-          {home.map((d, i) => (
-            <li key={d.deck.id} aria-label={d.deck.name} className="flex flex-col gap-1">
-              <DeckBanner
-                id={d.deck.id}
-                name={d.deck.name}
-                due={d.due}
-                fresh={d.fresh}
-                masteredPct={d.masteredPct}
-                index={i}
-                onStudy={() => navigate(`/session/${d.deck.id}`)}
+        <>
+          {searchable && (
+            <label className="relative block">
+              <span className="sr-only">{t('home.searchDecks')}</span>
+              <Icon
+                name="search"
+                size={16}
+                className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-subtle"
               />
-              <div className="flex flex-wrap items-center justify-end gap-1">
-                <button
-                  type="button"
-                  className={smallAction}
-                  onClick={() => navigate(`/decks/${d.deck.id}/cards`)}
-                >
-                  <Icon name="m-style" size={14} />
-                  <span>{t('decks.cards')}</span>
-                </button>
-                <button
-                  type="button"
-                  className={smallAction}
-                  onClick={() => navigate(`/decks/${d.deck.id}/import`)}
-                  {...net.buttonProps}
-                >
-                  <Icon name="file-spreadsheet" size={14} />
-                  <span>{t('decks.import')}</span>
-                </button>
-                <button type="button" className={smallAction} onClick={() => setEditing(d.deck)}>
-                  <Icon name="settings" size={14} />
-                  <span>{t('decks.settings')}</span>
-                </button>
-              </div>
-            </li>
-          ))}
-        </ul>
+              <input
+                type="search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder={t('home.searchDecks')}
+                className="h-10 w-full rounded-xl border-2 border-border bg-[var(--color-card)] pl-9 pr-3 text-sm font-bold text-text placeholder:text-text-subtle focus:border-nav-active-border"
+              />
+            </label>
+          )}
+          {shown.length === 0 ? (
+            <p className="py-6 text-center text-sm font-semibold text-text-muted">
+              {t('home.noDeckMatch')}
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-2">
+              {shown.map((d) => (
+                <li key={d.deck.id} aria-label={d.deck.name}>
+                  <DeckBanner
+                    id={d.deck.id}
+                    name={d.deck.name}
+                    due={d.due}
+                    fresh={d.fresh}
+                    masteredPct={d.masteredPct}
+                    index={home.indexOf(d)}
+                    onStudy={() => navigate(`/session/${d.deck.id}`)}
+                    actions={
+                      <>
+                        <button
+                          type="button"
+                          className={iconAction}
+                          aria-label={t('decks.cards')}
+                          title={t('decks.cards')}
+                          onClick={() => navigate(`/decks/${d.deck.id}/cards`)}
+                        >
+                          <Icon name="m-style" size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          className={`${iconAction} max-sm:hidden`}
+                          aria-label={t('decks.import')}
+                          title={t('decks.import')}
+                          onClick={() => navigate(`/decks/${d.deck.id}/import`)}
+                          {...net.buttonProps}
+                        >
+                          <Icon name="file-spreadsheet" size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          className={iconAction}
+                          aria-label={t('decks.settings')}
+                          title={t('decks.settings')}
+                          onClick={() => setEditing(d.deck)}
+                        >
+                          <Icon name="settings" size={18} />
+                        </button>
+                      </>
+                    }
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       <DeckSettingsDialog

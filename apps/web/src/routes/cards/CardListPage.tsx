@@ -1,18 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { motion } from 'motion/react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
+import { htmlToText } from '@anki-duo/domain';
 import { content } from '../../client/runtime';
 import { dexieStore } from '../../client/store';
 import { useOnlineOnly } from '../../client/online-only';
 import type { Card } from '../../client/local-store';
-import { ChunkyButton, Dialog, Icon, TagChip } from '../../components/ui';
+import { ChunkyButton, Dialog, Icon, Select, TagChip } from '../../components/ui';
 import { notify } from '../../client/notify';
 import { describeApiError } from '../../lib/api-error';
+import { useMotionPreference } from '../../lib/motion';
 
 type Pending = { kind: 'reset' | 'delete'; card: Card } | null;
 
-const PAGE = 200;
+const PAGE_SIZE = 20;
 const DAY = 86_400_000;
 
 /** Plain-text one-liner of card Markdown for list rows and search. */
@@ -69,10 +72,11 @@ export function CardListPage() {
   const net = useOnlineOnly();
   const [query, setQuery] = useState('');
   const [tag, setTag] = useState('');
-  const [limit, setLimit] = useState(PAGE);
+  const [page, setPage] = useState(0);
   const [pending, setPending] = useState<Pending>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const reducedMotion = useMotionPreference() === 'reduced';
 
   const decks = useLiveQuery(async () => (await dexieStore.listDecks()).sort(byName), []);
   const cards = useLiveQuery(async () => {
@@ -80,6 +84,11 @@ export function CardListPage() {
     const lists = await Promise.all(ds.map((d) => dexieStore.listCards(d.id)));
     return lists.map((l) => l.sort((a, b) => a.position - b.position)).flat();
   }, [deckId]);
+
+  // Filters change the result set, so start again from the first page.
+  useEffect(() => {
+    setPage(0);
+  }, [query, tag, deckId]);
 
   useEffect(() => {
     if (!menuFor) return;
@@ -98,8 +107,9 @@ export function CardListPage() {
   const rows = useMemo<Row[]>(
     () =>
       (cards ?? []).map((card) => {
-        const front = stripMarkdown(card.front);
-        const back = stripMarkdown(card.back);
+        const strip = card.format === 'html' ? htmlToText : stripMarkdown;
+        const front = strip(card.front);
+        const back = strip(card.back);
         return {
           card,
           front,
@@ -118,6 +128,11 @@ export function CardListPage() {
       (r) => (!tag || r.card.tags.includes(tag)) && (!q || r.haystack.includes(q)),
     );
   }, [rows, query, tag]);
+
+  // Clamp so a shrinking result set (e.g. after a delete) never leaves the page empty.
+  const pageCount = Math.max(1, Math.ceil(shown.length / PAGE_SIZE));
+  const current = Math.min(page, pageCount - 1);
+  const pageRows = shown.slice(current * PAGE_SIZE, (current + 1) * PAGE_SIZE);
 
   const now = Date.now();
   const targetDeck = deckId || decks?.[0]?.id || '';
@@ -167,12 +182,9 @@ export function CardListPage() {
           type="search"
           aria-label={t('cards.search')}
           placeholder={t('cards.search')}
-          className="min-h-12 w-full min-w-0 rounded-2xl border-2 border-border bg-surface pl-12 pr-4 text-sm font-semibold text-text placeholder:text-text-subtle focus:border-secondary focus:bg-[var(--color-card)]"
+          className="min-h-12 w-full min-w-0 rounded-2xl border-2 border-border bg-surface pl-12 pr-4 text-sm font-semibold text-text transition-colors placeholder:text-text-subtle focus:border-secondary focus:bg-[var(--color-card)] focus:outline-none"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setLimit(PAGE);
-          }}
+          onChange={(e) => setQuery(e.target.value)}
         />
       </div>
 
@@ -191,33 +203,30 @@ export function CardListPage() {
                   key={x}
                   label={x}
                   active={tag === x}
-                  onClick={() => {
-                    setTag(tag === x ? '' : x);
-                    setLimit(PAGE);
-                  }}
+                  onClick={() => setTag(tag === x ? '' : x)}
                 />
               ))}
             </>
           )}
           {hasDecks && (
-            <label className="ml-auto flex items-center gap-2 text-xs font-bold text-text-muted">
-              <span className="sr-only sm:not-sr-only">{t('ui.cards.deckFilter')}</span>
-              <select
+            <div className="ml-auto flex items-center gap-2 text-xs font-bold text-text-muted">
+              <label htmlFor="cards-deck-filter" className="sr-only sm:not-sr-only">
+                {t('ui.cards.deckFilter')}
+              </label>
+              <Select
+                id="cards-deck-filter"
                 aria-label={t('ui.cards.deckFilter')}
-                className="min-h-9 max-w-48 rounded-lg border-2 border-border bg-[var(--color-card)] px-2 text-xs font-bold text-text focus:border-secondary"
+                size="sm"
+                align="right"
+                className="max-w-48"
                 value={deckId}
-                onChange={(e) =>
-                  navigate(e.target.value ? `/decks/${e.target.value}/cards` : '/cards')
-                }
-              >
-                <option value="">{t('ui.cards.allDecks')}</option>
-                {decks!.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onChange={(val) => navigate(val ? `/decks/${val}/cards` : '/cards')}
+                options={[
+                  { value: '', label: t('ui.cards.allDecks') },
+                  ...decks!.map((d) => ({ value: d.id, label: d.name })),
+                ]}
+              />
+            </div>
           )}
         </div>
       )}
@@ -247,14 +256,14 @@ export function CardListPage() {
       ) : (
         <>
           <ul className="divide-y-2 divide-border rounded-[var(--radius-card)] border-2 border-border bg-[var(--color-card)]">
-            {shown.slice(0, limit).map(({ card: c, front, back }) => {
+            {pageRows.map(({ card: c, front, back }) => {
               const status = statusOf(t, c, now);
               const open = menuFor === c.id;
               return (
                 <li key={c.id} className="relative flex items-center">
                   <Link
                     to={`/decks/${c.deckId}/cards/${c.id}`}
-                    className="flex min-w-0 flex-1 items-center gap-3 rounded-[var(--radius-card)] px-5 py-3.5 hover:bg-surface focus-visible:outline-3 focus-visible:-outline-offset-2 focus-visible:outline-focus"
+                    className="flex min-w-0 flex-1 items-center gap-3 rounded-[var(--radius-card)] px-5 py-3.5 transition-colors duration-[var(--duration-fast)] hover:bg-surface focus-visible:-outline-offset-2"
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-base font-extrabold text-text">
@@ -283,14 +292,17 @@ export function CardListPage() {
                       aria-haspopup="menu"
                       aria-expanded={open}
                       onClick={() => setMenuFor(open ? null : c.id)}
-                      className="flex h-11 w-9 cursor-pointer items-center justify-center rounded-lg text-text-subtle hover:bg-surface hover:text-text focus-visible:outline-3 focus-visible:outline-focus"
+                      className="flex h-11 w-9 cursor-pointer items-center justify-center rounded-lg text-text-subtle transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface hover:text-text enabled:active:scale-95"
                     >
                       <Icon name="ellipsis" size={18} />
                     </button>
                     {open && (
-                      <div
+                      <motion.div
                         role="menu"
-                        className="absolute right-2 top-11 z-10 flex w-44 flex-col rounded-xl border-2 border-border bg-[var(--color-card)] p-1 shadow-lg"
+                        initial={reducedMotion ? false : { scale: 0.95, y: -4 }}
+                        animate={{ scale: 1, y: 0 }}
+                        transition={reducedMotion ? { duration: 0.01 } : { duration: 0.12 }}
+                        className="absolute right-2 top-11 z-10 flex w-44 origin-top-right flex-col rounded-xl border-2 border-border bg-[var(--color-card)] p-1 shadow-lg"
                       >
                         <MenuItem
                           disabled={!net.online}
@@ -320,7 +332,7 @@ export function CardListPage() {
                             setPending({ kind: 'delete', card: c });
                           }}
                         />
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 </li>
@@ -330,19 +342,36 @@ export function CardListPage() {
 
           <div className="flex flex-wrap items-center justify-between gap-3 text-xs font-bold text-text-muted">
             <span>
-              {t('ui.cards.showingCount', {
-                shown: Math.min(limit, shown.length),
+              {t('ui.cards.showingRange', {
+                from: current * PAGE_SIZE + 1,
+                to: Math.min((current + 1) * PAGE_SIZE, shown.length),
                 total: shown.length,
               })}
             </span>
-            {shown.length > limit && (
-              <button
-                type="button"
-                className="cursor-pointer font-extrabold uppercase tracking-wider text-nav-active-text underline"
-                onClick={() => setLimit((l) => l + PAGE)}
-              >
-                {t('ui.cards.showMore')}
-              </button>
+            {pageCount > 1 && (
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  aria-label={t('ui.cards.prevPage')}
+                  disabled={current === 0}
+                  onClick={() => setPage(current - 1)}
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-border bg-[var(--color-card)] text-text-muted transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface hover:text-text enabled:active:scale-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Icon name="chevron-left" size={18} />
+                </button>
+                <span className="tabular-nums text-text-muted">
+                  {t('ui.cards.pageOf', { page: current + 1, count: pageCount })}
+                </span>
+                <button
+                  type="button"
+                  aria-label={t('ui.cards.nextPage')}
+                  disabled={current >= pageCount - 1}
+                  onClick={() => setPage(current + 1)}
+                  className="flex h-9 w-9 cursor-pointer items-center justify-center rounded-xl border-2 border-border bg-[var(--color-card)] text-text-muted transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface hover:text-text enabled:active:scale-90 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  <Icon name="chevron-right" size={18} />
+                </button>
+              </div>
             )}
             {hasDecks && (
               <Link
@@ -410,7 +439,7 @@ function MenuItem({
       role="menuitem"
       disabled={disabled}
       onClick={onClick}
-      className={`flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-left text-sm font-bold hover:bg-surface disabled:cursor-not-allowed disabled:opacity-50 ${danger ? 'text-danger-depth' : 'text-text'}`}
+      className={`flex min-h-11 cursor-pointer items-center gap-2.5 rounded-lg px-3 text-left text-sm font-bold transition-[transform,background-color,color] duration-[var(--duration-fast)] hover:bg-surface enabled:active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 ${danger ? 'text-danger-depth' : 'text-text'}`}
     >
       <Icon name={icon} size={16} />
       {label}

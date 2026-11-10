@@ -14,6 +14,10 @@ const card = (
   back: 'b',
   tags: [],
   suspended: false,
+  noteId: null,
+  noteTypeId: null,
+  templateId: null,
+  format: 'markdown' as const,
   fsrs: {
     state: over.state ?? 'new',
     due: over.due ?? '2026-01-01T00:00:00.000Z',

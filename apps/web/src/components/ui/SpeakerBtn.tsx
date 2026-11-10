@@ -20,7 +20,7 @@ export function SpeakerBtn({
     <button
       type={type}
       aria-label={label}
-      className={`inline-flex ${box} cursor-pointer items-center justify-center bg-secondary text-white shadow-[0_4px_0_var(--color-secondary-depth)] transition-transform active:translate-y-[3px] active:shadow-none focus-visible:outline-3 focus-visible:outline-offset-2 focus-visible:outline-focus ${className}`}
+      className={`inline-flex ${box} cursor-pointer items-center justify-center bg-secondary text-on-secondary shadow-[0_4px_0_var(--color-secondary-depth)] transition-[transform,box-shadow,filter] duration-[var(--duration-fast)] hover:brightness-[1.03] active:translate-y-[3px] active:shadow-none ${className}`}
       {...rest}
     >
       <Icon name="volume" size={size === 'lg' ? 30 : 22} />

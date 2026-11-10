@@ -18,6 +18,10 @@ const card = (id: string, front: string, due: string): Card => ({
   back: 'b',
   tags: [],
   suspended: false,
+  noteId: null,
+  noteTypeId: null,
+  templateId: null,
+  format: 'markdown' as const,
   fsrs: {
     state: 'review',
     due,

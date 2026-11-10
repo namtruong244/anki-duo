@@ -14,6 +14,7 @@ import { registerDecks } from './routes/decks.js';
 import { registerExport } from './routes/export.js';
 import { registerImport } from './routes/import.js';
 import { registerClientEvents } from './routes/client-events.js';
+import { registerNotes } from './routes/notes.js';
 import { registerMe } from './routes/me.js';
 import { registerMedia } from './routes/media.js';
 import { registerSync } from './routes/sync.js';
@@ -106,6 +107,7 @@ export function createApp(deps: AppDeps) {
   registerSync(app);
   registerDecks(app);
   registerCards(app);
+  registerNotes(app);
   registerImport(app);
   registerMedia(app);
   registerExport(app);

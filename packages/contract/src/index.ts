@@ -6,3 +6,4 @@ export * from './sync.js';
 export * from './decks.js';
 export * from './media.js';
 export * from './export.js';
+export * from './notes.js';

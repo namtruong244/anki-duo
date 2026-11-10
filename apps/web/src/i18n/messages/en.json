@@ -43,7 +43,32 @@
     "legalSignIn": "By signing in, you agree to Anki Duo's Terms & Privacy Policy.",
     "legalSignUp": "I agree to Anki Duo's Terms of Service and Privacy Policy.",
     "termsRequired": "Please accept the terms to create an account.",
-    "error": "Something went wrong. Please try again."
+    "error": "Something went wrong. Please try again.",
+    "passwordHint": "At least 10 characters",
+    "resend": "Resend verification email",
+    "resendCooldown": "Resend in {seconds}s",
+    "resendSending": "Sending…",
+    "resendSent": "Verification email sent to {email}. Check your inbox and spam folder.",
+    "resendFailed": "We couldn't send the email. Please try again in a moment.",
+    "checkSpam": "Can't find it? Check your spam folder.",
+    "resendEmailLabel": "Your email",
+    "unverifiedHelp": "Your email isn't verified yet. Check your inbox (and spam) for the verification link.",
+    "invalidCredentialsHint": "Forgot your password?",
+    "userExistsSignIn": "Sign in",
+    "userExistsReset": "reset your password",
+    "userExistsOr": "or",
+    "errors": {
+      "emailNotVerified": "Your email isn't verified yet.",
+      "invalidCredentials": "Incorrect email or password.",
+      "userExists": "An account with this email already exists.",
+      "passwordTooShort": "Password is too short. Use at least 10 characters.",
+      "passwordTooLong": "Password is too long.",
+      "invalidEmail": "That email address doesn't look valid.",
+      "invalidToken": "This link is invalid or has expired. Request a new one.",
+      "rateLimited": "Too many attempts. Please wait a minute and try again.",
+      "network": "Can't reach the server. Check your internet connection and try again.",
+      "generic": "Something went wrong. Please try again."
+    }
   },
   "pwa": {
     "installed": "Installed"
@@ -64,6 +89,7 @@
     "resumeTitle": "Continue your session?",
     "resumeBody": "You have an unfinished session.",
     "resume": "Continue",
+    "continue": "Continue",
     "discard": "Start over",
     "emptyTitle": "You're all caught up",
     "nextDue": "Next review: {when}",
@@ -270,8 +296,7 @@
     "longestStreakShort": "Longest",
     "currentStreakHint": "days in a row",
     "totalXpHint": "XP earned",
-    "swipeHint": "swipe sideways",
-    "monthShort": "M{n}"
+    "swipeHint": "swipe sideways"
   },
   "home": {
     "title": "Learn",
@@ -289,7 +314,9 @@
     "reviewAllTitle": "Review all cards due today",
     "reviewAllMeta": "{n, plural, one {# card due} other {# cards due}} · about {minutes} min",
     "reviewNow": "Review now",
-    "myDecks": "My decks"
+    "myDecks": "My decks",
+    "searchDecks": "Search decks…",
+    "noDeckMatch": "No deck matches your search."
   },
   "celebration": {
     "goal": "Daily goal reached!",
@@ -330,7 +357,12 @@
     "import_bad_encoding": "That file is not UTF-8. Save it as UTF-8 and try again.",
     "export_invalid": "That file is not a valid Anki Duo export.",
     "rate_limited": "Too many requests. Please wait a moment and try again.",
-    "reauth_required": "Please sign in again to continue."
+    "reauth_required": "Please sign in again to continue.",
+    "invalid_note_type": "This note type is not valid. Check the fields and templates.",
+    "note_type_in_use": "Notes still use this note type, so it cannot be deleted.",
+    "note_type_name_taken": "You already have a note type with that name.",
+    "empty_front": "The front of every card would be empty. Fill in at least one field used on a front.",
+    "edit_via_note": "This card belongs to a note. Edit the note instead."
   },
   "ui": {
     "theme": {
@@ -386,15 +418,17 @@
     "cards": {
       "stateNew": "New",
       "stateLearning": "Learning",
-      "showingCount": "Showing {shown} of {total}",
+      "showingRange": "{from}–{to} of {total}",
+      "prevPage": "Previous page",
+      "nextPage": "Next page",
+      "pageOf": "Page {page} of {count}",
       "livePreview": "Live preview",
       "due": "Due",
       "deckFilter": "Deck",
       "allDecks": "All decks",
       "noDecks": "You have no decks yet. Create one first to add cards.",
       "createDeck": "Create a deck",
-      "actions": "Card actions",
-      "showMore": "Show more"
+      "actions": "Card actions"
     },
     "import": {
       "stepChoose": "Choose file",
@@ -458,6 +492,77 @@
       "addImage": "+ Image",
       "addAudio": "+ Audio",
       "saveFirst": "Save the card first to attach images or audio."
+    }
+  },
+  "notes": {
+    "toolbar": {
+      "label": "Formatting for {field}",
+      "bold": "Bold",
+      "italic": "Italic",
+      "underline": "Underline",
+      "strike": "Strikethrough",
+      "subscript": "Subscript",
+      "superscript": "Superscript",
+      "color": "Text color",
+      "highlight": "Highlight",
+      "bulletList": "Bulleted list",
+      "orderedList": "Numbered list",
+      "alignLeft": "Align left",
+      "alignCenter": "Align center",
+      "alignRight": "Align right",
+      "link": "Link",
+      "linkPrompt": "Link address (empty to remove)",
+      "clear": "Clear formatting",
+      "image": "Insert image",
+      "audio": "Insert audio",
+      "html": "HTML",
+      "htmlSource": "HTML source of {field}",
+      "saveFirst": "Save the note first to attach images or audio."
+    },
+    "editor": {
+      "newTitle": "Add new note",
+      "editTitle": "Edit note",
+      "noteType": "Note type",
+      "typeLocked": "The note type of an existing note cannot be changed.",
+      "manageTypes": "Manage note types",
+      "saveAndAdd": "Save & add another",
+      "saved": "Note saved"
+    },
+    "types": {
+      "title": "Note types",
+      "intro": "A note type defines the fields of a note and the card templates built from them.",
+      "add": "Add note type",
+      "cloneFrom": "Start from",
+      "name": "Name",
+      "copyName": "{name} copy",
+      "create": "Create",
+      "rename": "Rename",
+      "summary": "{fields} fields, {templates} card templates",
+      "deleteTitle": "Delete this note type?",
+      "deleteConfirm": "\"{name}\" will be deleted. This only works if no note uses it.",
+      "deleted": "Note type deleted",
+      "saved": "Note type saved",
+      "editTitle": "Edit note type",
+      "back": "Back to note types",
+      "validation": "Problems with this note type",
+      "fields": "Fields",
+      "fieldName": "Field {n} name",
+      "newFieldName": "Field {n}",
+      "addField": "Add field",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "deleteField": "Delete field",
+      "deleteFieldConfirm": "Deleting this field removes its content from every note of this type.",
+      "templates": "Card templates",
+      "templateName": "Template name",
+      "newTemplateName": "Card {n}",
+      "addTemplate": "Add template",
+      "deleteTemplate": "Delete template",
+      "deleteTemplateConfirm": "All cards made from this template, with their review history, will be deleted when you save.",
+      "insertField": "Insert field...",
+      "frontTemplate": "Front template",
+      "backTemplate": "Back template",
+      "css": "Styling (CSS)"
     }
   }
 }

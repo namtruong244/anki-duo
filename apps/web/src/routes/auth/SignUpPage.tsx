@@ -1,15 +1,18 @@
 import { useState, type FormEvent } from 'react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { authClient } from '../../client/auth';
+import { authErrorMessage, classifyAuthError, MIN_PASSWORD_LENGTH } from '../../client/auth-errors';
 import { ChunkyButton } from '../../components/ui';
 import { AuthShell, Field, FormError, SocialSignIn } from './Shell';
 
 function getStrength(p: string): { score: number; label: 'Weak' | 'Fair' | 'Good' | 'Strong' } {
   if (!p) return { score: 0, label: 'Weak' };
   let score = 0;
-  if (p.length >= 8) score++;
-  if (p.length >= 12) score++;
+  // Below the server minimum is always "Weak"; the minimum itself earns the first point.
+  if (p.length < MIN_PASSWORD_LENGTH) return { score: 1, label: 'Weak' };
+  score++;
+  if (p.length >= 14) score++;
   if (/[A-Z]/.test(p) && /[a-z]/.test(p)) score++;
   if (/\d/.test(p) && /[^A-Za-z0-9]/.test(p)) score++;
   const clamped = Math.max(1, Math.min(score, 4));
@@ -20,7 +23,7 @@ function getStrength(p: string): { score: number; label: 'Weak' | 'Fair' | 'Good
 export function SignUpPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<unknown>(null);
   const [busy, setBusy] = useState(false);
   const [password, setPassword] = useState('');
   const [terms, setTerms] = useState(false);
@@ -36,23 +39,32 @@ export function SignUpPage() {
   async function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!terms) {
-      setError(t('auth.termsRequired'));
+      setError({ message: t('auth.termsRequired'), terms: true });
       return;
     }
     const f = new FormData(e.currentTarget);
     const email = String(f.get('email'));
+    if (password.length < MIN_PASSWORD_LENGTH) {
+      setError({ code: 'PASSWORD_TOO_SHORT' });
+      return;
+    }
     setBusy(true);
     setError(null);
-    const { error: err } = await authClient.signUp.email({
-      email,
-      password: String(f.get('password')),
-      name: String(f.get('name') || email),
-      fetchOptions: {
-        headers: { 'x-time-zone': Intl.DateTimeFormat().resolvedOptions().timeZone },
-      },
-    });
+    let err: unknown;
+    try {
+      ({ error: err } = await authClient.signUp.email({
+        email,
+        password,
+        name: String(f.get('name') || email),
+        fetchOptions: {
+          headers: { 'x-time-zone': Intl.DateTimeFormat().resolvedOptions().timeZone },
+        },
+      }));
+    } catch (ex) {
+      err = ex;
+    }
     setBusy(false);
-    if (err) setError(t('auth.error'));
+    if (err) setError(err);
     else navigate(`/verify-email?email=${encodeURIComponent(email)}`);
   }
 
@@ -67,11 +79,12 @@ export function SignUpPage() {
             name="password"
             type="password"
             autoComplete="new-password"
-            minLength={8}
+            minLength={MIN_PASSWORD_LENGTH}
             required
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+          <p className="px-0.5 text-xs font-bold text-text-muted">{t('auth.passwordHint')}</p>
           {password.length > 0 && (
             <div className="flex flex-col gap-1.5 px-0.5">
               <div className="grid h-1.5 w-full grid-cols-4 gap-1.5">
@@ -95,21 +108,38 @@ export function SignUpPage() {
         </div>
 
         {/* Terms of service checkbox (required, as designed) */}
-        <label className="flex min-h-11 cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-border bg-surface p-3 text-xs font-semibold leading-relaxed text-text-muted transition-colors focus-within:border-secondary">
+        <label className="flex min-h-11 cursor-pointer items-start gap-2.5 rounded-2xl border-2 border-border bg-surface p-3 text-xs font-semibold leading-relaxed text-text-muted transition-colors has-[:focus-visible]:border-secondary">
           <input
             type="checkbox"
             name="terms"
             checked={terms}
             onChange={(e) => {
               setTerms(e.target.checked);
-              if (e.target.checked) setError(null);
+              if (e.target.checked && (error as { terms?: boolean } | null)?.terms) setError(null);
             }}
             className="mt-0.5 h-5 w-5 shrink-0 rounded border-2 border-border accent-primary"
           />
           <span>{t('auth.legalSignUp')}</span>
         </label>
 
-        {error && <FormError>{error}</FormError>}
+        {error !== null && (
+          <FormError>
+            {(error as { terms?: boolean }).terms
+              ? t('auth.termsRequired')
+              : authErrorMessage(error, t)}
+            {classifyAuthError(error).kind === 'userExists' && (
+              <span className="mt-1 block">
+                <Link className="underline" to="/sign-in">
+                  {t('auth.userExistsSignIn')}
+                </Link>{' '}
+                {t('auth.userExistsOr')}{' '}
+                <Link className="underline" to="/reset-password">
+                  {t('auth.userExistsReset')}
+                </Link>
+              </span>
+            )}
+          </FormError>
+        )}
 
         <ChunkyButton type="submit" disabled={busy || !terms} className="w-full rounded-2xl">
           {t('auth.signUp')}

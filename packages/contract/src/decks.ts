@@ -125,6 +125,7 @@ export const patchCardRoute = createRoute({
   responses: {
     200: { description: 'Updated', content: { 'application/json': { schema: CardSchema } } },
     404: problemResponse('Error'),
+    409: problemResponse('Error'),
   },
 });
 

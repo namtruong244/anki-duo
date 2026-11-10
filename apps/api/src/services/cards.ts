@@ -120,7 +120,9 @@ export async function updateCard(
 ) {
   return db.transaction(async (t) => {
     const tx = t as unknown as Db;
-    await findCard(tx, userId, cardId);
+    const existing = await findCard(tx, userId, cardId);
+    if (existing.noteId && (patch.front !== undefined || patch.back !== undefined))
+      throw new ApiProblem(409, 'edit_via_note', 'Edit this card through its note');
     const [row] = await tx
       .update(schema.card)
       .set({
@@ -138,26 +140,55 @@ export async function updateCard(
   });
 }
 
+/**
+ * Inside a transaction: removes history and media and leaves a content-free tombstone. The caller
+ * refreshes counts and deletes the returned storage keys once the transaction has committed.
+ */
+export async function tombstoneCardTx(tx: Db, cardId: string, now: Date): Promise<string[]> {
+  const media = await tx
+    .select({ key: schema.mediaAsset.storageKey })
+    .from(schema.mediaAsset)
+    .where(eq(schema.mediaAsset.cardId, cardId));
+  await tx.delete(schema.mediaAsset).where(eq(schema.mediaAsset.cardId, cardId));
+  await tx.delete(schema.reviewLog).where(eq(schema.reviewLog.cardId, cardId));
+  await tx
+    .update(schema.card)
+    .set({ front: '', back: '', frontNorm: '', tags: [], deletedAt: now, updatedAt: now })
+    .where(eq(schema.card.id, cardId));
+  return media.map((m) => m.key);
+}
+
+/** Soft-deletes the note once its last live card is gone. */
+export async function deleteNoteIfOrphan(tx: Db, noteId: string, now: Date): Promise<void> {
+  const [left] = await tx
+    .select({ id: schema.card.id })
+    .from(schema.card)
+    .where(and(eq(schema.card.noteId, noteId), isNull(schema.card.deletedAt)))
+    .limit(1);
+  if (left) return;
+  await tx
+    .update(schema.note)
+    .set({ fields: {}, tags: [], deletedAt: now, updatedAt: now })
+    .where(and(eq(schema.note.id, noteId), isNull(schema.note.deletedAt)));
+}
+
+export async function deleteStorageKeys(deps: AppDeps, keys: string[]): Promise<void> {
+  for (const key of keys) await deps.storage?.delete(key).catch(() => undefined);
+}
+
 /** Deletes history and media, keeps a content-free tombstone so other devices learn of it. */
 export async function deleteCard(deps: AppDeps, userId: string, cardId: string): Promise<void> {
   const { db, now } = deps;
   const keys = await db.transaction(async (t) => {
     const tx = t as unknown as Db;
-    await findCard(tx, userId, cardId);
-    const media = await tx
-      .select({ key: schema.mediaAsset.storageKey })
-      .from(schema.mediaAsset)
-      .where(eq(schema.mediaAsset.cardId, cardId));
-    await tx.delete(schema.mediaAsset).where(eq(schema.mediaAsset.cardId, cardId));
-    await tx.delete(schema.reviewLog).where(eq(schema.reviewLog.cardId, cardId));
-    await tx
-      .update(schema.card)
-      .set({ front: '', back: '', frontNorm: '', tags: [], deletedAt: now(), updatedAt: now() })
-      .where(eq(schema.card.id, cardId));
+    const card = await findCard(tx, userId, cardId);
+    const at = now();
+    const keys = await tombstoneCardTx(tx, cardId, at);
+    if (card.noteId) await deleteNoteIfOrphan(tx, card.noteId, at);
     await refreshCounts(tx, userId);
-    return media.map((m) => m.key);
+    return keys;
   });
-  for (const key of keys) await deps.storage?.delete(key).catch(() => undefined);
+  await deleteStorageKeys(deps, keys);
 }
 
 /** FR-012: back to New. The reset is a log entry, so history stays complete and replayable. */

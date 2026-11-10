@@ -2,7 +2,7 @@ import { useMemo, useState, type DragEvent } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { useTranslation } from 'react-i18next';
-import { normaliseFront } from '@anki-duo/domain';
+import { htmlToText, normaliseFront } from '@anki-duo/domain';
 import { api } from '../../client/api';
 import { newId, syncEngine } from '../../client/runtime';
 import { dexieStore } from '../../client/store';
@@ -19,7 +19,7 @@ import {
 } from '../../client/import/parse';
 import { parseInWorker } from '../../client/import/parse-client';
 import { reportCsv, runImport, type ImportTotals } from '../../client/import/upload';
-import { ChunkyButton, Icon, ProgressBar } from '../../components/ui';
+import { ChunkyButton, Icon, ProgressBar, Select } from '../../components/ui';
 import { downloadText } from '../../lib/download';
 
 type Mode = 'skip' | 'update' | 'keep_both';
@@ -33,8 +33,6 @@ const DELIMITER_KEY: Record<Delimiter, string> = {
 const ACCEPT = '.csv,.tsv,.txt,text/csv,text/tab-separated-values,text/plain';
 
 const labelClass = 'text-[11px] font-extrabold uppercase tracking-[0.1em] text-text-muted';
-const fieldClass =
-  'min-h-12 w-full min-w-0 rounded-2xl border-2 border-border bg-surface px-4 text-sm font-semibold text-text focus:border-secondary focus:bg-[var(--color-card)]';
 
 function Stepper({ step }: { step: 1 | 2 | 3 | 4 }) {
   const { t } = useTranslation();
@@ -53,7 +51,7 @@ function Stepper({ step }: { step: 1 | 2 | 3 | 4 }) {
                 done
                   ? 'bg-primary text-on-primary'
                   : current
-                    ? 'bg-secondary text-white'
+                    ? 'bg-secondary text-on-secondary'
                     : 'bg-neutral text-text-muted'
               }`}
             >
@@ -101,7 +99,10 @@ export function ImportPage() {
     [],
   );
   const existing = useLiveQuery(
-    async () => (await dexieStore.listCards(targetDeck)).map((c) => normaliseFront(c.front)),
+    async () =>
+      (await dexieStore.listCards(targetDeck)).map((c) =>
+        normaliseFront(c.format === 'html' ? htmlToText(c.front) : c.front),
+      ),
     [targetDeck],
   );
 
@@ -371,10 +372,12 @@ export function ImportPage() {
                 )}
               </p>
             )}
-            <label>
+            <label className="group">
               <span
-                className={`inline-flex min-h-11 items-center justify-center rounded-[var(--radius-button)] bg-secondary px-6 py-2.5 text-sm font-extrabold uppercase tracking-[0.06em] text-white shadow-[0_var(--button-depth)_0_var(--color-secondary-depth)] focus-within:outline-3 ${
-                  net.online ? 'cursor-pointer hover:brightness-[1.03]' : 'opacity-50'
+                className={`inline-flex min-h-10 items-center justify-center rounded-[var(--radius-button)] bg-secondary px-4 py-2 text-[13px] font-extrabold uppercase tracking-[0.04em] text-on-secondary shadow-[0_var(--button-depth)_0_var(--color-secondary-depth)] group-has-[:focus-visible]:outline-3 group-has-[:focus-visible]:outline-focus ${
+                  net.online
+                    ? 'cursor-pointer hover:brightness-[1.03] transition-[transform,box-shadow,filter] duration-[var(--duration-fast)] active:translate-y-[var(--button-press-offset)] active:shadow-none'
+                    : 'opacity-50'
                 }`}
               >
                 {t('ui.import.chooseBtn')}
@@ -398,18 +401,12 @@ export function ImportPage() {
             <label htmlFor="import-deck" className={labelClass}>
               {t('ui.import.targetDeck')}
             </label>
-            <select
+            <Select
               id="import-deck"
-              className={fieldClass}
               value={targetDeck}
-              onChange={(e) => setTargetDeck(e.target.value)}
-            >
-              {(decks ?? []).map((d) => (
-                <option key={d.id} value={d.id}>
-                  {d.name}
-                </option>
-              ))}
-            </select>
+              onChange={(val) => setTargetDeck(val)}
+              options={(decks ?? []).map((d) => ({ value: d.id, label: d.name }))}
+            />
           </div>
 
           <div
@@ -436,7 +433,7 @@ export function ImportPage() {
                       );
                     }
                   }}
-                  className={`min-h-9 cursor-pointer rounded-xl border-2 px-3.5 text-xs font-extrabold text-nav-active-text focus-visible:outline-3 focus-visible:outline-focus ${
+                  className={`min-h-9 cursor-pointer rounded-xl border-2 px-3.5 text-xs font-extrabold text-nav-active-text transition-[transform,background-color,border-color] duration-[var(--duration-fast)] active:scale-95 ${
                     active
                       ? 'border-nav-active-border bg-nav-active-bg'
                       : 'border-border bg-[var(--color-card)] hover:bg-surface'
@@ -479,17 +476,19 @@ export function ImportPage() {
                       size={20}
                       className="hidden shrink-0 text-text-muted sm:block"
                     />
-                    <select
+                    <Select
                       aria-label={`${t('ui.import.column')} ${letter}: ${col}`}
-                      className="min-h-11 w-full rounded-2xl border-2 border-nav-active-border bg-nav-active-bg px-4 text-sm font-extrabold text-nav-active-text sm:w-60"
+                      variant="tint"
+                      className="sm:w-60"
                       value={roleFor(i)}
-                      onChange={(e) => setRole(i, e.target.value as Role)}
-                    >
-                      <option value="front">{t('import.mapFront')}</option>
-                      <option value="back">{t('import.mapBack')}</option>
-                      <option value="tags">{t('import.mapTags')}</option>
-                      <option value="skip">{t('ui.import.ignore')}</option>
-                    </select>
+                      onChange={(val) => setRole(i, val as Role)}
+                      options={[
+                        { value: 'front', label: t('import.mapFront') },
+                        { value: 'back', label: t('import.mapBack') },
+                        { value: 'tags', label: t('import.mapTags') },
+                        { value: 'skip', label: t('ui.import.ignore') },
+                      ]}
+                    />
                   </li>
                 );
               })}
@@ -572,7 +571,7 @@ export function ImportPage() {
               {(['skip', 'update', 'keep_both'] as const).map((m) => (
                 <label
                   key={m}
-                  className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-xl border-2 px-3 text-xs font-extrabold ${
+                  className={`flex min-h-9 cursor-pointer items-center gap-2 rounded-xl border-2 px-3 text-xs font-extrabold transition-[transform,background-color,border-color] duration-[var(--duration-fast)] active:scale-95 ${
                     mode === m
                       ? 'border-nav-active-border bg-nav-active-bg text-nav-active-text'
                       : 'border-border text-text-muted hover:bg-surface'

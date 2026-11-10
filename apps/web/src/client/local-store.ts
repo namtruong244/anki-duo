@@ -3,6 +3,7 @@ import type { components } from './api-types';
 type S = components['schemas'];
 export type Deck = S['Deck'];
 export type Card = S['Card'];
+export type NoteType = S['NoteType'];
 export type MediaAsset = S['Media'];
 export type Settings = S['Settings'];
 export type Stats = S['Stats'];
@@ -45,6 +46,7 @@ export interface PullApplication {
   stats?: Stats | null;
   decks?: Deck[];
   cards?: Card[];
+  noteTypes?: NoteType[];
   media?: MediaAsset[];
   dailyActivity?: DailyActivity[];
   cursor?: string;
@@ -77,6 +79,11 @@ export interface LocalStore {
   ): Promise<Card[]>;
   listCardsByNode(deckId: string, nodeIndex: number): Promise<Card[]>;
   listCards(deckId: string): Promise<Card[]>;
+
+  putNoteTypes(rows: NoteType[]): Promise<void>;
+  getNoteType(id: string): Promise<NoteType | undefined>;
+  /** Note types that are not deleted. */
+  listNoteTypes(): Promise<NoteType[]>;
 
   putMedia(media: MediaAsset[]): Promise<void>;
   listMedia(cardId: string): Promise<MediaAsset[]>;

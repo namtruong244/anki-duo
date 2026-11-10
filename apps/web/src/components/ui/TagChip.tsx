@@ -22,7 +22,7 @@ export function TagChip({
     <button
       type={type}
       aria-pressed={rest.onClick ? active : undefined}
-      className={`inline-flex min-h-7 cursor-pointer items-center rounded-lg border-2 px-2.5 py-0.5 text-xs font-extrabold text-nav-active-text transition-colors focus-visible:outline-3 focus-visible:outline-focus ${
+      className={`inline-flex min-h-7 cursor-pointer items-center rounded-lg border-2 px-2.5 py-0.5 text-xs font-extrabold text-nav-active-text transition-[transform,background-color,border-color] duration-[var(--duration-fast)] active:scale-95 ${
         active
           ? 'border-nav-active-border bg-nav-active-bg'
           : 'border-border bg-[var(--color-card)] hover:bg-surface'

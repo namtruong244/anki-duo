@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import i18next from 'i18next';
 import { dexieStore } from '../../src/client/store';
 import type { Settings } from '../../src/client/local-store';
+import { studyWindow } from '../../src/client/session/session-machine';
 import { initI18n } from '../../src/i18n';
 import { DashboardPage } from '../../src/routes/dashboard/DashboardPage';
 
@@ -76,26 +77,50 @@ describe('DashboardPage', () => {
     render(<DashboardPage />);
     // d1: 2 new capped to 1; d2: 1 due (suspended one excluded).
     expect((await screen.findByTestId('donut-centre')).textContent).toContain('2');
-    const group = screen.getByRole('group', { name: 'Deck' });
-    fireEvent.click(within(group).getByRole('button', { name: 'Beta' }));
+    const select = await screen.findByRole('combobox', { name: 'Deck' });
+    fireEvent.change(select, { target: { value: 'd2' } });
     expect(screen.getByTestId('donut-centre').textContent).toContain('1');
-    fireEvent.click(within(group).getByRole('button', { name: 'Alpha' }));
+    fireEvent.change(select, { target: { value: 'd1' } });
     expect(screen.getByTestId('donut-centre').textContent).toContain('1');
   });
 
   it('filters the donut by deck', async () => {
     render(<DashboardPage />);
-    const group = await screen.findByRole('group', { name: 'Deck' });
-    expect(
-      within(group)
-        .getByRole('button', { name: /^All decks/ })
-        .getAttribute('aria-pressed'),
-    ).toBe('true');
-    fireEvent.click(within(group).getByRole('button', { name: 'Beta' }));
+    const select = (await screen.findByRole('combobox', { name: 'Deck' })) as HTMLSelectElement;
+    expect(select.value).toBe('all');
+    expect(screen.getByRole('button', { name: 'All decks' })).toBeTruthy();
+    fireEvent.change(select, { target: { value: 'd2' } });
+    expect(select.value).toBe('d2');
+    expect(screen.getByRole('button', { name: 'Beta' })).toBeTruthy();
     const list = screen.getByRole('list', { name: 'Cards by status' });
     expect(within(list).getByText('Learning').closest('li')!.textContent).toMatch(/0$/);
     expect(screen.getByTestId('donut-centre').textContent).toContain('0');
-    fireEvent.click(within(group).getByRole('button', { name: 'Alpha' }));
+    fireEvent.change(select, { target: { value: 'd1' } });
     expect(screen.getByTestId('donut-centre').textContent).toContain('2');
+  });
+
+  it('counts only days within the 12-month calendar window for daysStudied', async () => {
+    const currentStudyDay = studyWindow(new Date(), settings).day;
+    const oldDay = '2020-01-01';
+    await dexieStore.dailyActivity.bulkPut([
+      {
+        studyDay: oldDay,
+        reviews: 10,
+        xp: 100,
+        goalXp: 20,
+        allAvailableDone: true,
+        goalMet: true,
+      },
+      {
+        studyDay: currentStudyDay,
+        reviews: 5,
+        xp: 50,
+        goalXp: 20,
+        allAvailableDone: true,
+        goalMet: true,
+      },
+    ]);
+    render(<DashboardPage />);
+    expect(await screen.findByText('1 days studied')).toBeTruthy();
   });
 });

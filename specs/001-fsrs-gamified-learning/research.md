@@ -439,3 +439,30 @@ exactly $0. The web is now served by Cloudflare Workers Static Assets, and a sma
   differences between development and production.
 - **Alternatives considered**: Making `sst dev` the default loop was rejected: it needs an AWS
   account for every change.
+
+## R19. Note types and HTML card rendering
+
+- **Decision**:
+  - Note-type fields are edited with **TipTap** (ProseMirror-based) as a WYSIWYG editor, with a
+    raw-HTML toggle for advanced edits. Field values are stored as sanitized HTML.
+  - Note-type HTML and CSS are sanitized by a **whitelist sanitizer built on `htmlparser2`**. The same
+    module runs on the API (on save) and in the web client (on render), so both apply one rule set.
+    Scripts, event-handler attributes and unlisted URL schemes are removed. Allowed image sources are
+    `https:` or `media:<uuid>`, and allowed link schemes are `http:`, `https:` and `mailto:`. CSS
+    `url()`, `expression()`, `@import` and `behavior` are filtered out.
+  - Each note-type card renders in a **Shadow DOM** inside the app, so its CSS is scoped to that card
+    and the app's design tokens still inherit into it.
+  - Legacy cards stay Markdown (R11) and keep the existing Markdown editor and renderer.
+- **Rationale**: Anki-style templates need author-controlled HTML and CSS, which the Markdown
+  pipeline (R11) cannot express. JavaScript is never allowed, so a sanitized static fragment in a
+  Shadow DOM gives the layout freedom without running author code. One sanitizer shared by server
+  and client keeps stored and rendered output consistent. TipTap has a mature, extensible
+  editor with a clean JSON/HTML output, and it runs in the browser without a server round trip.
+- **Alternatives considered**:
+  - An `<iframe sandbox>` that allows scripts was rejected. Script execution is out of scope for
+    the product, and iframes need postMessage-based height sync and do not inherit app tokens.
+  - DOMPurify was rejected for server-side sanitizing because it needs a DOM, which the Node API
+    does not have (it would need jsdom). It remains an option for client-only rendering, but it
+    would then be a second rule set next to the server's.
+  - Keeping only Markdown was rejected because it cannot express the layouts and CSS that note
+    types require (FR-010, FR-034).

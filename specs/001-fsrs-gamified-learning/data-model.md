@@ -83,7 +83,11 @@ row (FR-009, deletion edge case).
 | user_id, deck_id | uuid | |
 | position | integer | Ordinal in the deck, assigned from `deck.next_position`; immutable |
 | node_index | integer | Learning-path node, assigned at creation (see Path rules); immutable |
-| front, back | text | Markdown, 1–10,000 chars for front, 0–10,000 for back |
+| format | enum `markdown` \| `html` | `markdown` for legacy cards; `html` for note-type cards (FR-010). Default `markdown` |
+| front, back | text | Markdown when `format = markdown`, sanitized HTML when `format = html`. 1–100,000 chars for front, 0–100,000 for back |
+| note_id | uuid null | → Note. Set only for note-type cards; `null` for legacy cards |
+| note_type_id | uuid null | → NoteType. Set only for note-type cards |
+| template_id | text null | Id of the template in the note type that produced this card. Set only for note-type cards |
 | front_norm | text | Lower-cased, trimmed, whitespace-collapsed, NFC front. Used for duplicate detection (FR-013) |
 | tags | text[] | ≤ 20 tags, each 1–50 chars, no whitespace |
 | state | enum `new` \| `learning` \| `review` \| `relearning` | FSRS state (FR-001) |
@@ -103,11 +107,50 @@ row (FR-009, deletion edge case).
 The FSRS columns are a cache. The source of truth is the card's non-revoked review logs, and
 replaying them through the scheduler MUST reproduce these columns exactly (R6, Principle I).
 
+For note-type cards, `front` and `back` are the sanitized output of rendering the template against
+the note's fields (FR-037). Sessions and sync use these stored values, so review works offline
+without the note. Editing front or back directly is refused for these cards; tags and suspension
+stay editable.
+
 Indexes:
 - `(user_id, deck_id, state, due)` for queue building;
 - `(deck_id, node_index)` for the path;
 - `(deck_id, front_norm)` for duplicate detection;
-- `(user_id, change_seq)` for pull.
+- `(user_id, change_seq)` for pull;
+- unique `(note_id, template_id)` where `deleted_at` is null, so a note has at most one live card
+  per template.
+
+### NoteType
+
+| Field | Type | Rules |
+|---|---|---|
+| id | uuid PK | Client-generated when created on a device; idempotent on id |
+| user_id | uuid → user | |
+| name | text | 1–100 chars after trimming; unique per user, case-insensitive, among non-deleted note types |
+| fields | jsonb | Ordered list of `{ id, name }`. `id` is unique within the type (`f_` prefix); `name` is unique within the type and is what templates refer to (FR-035) |
+| templates | jsonb | Ordered list of `{ id, name, front, back }`, at least one. `id` has a `t_` prefix. `front` and `back` are HTML with field references (FR-035) |
+| css | text | Default `''`. Sanitized on save (FR-034) |
+| created_at, updated_at, deleted_at, change_seq | | Synced through pull (R6) |
+
+Built-in note types (FR-036) are created for a learner on first use. Deleting a note type is
+blocked while any live note uses it (FR-039).
+
+### Note
+
+| Field | Type | Rules |
+|---|---|---|
+| id | uuid PK | Client-generated when created on a device; idempotent on id |
+| user_id, deck_id | uuid | Deleting the deck deletes its notes |
+| note_type_id | uuid → NoteType | |
+| fields | jsonb | Map of field id → sanitized HTML. Keys not in the note type are dropped when the type changes (FR-038) |
+| tags | text[] | Same rules as `Card.tags`. Copied to every card of the note |
+| created_at, updated_at, deleted_at | | Not synced. Devices learn about notes through their cards |
+
+A note has one card per template whose rendered front is non-empty (FR-037). Creating a note with
+no non-empty front is rejected.
+
+Indexes:
+- `(user_id, note_type_id)` to check whether a note type is in use (FR-039).
 
 ### MediaAsset
 
@@ -313,6 +356,7 @@ and keeps media bytes in its own file cache instead of the service-worker cache.
 | `stats` | userId | LearnerStats | Optimistic values, corrected on pull |
 | `decks` | id | Deck | |
 | `cards` | id; indexes `[deckId+state+due]`, `[deckId+nodeIndex]` | Card | Content and FSRS state only; no review history |
+| `noteTypes` | id | NoteType | Read for rendering note-type cards and the editor, offline |
 | `media` | id | MediaAsset metadata | Bytes live in the service-worker cache |
 | `outbox` | id (UUIDv7, sorted) | `ReviewEvent` \| `RevokeEvent` \| `SessionEvent` \| `DayFlagEvent` | Deleted after the server acknowledges them |
 | `sessions` | id | In-progress StudySession with queue and undo snapshot | Allows resume (FR-019) |

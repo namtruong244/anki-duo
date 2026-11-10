@@ -6,6 +6,7 @@ import {
   doublePrecision,
   index,
   integer,
+  jsonb,
   pgTable,
   smallint,
   text,
@@ -44,6 +45,65 @@ export const deck = pgTable(
   ],
 );
 
+export const noteType = pgTable(
+  'note_type',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    name: text('name').notNull(),
+    fields: jsonb('fields').notNull().$type<{ id: string; name: string }[]>(),
+    templates: jsonb('templates')
+      .notNull()
+      .$type<{ id: string; name: string; front: string; back: string }[]>(),
+    css: text('css').notNull().default(''),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+    changeSeq: bigint('change_seq', { mode: 'number' }),
+  },
+  (t) => [
+    check(
+      'note_type_name_length',
+      sql`${t.deletedAt} is not null or char_length(${t.name}) between 1 and 100`,
+    ),
+    uniqueIndex('note_type_user_name_unique')
+      .on(t.userId, sql`lower(${t.name})`)
+      .where(sql`${t.deletedAt} is null`),
+    index('note_type_user_seq_idx').on(t.userId, t.changeSeq),
+  ],
+);
+
+export const note = pgTable(
+  'note',
+  {
+    id: uuid('id').primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => user.id, { onDelete: 'cascade' }),
+    deckId: uuid('deck_id')
+      .notNull()
+      .references(() => deck.id, { onDelete: 'cascade' }),
+    noteTypeId: uuid('note_type_id')
+      .notNull()
+      .references(() => noteType.id),
+    fields: jsonb('fields').notNull().$type<Record<string, string>>(),
+    tags: text('tags')
+      .array()
+      .notNull()
+      .default(sql`'{}'::text[]`),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+    deletedAt: timestamp('deleted_at', { withTimezone: true }),
+  },
+  (t) => [
+    index('note_deck_idx').on(t.deckId),
+    index('note_type_idx').on(t.noteTypeId),
+    index('note_user_idx').on(t.userId),
+  ],
+);
+
 export const card = pgTable(
   'card',
   {
@@ -59,6 +119,10 @@ export const card = pgTable(
     front: text('front').notNull().default(''),
     back: text('back').notNull().default(''),
     frontNorm: text('front_norm').notNull().default(''),
+    noteId: uuid('note_id').references(() => note.id, { onDelete: 'cascade' }),
+    noteTypeId: uuid('note_type_id'),
+    templateId: text('template_id'),
+    format: text('format').notNull().default('markdown'),
     tags: text('tags')
       .array()
       .notNull()
@@ -81,10 +145,11 @@ export const card = pgTable(
     // Content is cleared on deletion, so the length checks only apply to live rows.
     check(
       'card_front_length',
-      sql`${t.deletedAt} is not null or char_length(${t.front}) between 1 and 10000`,
+      sql`${t.deletedAt} is not null or char_length(${t.front}) between 1 and 100000`,
     ),
-    check('card_back_length', sql`char_length(${t.back}) <= 10000`),
+    check('card_back_length', sql`char_length(${t.back}) <= 100000`),
     check('card_tags_count', sql`cardinality(${t.tags}) <= 20`),
+    check('card_format', sql`${t.format} in ('markdown', 'html')`),
     check('card_state', sql`${t.state} in ('new', 'learning', 'review', 'relearning')`),
     check('card_difficulty', sql`${t.difficulty} between 0 and 10`),
     check('card_stability', sql`${t.stability} >= 0`),
@@ -92,6 +157,10 @@ export const card = pgTable(
     index('card_node_idx').on(t.deckId, t.nodeIndex),
     index('card_front_norm_idx').on(t.deckId, t.frontNorm),
     index('card_user_seq_idx').on(t.userId, t.changeSeq),
+    index('card_note_idx').on(t.noteId),
+    uniqueIndex('card_note_template_unique')
+      .on(t.noteId, t.templateId)
+      .where(sql`${t.deletedAt} is null and ${t.noteId} is not null`),
   ],
 );
 
